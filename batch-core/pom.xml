@@ -31,6 +31,11 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
+        <!-- JSON 変換（RestClient のレスポンス変換・JsonItemReader で使用。Jackson 3 系） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <!-- Bean Validation（バリデーション付き Processor 基盤で使用） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
