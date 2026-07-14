@@ -1,0 +1,27 @@
+# ローカル開発用 PostgreSQL（本番は Aurora PostgreSQL 互換を想定）
+#
+# 使い方:
+#   docker compose -f docker/compose.yaml up -d
+#   docker compose -f docker/compose.yaml down -v   # データも破棄する場合
+#
+# スキーマ（batch=ジョブメタデータ / app=業務）は Flyway がアプリ起動時に作成する。
+services:
+  postgres:
+    image: postgres:16
+    container_name: batch-postgres
+    environment:
+      POSTGRES_DB: batchdb
+      POSTGRES_USER: batch_admin
+      POSTGRES_PASSWORD: batch_admin # ローカル専用。本番は Secrets Manager から注入する
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batch_admin -d batchdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

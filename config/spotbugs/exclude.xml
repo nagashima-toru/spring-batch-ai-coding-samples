@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs 除外フィルタ
+
+  方針: 誤検知や、フレームワークの流儀上どうしても検出されるパターンのみ除外する。
+        除外を追加する場合は理由をコメントで残すこと。
+-->
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0">
+
+    <!-- Spring がDIするフィールド/コンストラクタ引数の保持は EI_EXPOSE_REP の対象外とする
+         （Bean はシングルトンで共有される前提のため） -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- テストコードは対象外 -->
+    <Match>
+        <Class name="~.*Test$"/>
+    </Match>
+    <Match>
+        <Class name="~.*IT$"/>
+    </Match>
+</FindBugsFilter>

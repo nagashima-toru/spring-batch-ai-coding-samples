@@ -1,0 +1,22 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# ログ・一時ファイル
+*.log
+tmp/
+
+# ローカル環境設定（機密情報はコミット禁止）
+.env
+application-local-secret.yml
