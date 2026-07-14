@@ -13,6 +13,13 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!-- コンストラクタでの引数検証（fail-fast）は本プロジェクトの規約として推奨するため除外する。
+         Finalizer 攻撃は Java 18+ でファイナライズが非推奨であり、本プロジェクトはセキュリティ
+         センシティブなクラスを含まない -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
     <!-- テストコードは対象外 -->
     <Match>
         <Class name="~.*Test$"/>
