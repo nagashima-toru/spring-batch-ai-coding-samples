@@ -36,7 +36,7 @@ jobs:
 
       - name: テスト結果のアップロード（失敗時の調査用）
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports
           path: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: カバレッジレポートのアップロード
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-reports
           path: '**/target/site/jacoco/'
