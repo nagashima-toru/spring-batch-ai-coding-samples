@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.common.WorkMapper">
+
+    <insert id="upsert" parameterType="com.example.batch.sample.common.WorkRecord">
+        INSERT INTO app.work_import (code, amount)
+        VALUES (#{code}, #{amount})
+        ON CONFLICT (code)
+        DO UPDATE SET amount = EXCLUDED.amount,
+                      updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="countWork" resultType="long">
+        SELECT COUNT(*) FROM app.work_import
+    </select>
+
+    <delete id="truncateSummary">
+        TRUNCATE TABLE app.work_summary
+    </delete>
+
+    <insert id="insertSummaryFromWork">
+        INSERT INTO app.work_summary (total_count, total_amount)
+        SELECT COUNT(*), COALESCE(SUM(amount), 0)
+        FROM app.work_import
+    </insert>
+
+    <select id="countSummary" resultType="long">
+        SELECT COUNT(*) FROM app.work_summary
+    </select>
+</mapper>

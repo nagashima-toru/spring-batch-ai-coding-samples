@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.common.SalesMapper">
+
+    <insert id="insertTransaction" parameterType="com.example.batch.sample.common.SalesTransaction">
+        INSERT INTO app.sales_transaction (customer_code, amount, sold_at)
+        VALUES (#{customerCode}, #{amount}, #{soldAt})
+    </insert>
+
+    <select id="countTransactions" resultType="long">
+        SELECT COUNT(*) FROM app.sales_transaction
+    </select>
+
+    <!-- サンプル03: 抽出用の全件カーソル読取（MyBatisCursorItemReader から使用） -->
+    <select id="selectAllTransactions" resultType="com.example.batch.sample.common.SalesTransaction">
+        SELECT id, customer_code, amount, sold_at
+        FROM app.sales_transaction
+        ORDER BY id
+    </select>
+
+    <delete id="truncateSummary">
+        TRUNCATE TABLE app.sales_summary
+    </delete>
+
+    <!-- サンプル04: 集計は SQL で完結させる（truncate と同一トランザクションで実行） -->
+    <insert id="insertSummaryFromTransactions">
+        INSERT INTO app.sales_summary (customer_code, total_amount, sales_count)
+        SELECT customer_code, SUM(amount), COUNT(*)
+        FROM app.sales_transaction
+        GROUP BY customer_code
+    </insert>
+
+    <select id="countSummary" resultType="long">
+        SELECT COUNT(*) FROM app.sales_summary
+    </select>
+</mapper>

@@ -2,6 +2,7 @@ package com.example.batch.sample;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * サンプルバッチアプリケーションのエントリポイント。
@@ -17,6 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * ECS タスクへ伝播される（{@link SpringApplication#exit} を使用）。</p>
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class BatchSampleApplication {
 
     public static void main(String[] args) {

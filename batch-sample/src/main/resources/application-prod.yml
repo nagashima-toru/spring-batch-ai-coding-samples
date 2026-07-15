@@ -1,0 +1,15 @@
+# 本番環境（AWS）。接続情報は Secrets Manager / SSM から環境変数注入する
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    com.example.batch: INFO
+    # 本番はSQLログ等のデバッグ出力を禁止
+    org.mybatis: WARN

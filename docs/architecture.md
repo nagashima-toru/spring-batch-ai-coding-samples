@@ -164,6 +164,9 @@ com.example.batch.sample/
 
 - Spring Boot の自動メタデータ生成（`spring.batch.jdbc.initialize-schema`）は **無効化**し、Flyway のマイグレーションで明示管理する（本番で DDL 権限を持たない運用を想定）
 - 接続ユーザーは両スキーマへのアクセス権を持つ。`currentSchema` は指定せず、SQL 側でスキーマ修飾する
+- **重要（Boot 4）:** Spring Batch 6 / Boot 4 の既定 JobRepository は**インメモリ（Resourceless）**であり、
+  そのままではメタデータが永続化されずリスタートできない。バッチアプリは必ず
+  `spring-boot-starter-batch-jdbc` を依存に追加して JDBC ジョブリポジトリを有効化すること
 
 ### 9.2 DB アクセス
 

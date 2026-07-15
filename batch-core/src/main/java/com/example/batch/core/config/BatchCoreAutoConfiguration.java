@@ -3,7 +3,7 @@ package com.example.batch.core.config;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.batch.autoconfigure.BatchJobLauncherAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -58,8 +58,13 @@ public class BatchCoreAutoConfiguration {
         return new WarningAwareExitCodeGenerator();
     }
 
+    /**
+     * 二重起動防止リスナー。JobRepository は Boot の Batch 自動構成が後から定義するため
+     * {@code @ConditionalOnBean} は使えず（自動構成の評価順序で必ず不成立になる）、
+     * クラス存在条件＋実行時注入とする。
+     */
     @Bean
-    @ConditionalOnBean(JobRepository.class)
+    @ConditionalOnClass(JobRepository.class)
     @ConditionalOnMissingBean
     public DuplicateRunPreventingJobExecutionListener duplicateRunPreventingJobExecutionListener(
             JobRepository jobRepository) {

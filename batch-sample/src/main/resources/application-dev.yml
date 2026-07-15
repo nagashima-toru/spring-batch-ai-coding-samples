@@ -1,0 +1,14 @@
+# 開発環境（AWS）。接続情報は Secrets Manager / SSM から環境変数注入する
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+# CloudWatch Logs 連携のため構造化JSONログ（ECS形式）で標準出力へ
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    com.example.batch: INFO

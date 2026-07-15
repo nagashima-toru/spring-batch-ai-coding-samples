@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.common.ProductMapper">
+
+    <insert id="upsert" parameterType="com.example.batch.sample.common.Product">
+        INSERT INTO app.product (product_code, product_name, price)
+        VALUES (#{productCode}, #{productName}, #{price})
+        ON CONFLICT (product_code)
+        DO UPDATE SET product_name = EXCLUDED.product_name,
+                      price = EXCLUDED.price,
+                      updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM app.product
+    </select>
+</mapper>
