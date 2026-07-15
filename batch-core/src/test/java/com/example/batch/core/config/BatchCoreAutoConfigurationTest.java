@@ -34,16 +34,15 @@ class BatchCoreAutoConfigurationTest {
     }
 
     @Test
-    void JobRepositoryが無い場合は二重起動防止リスナーを登録しない() {
-        runner.run(context -> {
-            assertThat(context).doesNotHaveBean(DuplicateRunPreventingJobExecutionListener.class);
-            assertThat(context).hasSingleBean(BatchHttpClient.class);
-        });
+    void 二重起動防止リスナーはJobRepositoryの実行時注入を必要とする() {
+        // バッチアプリでは Boot の自動構成が JobRepository を必ず提供する。
+        // 提供されない構成ではコンテキスト起動に失敗する（誤構成の早期検出）
+        runner.run(context -> assertThat(context).hasFailed());
     }
 
     @Test
     void 業務側でExitCodeGeneratorを定義した場合は置き換えられる() {
-        runner.withUserConfiguration(CustomExitCodeConfig.class).run(context -> {
+        runner.withUserConfiguration(JobRepositoryMockConfig.class, CustomExitCodeConfig.class).run(context -> {
             assertThat(context).doesNotHaveBean(WarningAwareExitCodeGenerator.class);
             assertThat(context).hasSingleBean(ExitCodeGenerator.class);
         });

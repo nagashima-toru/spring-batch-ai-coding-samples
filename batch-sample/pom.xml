@@ -26,11 +26,18 @@
             <artifactId>batch-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- DBマイグレーション（BATCH_*メタデータ・業務スキーマとも Flyway で管理） -->
+        <!-- ジョブメタデータのDB永続化（リスタートに必須）。
+             Boot 4 の既定はインメモリ（Resourceless）のため、JDBC リポジトリを明示的に有効化する -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-batch-jdbc</artifactId>
+        </dependency>
+
+        <!-- DBマイグレーション（BATCH_*メタデータ・業務スキーマとも Flyway で管理）
+             Boot 4 は自動構成がモジュール分割されているため flyway-core 単体でなく starter を使う -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -71,6 +78,19 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- カバレッジ対象外: 起動クラスと骨格サンプル（07〜09。docs/architecture.md §12） -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>com/example/batch/sample/BatchSampleApplication.class</exclude>
+                        <exclude>com/example/batch/sample/job07_partitioning/**</exclude>
+                        <exclude>com/example/batch/sample/job08_s3_io/**</exclude>
+                        <exclude>com/example/batch/sample/job09_notification/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

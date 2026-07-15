@@ -1,0 +1,45 @@
+# 全プロファイル共通設定。環境差分は application-{local|dev|prod}.yml へ（docs/architecture.md §10）
+spring:
+  application:
+    name: batch-sample
+  profiles:
+    default: local
+  main:
+    web-application-type: none
+  batch:
+    jdbc:
+      # メタデータテーブルは Flyway で管理するため自動生成しない（docs/architecture.md §9.1）
+      initialize-schema: never
+      table-prefix: batch.BATCH_
+    # 実行するジョブは起動引数 --spring.batch.job.name=xxx で必ず指定する
+  flyway:
+    locations: classpath:db/migration
+    schemas: batch, app
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    # record 型へのコンストラクタ自動マッピングを有効化（エンティティは不変 record で定義）
+    arg-name-based-constructor-auto-mapping: true
+
+batch:
+  core:
+    http:
+      connect-timeout: 5s
+      read-timeout: 30s
+      retry:
+        max-attempts: 3
+        initial-delay: 500ms
+        multiplier: 2.0
+        max-delay: 10s
+
+sample:
+  chunk-size: 100
+  skip-limit: 10
+  job05:
+    api:
+      base-url: http://localhost:8081
+      page-size: 100
+      # ローカル以外は Secrets Manager から環境変数注入
+      token: ${SAMPLE05_API_TOKEN:local-dummy-token}

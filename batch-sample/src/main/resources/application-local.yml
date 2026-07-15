@@ -1,0 +1,11 @@
+# ローカル開発用（AWS 非依存）。DB は docker/compose.yaml の PostgreSQL を使用する
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batchdb
+    username: batch_admin
+    password: batch_admin # ローカル専用。コミット済み固定値（本番系は環境変数注入）
+
+# ローカルは可読性優先でテキストログ（構造化JSONは dev/prod のみ）
+logging:
+  level:
+    com.example.batch: INFO

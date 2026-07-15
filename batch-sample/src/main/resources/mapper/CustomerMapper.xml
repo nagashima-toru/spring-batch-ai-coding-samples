@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.common.CustomerMapper">
+
+    <insert id="upsert" parameterType="com.example.batch.sample.common.Customer">
+        INSERT INTO app.customer (customer_code, name, email)
+        VALUES (#{customerCode}, #{name}, #{email})
+        ON CONFLICT (customer_code)
+        DO UPDATE SET name = EXCLUDED.name,
+                      email = EXCLUDED.email,
+                      updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM app.customer
+    </select>
+</mapper>

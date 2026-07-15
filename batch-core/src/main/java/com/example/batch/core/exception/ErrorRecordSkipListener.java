@@ -21,44 +21,52 @@ import org.springframework.batch.infrastructure.item.file.FlatFileParseException
  * 元レコード＋エラー理由をファイルへ退避し、手動リカバリを可能にする」を実現する。
  * 出力形式は「{@code 元レコード<TAB>エラー理由}」の1行1レコード。</p>
  *
- * <p><b>使い方:</b> Chunk Step のリスナーとして登録する。</p>
+ * <p><b>使い方:</b> Chunk Step の skipListener として登録する。読取・加工時の Skip は
+ * 入力型 {@code T}、書込時の Skip は変換後の出力型 {@code S} で通知されるため、
+ * それぞれのフォーマッタを渡す。</p>
  * <pre>{@code
  * .faultTolerant()
  * .skipPolicy(new BusinessSkipPolicy(10))
- * .listener(new ErrorRecordSkipListener<>(
- *         Path.of("/data/error/customer_error.txt"), CustomerCsvRecord::toString))
+ * .skipListener(new ErrorRecordSkipListener<>(
+ *         Path.of("/data/error/customer_error.txt"),
+ *         csv -> String.join(",", csv.code(), csv.name()),   // 読取・加工時（入力レコード）
+ *         entity -> entity.toString()))                       // 書込時（変換後エンティティ）
  * }</pre>
  *
- * <p>読取時 Skip（パースエラー）は例外から元の行文字列を取得して出力する。
- * 加工・書込時 Skip はコンストラクタで渡したフォーマッタでレコードを文字列化して出力する。</p>
+ * <p>読取時 Skip（パースエラー）は例外から元の行文字列を取得して出力する。</p>
  *
- * <p><b>拡張ポイント:</b> 出力形式を変えたい場合はフォーマッタ関数で調整する。
- * 出力先をファイル以外（DB等）にしたい場合は {@link SkipListener} を直接実装した
- * 別クラスを作成する。</p>
+ * <p><b>拡張ポイント:</b> 出力形式はフォーマッタ関数で調整する。出力先をファイル以外
+ * （DB等）にしたい場合は {@link SkipListener} を直接実装した別クラスを作成する。</p>
  *
- * @param <T> Skip 対象のレコード型
+ * @param <T> 読取・加工時の入力レコード型
+ * @param <S> 書込時の出力（変換後）型
  */
-public class ErrorRecordSkipListener<T> implements SkipListener<T, T> {
+public class ErrorRecordSkipListener<T, S> implements SkipListener<T, S> {
 
     private static final Logger log = LoggerFactory.getLogger(ErrorRecordSkipListener.class);
 
     private final Path errorFile;
-    private final Function<T, String> formatter;
+    private final Function<T, String> inputFormatter;
+    private final Function<S, String> outputFormatter;
     private final Charset charset;
 
     /**
      * UTF-8 でエラーレコードファイルを出力するリスナーを作成する。
      *
-     * @param errorFile 退避先ファイルパス（親ディレクトリが無ければ作成する）
-     * @param formatter レコードを1行の文字列へ変換する関数
+     * @param errorFile       退避先ファイルパス（親ディレクトリが無ければ作成する）
+     * @param inputFormatter  入力レコードを1行の文字列へ変換する関数（読取・加工時 Skip 用）
+     * @param outputFormatter 出力レコードを1行の文字列へ変換する関数（書込時 Skip 用）
      */
-    public ErrorRecordSkipListener(Path errorFile, Function<T, String> formatter) {
-        this(errorFile, formatter, StandardCharsets.UTF_8);
+    public ErrorRecordSkipListener(Path errorFile, Function<T, String> inputFormatter,
+            Function<S, String> outputFormatter) {
+        this(errorFile, inputFormatter, outputFormatter, StandardCharsets.UTF_8);
     }
 
-    public ErrorRecordSkipListener(Path errorFile, Function<T, String> formatter, Charset charset) {
+    public ErrorRecordSkipListener(Path errorFile, Function<T, String> inputFormatter,
+            Function<S, String> outputFormatter, Charset charset) {
         this.errorFile = errorFile;
-        this.formatter = formatter;
+        this.inputFormatter = inputFormatter;
+        this.outputFormatter = outputFormatter;
         this.charset = charset;
     }
 
@@ -70,12 +78,12 @@ public class ErrorRecordSkipListener<T> implements SkipListener<T, T> {
 
     @Override
     public void onSkipInProcess(T item, Throwable t) {
-        writeErrorRecord(formatter.apply(item), t);
+        writeErrorRecord(inputFormatter.apply(item), t);
     }
 
     @Override
-    public void onSkipInWrite(T item, Throwable t) {
-        writeErrorRecord(formatter.apply(item), t);
+    public void onSkipInWrite(S item, Throwable t) {
+        writeErrorRecord(outputFormatter.apply(item), t);
     }
 
     private synchronized void writeErrorRecord(String record, Throwable t) {

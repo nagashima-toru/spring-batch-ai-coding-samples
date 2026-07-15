@@ -17,7 +17,7 @@ class ErrorRecordSkipListenerTest {
     @Test
     void 加工時Skipのレコードをフォーマットして退避する() throws Exception {
         Path errorFile = tempDir.resolve("error/skipped.txt");
-        var listener = new ErrorRecordSkipListener<String>(errorFile, r -> "record=" + r);
+        var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> "record=" + r, r -> "out=" + r);
 
         listener.onSkipInProcess("A001", new BusinessException("金額が不正"));
 
@@ -28,7 +28,7 @@ class ErrorRecordSkipListenerTest {
     @Test
     void 読取時Skipは元の行を退避する() throws Exception {
         Path errorFile = tempDir.resolve("skipped.txt");
-        var listener = new ErrorRecordSkipListener<String>(errorFile, r -> r);
+        var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> r, r -> r);
 
         listener.onSkipInRead(new FlatFileParseException("パース失敗", "bad,csv,line"));
 
@@ -39,7 +39,7 @@ class ErrorRecordSkipListenerTest {
     @Test
     void 書込時Skipも退避され複数件は追記される() throws Exception {
         Path errorFile = tempDir.resolve("skipped.txt");
-        var listener = new ErrorRecordSkipListener<String>(errorFile, r -> r);
+        var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> r, r -> r);
 
         listener.onSkipInWrite("R1", new BusinessException("重複"));
         listener.onSkipInWrite("R2", new BusinessException("重複"));
