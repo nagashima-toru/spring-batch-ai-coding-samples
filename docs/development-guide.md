@@ -70,6 +70,8 @@ flowchart TD
     PR --> ST
 ```
 
+`implementation` / `unit-test` / `integration-test` の各工程は、§5 の**検証ループ**（検証→失敗なら修正→再検証）を工程内に内蔵する。
+
 ### 2.2 各工程の入出力
 
 | 工程（Skill） | 入力 | 出力 |
@@ -129,11 +131,61 @@ flowchart LR
 - [ ] 単体テスト＋結合テストがあり、`./mvnw verify` が通る
 - [ ] リスタート動作（途中失敗→同一パラメータ再実行）を結合テストまたは手動で確認した
 
-## 5. トラブルシューティング
+## 5. 検証ループ（自律検証の共通ルール）
+
+`implementation` / `unit-test` / `integration-test` の各 Skill は、成果物を生成したら
+**検証コマンドを実行し、失敗したら修正して再検証するループ**を工程内で回す。
+本節がループ運用の共通ルール（SSoT）であり、各 Skill は本節を参照する。
+
+### 5.1 ループの基本形
+
+```text
+検証コマンド実行 → 失敗（exit code 非0）
+  → レポート/ログを読んで原因を特定 → 修正 → 再実行
+```
+
+失敗の詳細は以下を読む（標準出力のスタックトレースだけで判断しない）。
+
+| 検証 | レポートの場所 |
+|---|---|
+| 単体テスト | `{module}/target/surefire-reports/` |
+| 結合テスト | `{module}/target/failsafe-reports/` |
+| カバレッジ | `{module}/target/site/jacoco/` |
+| Checkstyle / SpotBugs | `{module}/target/site` 配下のレポート |
+
+### 5.2 上限と終了条件
+
+- 成功（exit code 0）で終了する。
+- 1工程あたり**最大3ラウンド**（カバレッジ充足ループのみ最大2ラウンド）。
+
+### 5.3 早期エスカレーション
+
+同一のエラー（同じテストの失敗・同じ違反）が**2ラウンド連続で解消しない**場合は、
+上限に達していなくてもループを停止し、以下を添えてユーザーに報告する。
+
+1. エラーログの要点（該当テスト名・違反内容・スタックトレースの核心）
+2. 試した修正の内容
+3. 原因の仮説
+
+### 5.4 反則の禁止（ガードレール）
+
+**ループを通すために検証自体を弱めてはならない。** 以下は指摘・依頼がない限り禁止。
+
+- カバレッジ閾値（親 pom の `jacoco.coverage.minimum`）の変更
+- Checkstyle / SpotBugs の除外設定追加による回避（正当な抑止はユーザー了承後に理由コメント付きで）
+- テストの削除・`@Disabled` 化・アサーション弱体化による回避
+- 適用済み Flyway マイグレーションファイルの書き換えによる回避
+
+### 5.5 SSoT との関係
+
+修正の過程で**設計書と異なる実装が必要**と判明したら、ループを中断して先に設計書の
+改訂を提案する（設計書と異なる実装の禁止。CLAUDE.md・§2 の原則）。
+
+## 6. トラブルシューティング
 
 | 事象 | 対処 |
 |---|---|
 | 結合テストが `Could not find a valid Docker environment` で失敗 | Docker Desktop を起動する。急ぎのビルドは `-DskipITs` |
-| 「A job instance already exists and is complete」 | 成功済みジョブと同一パラメータで再実行している（§6.1 の正常挙動）。業務パラメータを変えるか、テストなら DB を初期化する |
+| 「A job instance already exists and is complete」 | 成功済みジョブと同一パラメータで再実行している（`docs/architecture.md` §6.1 の正常挙動）。業務パラメータを変えるか、テストなら DB を初期化する |
 | ローカルDB の状態を初期化したい | `docker compose -f docker/compose.yaml down -v && docker compose -f docker/compose.yaml up -d` |
 | Checkstyle/SpotBugs 違反でビルド失敗 | `target/site` のレポートを確認し修正する。抑止が妥当な場合のみ理由コメント付きで除外設定へ追加 |

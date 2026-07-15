@@ -17,6 +17,20 @@ description: ジョブ単位の結合テスト（Testcontainers + Spring Batch T
 | 出力 | `src/test/java/...{ジョブパッケージ}/{ジョブ名}IT.java`（Failsafe が `*IT` を実行） |
 | 次工程 | `/review-code` |
 
+## 進め方
+
+1. `docker info` で Docker が起動していることを確認する（未起動ならユーザーに起動を依頼）
+2. 詳細設計書のエラー処理設計・リラン設計から、下表の検証観点ごとにテストケースを洗い出す
+3. 既存 IT の型（下記「テストの構成」）に従って実装する
+4. **検証ループ**: `./mvnw verify` を実行する。失敗したら
+   `{module}/target/failsafe-reports/` を読み、原因が**テストコード / 実装 /
+   テストデータ・コンテナ設定**のどれかを判定してから修正し再実行する（最大3ラウンド）
+   - `Could not find a valid Docker environment` は修正ループの対象外。即ユーザーに
+     Docker の起動を依頼する（`docs/development-guide.md` §6 トラブルシューティング）
+
+ループの共通ルール（上限・早期エスカレーション・検証を弱める反則の禁止）は
+`docs/development-guide.md` §5 に従う。
+
 ## テストの構成（必ず既存の型に従う）
 
 - `AbstractJobIT` を継承する（PostgreSQL コンテナ共有・`spring.batch.job.enabled=false`・
