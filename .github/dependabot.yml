@@ -1,0 +1,23 @@
+# 依存ライブラリ・Actions の更新PRを毎週作成する
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      # Spring 系はまとめて更新（個別更新だとバージョン不整合になりやすい）
+      spring:
+        patterns:
+          - "org.springframework*"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo

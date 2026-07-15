@@ -1,0 +1,65 @@
+# CD: バージョンタグ（v*）の push で Docker イメージをビルドし ECR へ push、
+#     ECS タスク定義を新イメージで更新する
+#
+# AWS 認証は OIDC（アクセスキー不使用）。事前に以下を設定すること:
+#   - AWS 側: GitHub OIDC プロバイダと、ECR push / ECS 登録権限を持つ IAM ロール
+#   - GitHub 側（Settings > Environments > production の Variables）:
+#       AWS_REGION / AWS_ROLE_ARN / ECR_REPOSITORY / ECS_TASK_FAMILY
+name: CD
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # OIDC トークン発行に必要
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: JDK 25 セットアップ
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: AWS 認証（OIDC）
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: ECR ログイン
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: イメージビルド＆push（Jib。Docker デーモン不要・テストは CI 済みのためスキップ）
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -pl batch-sample -am \
+            -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Djacoco.skip \
+            package jib:build \
+            -Djib.to.image="${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${GITHUB_REF_NAME}" \
+            -Djib.to.tags=latest
+
+      - name: ECS タスク定義を新イメージで更新（新リビジョン登録）
+        run: |
+          IMAGE="${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${GITHUB_REF_NAME}"
+          aws ecs describe-task-definition \
+            --task-definition "${{ vars.ECS_TASK_FAMILY }}" \
+            --query 'taskDefinition' > current-task-def.json
+          # 登録時に指定できない読み取り専用フィールドを除去し、イメージのみ差し替える
+          jq --arg IMAGE "$IMAGE" \
+            'del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                 .compatibilities, .registeredAt, .registeredBy)
+             | .containerDefinitions[0].image = $IMAGE' \
+            current-task-def.json > new-task-def.json
+          aws ecs register-task-definition --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.{family: family, revision: revision}' --output table
