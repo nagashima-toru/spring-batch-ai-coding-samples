@@ -22,7 +22,7 @@ jobs:
     environment: production
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: JDK 25 セットアップ
         uses: actions/setup-java@v5
