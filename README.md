@@ -60,6 +60,6 @@ echo $?   # 0=正常 / 2=警告(Skipあり) / 1=異常
 
 ## CD（デプロイ）の前提設定
 
-タグ `v*` の push で ECR push＋ECS タスク定義更新が動きます。事前に GitHub Environments
-（production）へ `AWS_REGION` / `AWS_ROLE_ARN`（OIDC用）/ `ECR_REPOSITORY` /
-`ECS_TASK_FAMILY` を設定してください（[cd.yml](.github/workflows/cd.yml) 冒頭のコメント参照）。
+タグ `v*` の push で ECR push＋ECS タスク定義更新が動きます。AWS 側（OIDC・IAM・ECR・
+ECS・EventBridge）と GitHub Environments の設定手順は **[docs/aws-setup.md](docs/aws-setup.md)**
+を参照してください。
