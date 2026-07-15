@@ -42,7 +42,7 @@
         <checkstyle.version>13.8.0</checkstyle.version>
         <spotbugs-maven-plugin.version>4.10.3.0</spotbugs-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-        <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
+        <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
 
         <!-- カバレッジ閾値（命令カバレッジ） -->
         <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
