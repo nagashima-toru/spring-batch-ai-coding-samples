@@ -1,0 +1,53 @@
+# CI: PR・main への push でビルド＋全品質チェックを実行する
+#
+# ./mvnw verify に以下が全て含まれる:
+#   - コンパイル / 単体テスト（Surefire） / 結合テスト（Failsafe + Testcontainers）
+#   - 静的解析（Checkstyle / SpotBugs）
+#   - カバレッジ閾値チェック（JaCoCo 命令カバレッジ80%）
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: JDK 25 セットアップ
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: ビルド・テスト・静的解析・カバレッジ
+        # 結合テストは Testcontainers が GitHub ホステッドランナーの Docker を使用する
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+
+      - name: テスト結果のアップロード（失敗時の調査用）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
+          retention-days: 7
+
+      - name: カバレッジレポートのアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: '**/target/site/jacoco/'
+          retention-days: 7

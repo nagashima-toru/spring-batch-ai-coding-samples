@@ -79,6 +79,28 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- コンテナイメージビルド（Jib: Dockerデーモン不要・レイヤ最適化。CD から jib:build で使用） -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:25-jre</image>
+                    </from>
+                    <!-- push 先（-Djib.to.image で CD が上書きする） -->
+                    <to>
+                        <image>batch-sample</image>
+                    </to>
+                    <container>
+                        <!-- ECS ではタスク定義の command 上書きでジョブ名・パラメータを指定する -->
+                        <jvmFlags>
+                            <jvmFlag>-XX:MaxRAMPercentage=75.0</jvmFlag>
+                            <jvmFlag>-Dfile.encoding=UTF-8</jvmFlag>
+                        </jvmFlags>
+                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+                    </container>
+                </configuration>
+            </plugin>
             <!-- カバレッジ対象外: 起動クラスと骨格サンプル（07〜09。docs/architecture.md §12） -->
             <plugin>
                 <groupId>org.jacoco</groupId>
