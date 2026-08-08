@@ -22,6 +22,10 @@ mybatis:
     map-underscore-to-camel-case: true
     # record 型へのコンストラクタ自動マッピングを有効化（エンティティは不変 record で定義）
     arg-name-based-constructor-auto-mapping: true
+    # PostgreSQL JDBC ドライバは Statement#setFetchSize(>0) を明示しない限りカーソルフェッチにならず
+    # 結果セット全体をクライアントへ読み込む。MyBatisCursorItemReader の全件メモリロード禁止
+    # （docs/architecture.md §3.3）を実効化するため、チャンクサイズ既定値に合わせて明示する
+    default-fetch-size: 100
 
 batch:
   core:

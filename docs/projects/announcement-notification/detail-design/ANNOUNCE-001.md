@@ -3,8 +3,8 @@
 | 項目 | 内容 |
 |---|---|
 | ジョブID / ジョブ名（Bean名） | ANNOUNCE-001 / announcementNotifyJob |
-| 入力（基本設計書） | docs/projects/announcement-notification/basic-design.md（1.1 版） |
-| ステータス | レビュー済み（2026-08-09 設計レビュー指摘反映済み） |
+| 入力（基本設計書） | docs/projects/announcement-notification/basic-design.md（1.2 版） |
+| ステータス | レビュー済み（2026-08-09 設計レビュー・コードレビュー指摘反映済み） |
 
 ## 1. ジョブ構成
 
@@ -85,7 +85,7 @@
 
 | 項目 | チェック内容 | 実装（Bean Validation / 業務チェック） | エラー時 |
 |---|---|---|---|
-| email | メールアドレスとして正しい形式か | Bean Validation `@Email`（`NotifyCandidate.email` に付与） | `BusinessException` → Skip（`skipLimit` 到達で異常終了） |
+| email | メールアドレスとして正しい形式か（空文字も不正とする） | Bean Validation `@NotBlank @Email`（`NotifyCandidate.email` に付与。`@Email` 単体は空文字を許容するため併記。コードレビューで指摘） | `BusinessException` → Skip（`skipLimit` 到達で異常終了） |
 
 ※ 未設定（null）チェックは Reader の SQL で除外済みのため Processor では行わない（§3 の分類「業務上の対象外」）。`announcementId` / `userId` / `subject` / `body` は自テーブル起因の値であり入力チェック対象としない。
 
@@ -132,6 +132,8 @@
 | `MailSendMapper#insert` | INSERT | `INSERT INTO app.mail_send (announcement_id, user_id, email, subject, body, send_status) VALUES (..., '0') ON CONFLICT (announcement_id, user_id) DO NOTHING`（冪等）。`created_at` は列の `DEFAULT now()` に委ねる（実装時に Flyway の `V3__create_announcement_notification_tables.sql` へ `DEFAULT now()` を定義する） |
 
 【設計上の注意（性能）】: 本人条件・家族条件を単一クエリの `OR` で結合すると、`app_user`・`zip_code_master`・`family_relation`（最大数十万〜数万件規模）を跨ぐ結合でインデックスが効きにくく、PostgreSQL のプランナが全表結合に倒れやすい。`UNION` で2本の単純結合クエリに分割することで、それぞれが `zip_code_master`／`app_user.zip_code`／`family_relation` の等値結合インデックスを使える形にする（設計レビューにより反映。処理時間の制約は要件定義書で未確定〈No.4〉のため、システムテストで実測し必要なら §2「処理量とチャンクサイズ」記載のパーティショニング検討へつなげる）。
+
+【設計上の注意（カーソルフェッチ）】: PostgreSQL JDBC ドライバは `Statement#setFetchSize(n>0)` を明示しない限り、サーバーサイドカーソルを使わず結果セット全体をクライアントへ読み込む（`MyBatisCursorItemReader` を使っていても、ドライバレベルでは全件メモリロードになり得る）。これは architecture.md §3.3 の「全件メモリロードを禁止する」に反するため、`mybatis.configuration.default-fetch-size`（`application.yml`、既定100＝チャンクサイズ既定値に合わせる）をアプリ全体で明示する（コードレビューで指摘。本ジョブ専用の設定ではなく既存のカーソル読取ジョブ（サンプル03）にも波及する是正）。
 
 ## 5. リラン設計
 

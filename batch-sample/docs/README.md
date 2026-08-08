@@ -22,3 +22,11 @@
 | 07 | [sample07-partitioning.md](sample07-partitioning.md) | パーティショニング並列処理・性能設計 |
 | 08 | [sample08-s3-io.md](sample08-s3-io.md) | S3入出力のプロファイル切替（AWS非依存開発） |
 | 09 | [sample09-notification.md](sample09-notification.md) | 異常終了時の Slack/SNS 通知 |
+
+## 案件ジョブについて
+
+`batch-sample` モジュールには、上記のリファレンスサンプル（`job01_`〜`job09_`）とは別に、
+実際の案件で作成したジョブ（例: `job_announcement_notify`）も同梱される。
+案件ジョブはサンプルのカタログには含めず、パッケージ名にサンプル番号（`jobNN_`）を付与しない
+（Job名・Step名・Configクラス名と命名を統一するため）。設計書は `docs/projects/{案件名}/` 配下に格納する
+（`docs/development-guide.md` §2 参照）。

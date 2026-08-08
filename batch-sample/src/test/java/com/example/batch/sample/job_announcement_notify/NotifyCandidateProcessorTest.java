@@ -39,4 +39,14 @@ class NotifyCandidateProcessorTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("email");
     }
+
+    @Test
+    void メールアドレスが空文字の場合はBusinessExceptionをスローする() {
+        // @Email 単体は空文字を許容するため @NotBlank を併記している（コードレビューで指摘・追加）
+        NotifyCandidate candidate = new NotifyCandidate(1L, 100L, "", "件名", "本文");
+
+        assertThatThrownBy(() -> processor.process(candidate))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("email");
+    }
 }
