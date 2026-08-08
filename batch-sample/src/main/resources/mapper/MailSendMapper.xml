@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_announcement_notify.MailSendMapper">
+
+    <!-- 一意制約 (announcement_id, user_id) により、再実行・リスタートで同一対象への二重登録を防止する -->
+    <insert id="insert" parameterType="com.example.batch.sample.job_announcement_notify.MailSend">
+        INSERT INTO app.mail_send (announcement_id, user_id, email, subject, body, send_status)
+        VALUES (#{announcementId}, #{userId}, #{email}, #{subject}, #{body}, #{sendStatus})
+        ON CONFLICT (announcement_id, user_id) DO NOTHING
+    </insert>
+</mapper>

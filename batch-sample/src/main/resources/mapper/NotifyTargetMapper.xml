@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_announcement_notify.NotifyTargetMapper">
+
+    <!-- Step3 Reader: 処理中のお知らせの通知対象ユーザーを抽出する（MyBatisCursorItemReader から使用）。
+         本人条件・家族条件を UNION で分離し、それぞれが zip_code / family_relation の等値結合
+         インデックスを使えるようにする（OR結合による全表結合を避ける。詳細設計書 §4）。
+         リスタート時のカーソル再開位置を安定させるため ORDER BY を必須とする。 -->
+    <select id="selectNotifyTargets" resultType="com.example.batch.sample.job_announcement_notify.NotifyCandidate">
+        SELECT announcement_id, subject, body, user_id, email
+        FROM (
+            <!-- ①本人: 住所の郵便番号が通知区域の展開後の郵便番号と一致するユーザー -->
+            SELECT a.announcement_id AS announcement_id, a.title AS subject, a.body AS body,
+                   u.user_id AS user_id, u.email AS email
+            FROM app.announcement a
+            JOIN app.announcement_region ar ON ar.announcement_id = a.announcement_id
+            JOIN app.zip_code_master z
+              ON (ar.city_code IS NOT NULL AND z.city_code = ar.city_code)
+              OR (ar.city_code IS NULL AND z.prefecture_code = ar.prefecture_code)
+            JOIN app.app_user u ON u.zip_code = z.zip_code
+            WHERE a.status = '1'
+              AND u.email IS NOT NULL
+
+            UNION
+
+            <!-- ②家族: 住所未登録のユーザーが、通知区域内に住む家族（family_relationで紐づく）と同居とみなす -->
+            SELECT a.announcement_id AS announcement_id, a.title AS subject, a.body AS body,
+                   u.user_id AS user_id, u.email AS email
+            FROM app.announcement a
+            JOIN app.announcement_region ar ON ar.announcement_id = a.announcement_id
+            JOIN app.zip_code_master z
+              ON (ar.city_code IS NOT NULL AND z.city_code = ar.city_code)
+              OR (ar.city_code IS NULL AND z.prefecture_code = ar.prefecture_code)
+            JOIN app.app_user family_user ON family_user.zip_code = z.zip_code
+            JOIN app.family_relation fr ON fr.family_user_id = family_user.user_id
+            JOIN app.app_user u ON u.user_id = fr.user_id AND u.zip_code IS NULL
+            WHERE a.status = '1'
+              AND u.email IS NOT NULL
+        ) notify_target
+        ORDER BY announcement_id, user_id
+    </select>
+</mapper>
