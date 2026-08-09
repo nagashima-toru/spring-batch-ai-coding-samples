@@ -53,6 +53,10 @@ java -jar batch-sample/target/batch-sample-*.jar \
 | `/review-code` | コードレビュー | 指摘一覧（チェックリスト準拠） |
 | `/system-test` | システムテスト | STシナリオ・実施記録 |
 
+`/sdd-pipeline` は上記 `basic-design`〜`system-test` とPR作成までを一気通貫で自動実行するオーケストレーションSkill。
+要件定義書（requirements.md、確定済み）がある案件に対して使う。設計・レビューはOpusサブエージェント、
+実装・テスト等の作業はSonnetサブエージェントに委譲する（詳細は `.claude/skills/sdd-pipeline/SKILL.md`）。
+
 ## 禁止事項
 
 - **Spring Batch 5系のサンプルコード流用禁止**（6系でAPI・パッケージが変更。
