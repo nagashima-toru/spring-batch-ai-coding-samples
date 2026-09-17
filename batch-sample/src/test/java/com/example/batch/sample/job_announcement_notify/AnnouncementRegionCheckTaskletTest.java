@@ -22,7 +22,7 @@ class AnnouncementRegionCheckTaskletTest {
     private ChunkContext chunkContext() {
         JobExecution jobExecution = new JobExecution(1L, new JobInstance(1L, "announcementNotifyJob"),
                 new JobParameters());
-        StepExecution stepExecution = new StepExecution("announcementNotify.02RegionCheckStep", jobExecution);
+        StepExecution stepExecution = new StepExecution(1L, "announcementNotify.02RegionCheckStep", jobExecution);
         return new ChunkContext(new StepContext(stepExecution));
     }
 

@@ -159,9 +159,10 @@ com.example.batch.sample/
 
 | スキーマ | 内容 | 管理 |
 |---|---|---|
-| `batch` | Spring Batch メタデータ（BATCH_* テーブル） | Flyway（`db/migration/batch`） |
-| `app` | 業務テーブル | Flyway（`db/migration/app`） |
+| `batch` | Spring Batch メタデータ（BATCH_* テーブル） | Flyway |
+| `app` | 業務テーブル | Flyway |
 
+- Flyway のマイグレーションファイルは `db/migration` 配下にスキーマ別ディレクトリを設けず**フラット配置**とし、`V{連番}` を両スキーマ共通の通し番号で採番する（`V1__create_batch_metadata_tables.sql` が `batch` スキーマ、`V2__create_app_tables.sql` 以降が `app` スキーマの例）。1つの案件で両スキーマにまたがる変更を行う場合も、1つの V ファイル内に両スキーマの DDL を記述してよい
 - Spring Boot の自動メタデータ生成（`spring.batch.jdbc.initialize-schema`）は **無効化**し、Flyway のマイグレーションで明示管理する（本番で DDL 権限を持たない運用を想定）
 - 接続ユーザーは両スキーマへのアクセス権を持つ。`currentSchema` は指定せず、SQL 側でスキーマ修飾する
 - **重要（Boot 4）:** Spring Batch 6 / Boot 4 の既定 JobRepository は**インメモリ（Resourceless）**であり、
