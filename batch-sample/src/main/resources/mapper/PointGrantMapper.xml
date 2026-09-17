@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_point_expiry.PointGrantMapper">
+
+    <!-- POINT-001 Step1: 期限切れ（expiry_date < targetDate）かつ status='1'（有効）の付与を
+         status='2'（失効）へ更新し、更新された行をそのまま失効履歴へ登録する。
+         データ変更 CTE により1つの SQL 文で原子的に実行されるため、失効更新と履歴登録は必ず1対1になる
+         （詳細設計書 §4・基本設計書 §2）。
+         MyBatis 要素は <insert> を使う（戻り値＝外側 INSERT の行数＝失効件数。useGeneratedKeys は使用しない）。 -->
+    <insert id="expireAndRecordHistory">
+        WITH expired AS (
+            UPDATE app.point_grant
+               SET status       = '2',
+                   expired_date = #{targetDate},
+                   updated_at   = now()
+             WHERE status = '1'
+               AND expiry_date &lt; #{targetDate}
+            RETURNING point_grant_id, member_id, points, granted_date, expiry_date
+        )
+        INSERT INTO app.point_expiry_history (
+            point_grant_id, member_id, points, granted_date, expiry_date, expired_date, created_at
+        )
+        SELECT point_grant_id, member_id, points, granted_date, expiry_date, #{targetDate}, now()
+          FROM expired
+    </insert>
+
+</mapper>
