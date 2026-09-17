@@ -35,7 +35,7 @@ class PointExpiryTaskletTest {
 
     private StepContribution stepContribution() {
         JobExecution jobExecution = new JobExecution(1L, new JobInstance(1L, "pointExpiryJob"), new JobParameters());
-        StepExecution stepExecution = new StepExecution("pointExpiry.01ExpireStep", jobExecution);
+        StepExecution stepExecution = new StepExecution(1L, "pointExpiry.01ExpireStep", jobExecution);
         return new StepContribution(stepExecution);
     }
 
