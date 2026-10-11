@@ -1,0 +1,208 @@
+# 基本設計書: 受注CSV取込・日次売上集計バッチ（order-daily-sales）
+
+| 項目 | 内容 |
+|---|---|
+| 案件名 | 受注CSV取込・日次売上集計バッチ（order-daily-sales） |
+| 入力（要件定義書） | docs/projects/order-daily-sales/requirements.md（2026-10-11 版・確定） |
+| ステータス | レビュー待ち |
+
+## 1. ジョブ一覧
+
+| ジョブID | ジョブ名（Bean名） | 概要 | 方式 | 実行タイミング | 先行ジョブ |
+|---|---|---|---|---|---|
+| ORDER-001 | orderDailySalesJob | 対象日の受注CSVを受注明細へ取り込み（対象日分は洗い替え）、受注日×店舗の日次売上集計を作成する | Chunk（取込）＋ Tasklet（チェック・削除・集計） | 日次 02:00 | なし |
+
+**ジョブ分割の検討**: 要件の処理一覧（No.1〜3）は実行タイミング（日次 02:00）・リラン単位（対象日）・
+依存関係（取込→集計の順序固定）がすべて同じであり、別ジョブにする理由がないため **1ジョブ**とする。
+取込と集計を別ジョブにすると、取込だけ成功して集計が未実行の状態を Step Functions で制御する必要が生じ、
+運用が複雑になる。
+
+**実装配置**: `batch-sample` モジュールにパッケージ `job_order_daily_sales` として追加する。
+案件ジョブのため、ジョブ名・パッケージ名にサンプル番号を付けない（announcement-notification・
+member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内容}`・`{サンプル番号}{内容}Job` は
+サンプルジョブ向けの規約）。
+
+| 対象 | 名前 |
+|---|---|
+| ジョブ名（Bean名） | `orderDailySalesJob` |
+| パッケージ | `com.example.batch.sample.job_order_daily_sales` |
+| Job 設定クラス | `OrderDailySalesJobConfig` |
+| Step 名の接頭辞 | `orderDailySales.` |
+
+## 2. ジョブ方式設計
+
+### ORDER-001: orderDailySalesJob
+
+- **方式**: Chunk（取込）＋ Tasklet（前処理・洗い替え削除・集計）
+- **選定理由**:
+  - 取込は入力が件数上限のないファイル（最大10万件/日）であり、architecture.md §3.1 の判断基準
+    「入力データが件数無制限（ファイル）→ Chunk」に該当する。不正行を Skip してエラーファイルへ退避し
+    処理を継続する要件（要件定義書 §3.5）はレコード単位の Skip 制御が必要で、Chunk でのみ実現できる。
+    サンプル01の選定基準「件数上限のないファイル取込」「不正レコードを退避して処理を継続したい」に合致する
+  - 集計は `INSERT ... SELECT ... GROUP BY` の SQL 1本で表現できるため Tasklet とする
+    （§3.1「集計 SQL 1本で完結する処理 → Tasklet」、§9.2「集計は SQL で行い Java 側で集計ループを避ける」。
+    サンプル01「選ばない場面: 取込後の集計がSQL1本で済む → サンプル04（Tasklet）を検討」、
+    サンプル04「選ぶ: 集計・変換が SQL で表現できる」）
+  - ファイル存在・ヘッダのチェックと、対象日分の削除は単発処理のため Tasklet（§3.1「前処理・後処理 → Tasklet」）
+  - 10万件はサンプル01の「数十万件超で処理時間が課題 → パーティショニング」の閾値を下回り、
+    05:00 の期限（3時間）にも十分収まるためパーティショニングは採用しない
+- **Step構成（概要）**: 1 Step 1 責務（§3.2）。Step 間の受け渡しは DB（受注明細テーブル）を介す
+
+| # | Step名 | 方式 | 処理内容 |
+|---|---|---|---|
+| 1 | orderDailySales.01FileCheckStep | Tasklet（基盤部品 `FileExistenceCheckTasklet`） | 入力ファイルの存在・読取可能性を確認する。無ければ異常終了 |
+| 2 | orderDailySales.02HeaderCheckStep | Tasklet（業務 Tasklet） | 入力ファイルの1行目（ヘッダ行）が IF-ORDER-I01 の項目名の並びと一致することを確認する。不一致なら異常終了 |
+| 3 | orderDailySales.03ClearStep | Tasklet | 対象日の受注明細（`order_date = targetDate`）と日次売上集計（`sales_date = targetDate`）を削除する（洗い替えの準備） |
+| 4 | orderDailySales.04ImportStep | Chunk | 受注CSVを読取（Reader）→ 検証・変換（Processor）→ 受注明細へ登録（Writer）。不正行は Skip しエラーファイルへ退避 |
+| 5 | orderDailySales.05AggregateStep | Tasklet | 対象日の受注明細を店舗ごとに集計し、日次売上集計へ `INSERT ... SELECT ... GROUP BY` で登録する |
+
+- **Processor の検証内容**（`ValidatingItemProcessorBase` を継承。Bean Validation ＋ 業務チェック）:
+  - 項目定義（IF-ORDER-I01）の必須・型・桁・値域
+  - 受注日がジョブの対象日（`targetDate`）と一致すること
+  - 同一ファイル内で受注番号＋明細番号が重複しないこと（2件目以降を業務エラーにする）。
+    既出キーは Processor がメモリ上の集合で保持する（最大10万キー、数MB）。リスタート時は Step 開始時に
+    対象日の受注明細（＝リスタート前にコミット済みの行）からキーを読み込み、集合を復元する
+  - 明細金額（単価×数量）を算出し、受注明細の `amount` に設定する
+- **リラン設計**:
+  - **前提: JDBC ジョブリポジトリ**（`spring-boot-starter-batch-jdbc`。architecture.md §9.1）
+  - **異常終了からの復旧は同一パラメータでリスタート**（§6.1）。失敗した Step から再開し、
+    Step 4 は処理済みチャンクの続きから再開する（Reader は基盤部品 `CsvItemReaderFactory` の
+    リスタート対応 `FlatFileItemReader`）。完了済みの Step 3（削除）はリスタートで再実行されないため、
+    コミット済みの取込結果は消えない
+  - **ECシステムから訂正ファイルを受け取った場合の再実行（洗い替え）**は、新しい `scheduledTime` と
+    同じ `targetDate` を指定して新しい JobInstance として実行する。Step 3 が対象日の受注明細・集計を
+    削除してから入れ直すため、二重計上は起きない（§6.2 冪等性。要件定義書 §5 リラン要件）
+  - 成功済みジョブを同一パラメータで再実行するとエラーになるのは正しい挙動（§6.1）
+  - 受注明細の主キー（受注番号＋明細番号）は二重登録の最終防御とする。Processor の重複検出を
+    すり抜けて一意制約違反になった場合はシステムエラーとして異常終了する（設計上発生しない想定）
+  - 二重起動防止: 基盤部品 `DuplicateRunPreventingJobExecutionListener` ＋ EventBridge 側の
+    同時実行抑止（§6.3 多層防御）
+- **エラー処理**（事象ごとの分類と動作）:
+
+| エラー事象 | 分類 | 例外 | 動作 | 終了コード |
+|---|---|---|---|---|
+| 入力ファイルが存在しない・読めない | 前処理エラー | `BusinessException`（`FileExistenceCheckTasklet`） | Step 1 で失敗 | 1（異常） |
+| ヘッダ行が想定と異なる | 前処理エラー | `BusinessException` | Step 2 で失敗（取込を始めない） | 1（異常） |
+| CSV としてパースできない行（列数不一致等） | 業務エラー | `FlatFileParseException`（`BusinessSkipPolicy` が Skip 対象として扱う） | Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
+| 必須欠落・型・桁・値域の不正 | 業務エラー | `BusinessException` | Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
+| 受注日が対象日と不一致 | 業務エラー | `BusinessException` | Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
+| 同一ファイル内の受注番号＋明細番号の重複 | 業務エラー | `BusinessException` | 2件目以降を Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
+| Skip 件数が `skipLimit` を超過 | 業務エラーの閾値超過 | `SkipLimitExceededException` | Step 4 で失敗 | 1（異常） |
+| DB 接続断・一意制約違反（想定外）・設定不備 | システムエラー | `SystemException` 等 | 即時異常終了（Skip しない） | 1（異常） |
+
+  - `skipLimit` は既定 **10**（§5.2）とし、設定で外部化する。超過時は入力ファイル自体の品質問題とみなして
+    異常終了させ、ECシステムへ訂正ファイルを依頼する
+  - Skip した行は基盤部品 `ErrorRecordSkipListener` でエラーファイルへ退避する（元レコード＋エラー理由）
+  - 警告終了（終了コード2）の条件: Skip が1件以上発生して完走（§5.3）
+  - Step 4 が失敗した場合、対象日の受注明細はコミット済みチャンクまで登録され、日次売上集計は空の状態で
+    残る（Step 3 で削除済み・Step 5 未実行）。リスタートまたは訂正ファイルでの再実行で整合した状態に戻る
+- **ジョブパラメータ**:
+
+| パラメータ名 | 型 | 必須 | 例 | 説明 |
+|---|---|---|---|---|
+| scheduledTime | java.time.LocalDateTime | ○ | 2026-10-12T02:00:00 | 起動時刻（EventBridge Scheduler の実行予定時刻を JST で渡す）。JobInstance の識別に使用する。リスタート時は同一値、訂正ファイルでの再実行時は実行時の時刻を指定する |
+| targetDate | java.time.LocalDate | - | 2026-10-11 | 対象日（受注日）。省略時は `scheduledTime` の日付の前日とする（要件定義書 §4） |
+| inputFile | String | - | /data/in/orders_20261011.csv | 受注CSVのパス。省略時は設定値の入力ディレクトリ配下の `orders_{targetDate:yyyyMMdd}.csv` |
+| errorFile | String | - | /data/error/orders_20261011_error.txt | エラーファイルのパス。省略時は設定値のエラーディレクトリ配下の `orders_{targetDate:yyyyMMdd}_error.txt` |
+
+  - `JobParametersValidators.required("scheduledTime")` で必須検証する
+  - `targetDate`・`inputFile`・`errorFile` の省略時の補完は詳細設計で定める（EventBridge Scheduler は
+    日付演算・パス組み立てができないため、ジョブ側で補完する）
+- **処理量とチャンクサイズ**:
+  - 想定件数: 1日最大 **10万件**（要件定義書 §3.2・§5）
+  - チャンクサイズ初期値 **100**（§3.3。設定で外部化）。コミット約1,000回、`MyBatisBatchItemWriter`
+    （バッチ実行モード）による一括 INSERT で取込は数分、集計 SQL は数秒を見込む。05:00 の期限（3時間）に対し
+    十分な余裕がある
+  - 方式見直しの閾値: 1日の件数が数十万件を超え処理時間が課題になった場合、チャンクサイズ調整 →
+    パーティショニング（サンプル07）の順で検討する（要件定義書 未確定 No.2）
+
+## 3. IF設計
+
+### 3.1 ファイルIF
+
+| IF-ID | ファイル名 | 形式 | 文字コード | 方向 | レイアウト |
+|---|---|---|---|---|---|
+| IF-ORDER-I01 | orders_{yyyyMMdd}.csv（`inputFile` で指定可） | CSV（カンマ区切り・ヘッダ行あり・改行コード LF/CRLF） | UTF-8（BOMなし） | 入力 | 下表 |
+| IF-ORDER-E01 | orders_{yyyyMMdd}_error.txt（`errorFile` で指定可） | テキスト（1行1レコード、改行コード LF） | UTF-8 | 出力 | 基盤部品 `ErrorRecordSkipListener` の標準形式（`元レコード<TAB>エラー理由`）。上書き生成 |
+
+**IF-ORDER-I01 レイアウト**（要件定義書 §3.2 の案。ヘッダ行の項目名は下表の「ヘッダ名」で固定）:
+
+| No | 項目名 | ヘッダ名 | 型 | 桁数 | 必須 | 備考 |
+|---|---|---|---|---|---|---|
+| 1 | 受注番号 | order_no | 英数字 | 20以内 | ○ | |
+| 2 | 明細番号 | line_no | 整数 | 1以上 | ○ | 受注番号＋明細番号で一意 |
+| 3 | 受注日 | order_date | 日付（yyyy-MM-dd） | 10 | ○ | 対象日と一致すること |
+| 4 | 店舗コード | store_code | 英数字 | 10以内 | ○ | |
+| 5 | 商品コード | item_code | 英数字 | 20以内 | ○ | |
+| 6 | 数量 | quantity | 整数 | 1以上 | ○ | |
+| 7 | 単価 | unit_price | 整数 | 0以上 | ○ | 円・税抜 |
+
+- 値の前後の空白は不正とする（トリムしない）。クォートは CSV 標準（ダブルクォート）に従う
+- 数量・単価の上限は、明細金額（単価×数量）が `bigint` に収まる範囲で詳細設計で定める
+
+### 3.2 API IF
+
+なし
+
+## 4. テーブル設計（app スキーマ）
+
+### 4.1 テーブル一覧
+
+| テーブル名 | 用途 | 新規/変更 | 想定件数 |
+|---|---|---|---|
+| order_detail | 受注明細（受注CSVの1行=1レコード） | 新規 | 最大10万件/日（保持期間は未確定。要件定義書 未確定 No.3） |
+| daily_store_sales | 日次売上集計（受注日×店舗） | 新規 | 店舗数/日 |
+
+※ `order` は SQL の予約語のため、テーブル名は `order_detail` とする。
+
+### 4.2 テーブル定義
+
+#### order_detail（受注明細）
+
+| カラム名 | 型 | NULL | キー | 説明 |
+|---|---|---|---|---|
+| order_no | varchar(20) | NOT NULL | PK(1) | 受注番号 |
+| line_no | integer | NOT NULL | PK(2) | 明細番号 |
+| order_date | date | NOT NULL | | 受注日 |
+| store_code | varchar(10) | NOT NULL | | 店舗コード |
+| item_code | varchar(20) | NOT NULL | | 商品コード |
+| quantity | integer | NOT NULL | | 数量 |
+| unit_price | integer | NOT NULL | | 単価（円・税抜） |
+| amount | bigint | NOT NULL | | 明細金額（単価×数量。取込時に算出） |
+| created_at | timestamptz | NOT NULL | | 登録日時（実処理時刻。監査用） |
+
+- インデックス: `(order_date, store_code)`（対象日の削除と集計用）
+- 主キーは受注日を含まないため、別の日のファイルに同じ受注番号＋明細番号があると一意制約違反になる。
+  受注番号は日をまたいで一意である前提とする（要件定義書 未確定 No.1 の IF 仕様で確認する）
+
+#### daily_store_sales（日次売上集計）
+
+| カラム名 | 型 | NULL | キー | 説明 |
+|---|---|---|---|---|
+| sales_date | date | NOT NULL | PK(1) | 受注日 |
+| store_code | varchar(10) | NOT NULL | PK(2) | 店舗コード |
+| order_count | integer | NOT NULL | | 受注件数（受注番号の重複を除いた件数） |
+| line_count | integer | NOT NULL | | 明細件数 |
+| total_quantity | bigint | NOT NULL | | 売上数量（数量の合計） |
+| total_amount | bigint | NOT NULL | | 売上金額（明細金額の合計。円・税抜） |
+| created_at | timestamptz | NOT NULL | | 登録日時（実処理時刻。監査用） |
+
+- 受注が0件の店舗はレコードを作らない（要件定義書 §3.4）
+
+**Flyway マイグレーション**: `V5__create_order_daily_sales_tables.sql`（上記2テーブルを app スキーマへ作成。SQL はスキーマ修飾必須）
+
+## 5. 運用設計
+
+| 項目 | 内容 |
+|---|---|
+| スケジュール（EventBridge） | EventBridge Scheduler で毎日 **02:00（JST）** に起動し、`scheduledTime` に実行予定時刻（JST）を渡す。`targetDate`・`inputFile`・`errorFile` は省略する（前日分を既定パスから取り込む） |
+| 依存フロー（Step Functions 要否） | 不要（単独ジョブ。ECシステムとはファイル配置で疎結合。売上照会・帳票とは集計テーブル経由） |
+| 失敗時の運用（通知先・リラン手順） | 終了コード1: CloudWatch（終了コード・ログ）で検知し運用者へ通知。ファイル未着・ヘッダ不正・Skip 上限超過は ECシステムへ訂正ファイルを依頼し、新しい `scheduledTime`＋同じ `targetDate` で再実行（洗い替え）。システムエラーは原因除去後に同一パラメータでリスタート。終了コード2: エラーファイルを確認し、必要なら訂正ファイルで再実行 |
+| 終了コードと運用アクション | 0=正常 / 2=警告: エラーファイル確認 / 1=異常: 原因除去後リスタートまたは訂正ファイルで再実行 |
+| 処理時間の監視 | 05:00 までに完了しない場合は運用者へ通知する（EventBridge / CloudWatch の設定。本バッチ側の実装は不要） |
+
+## 6. 変更履歴
+
+| 日付 | 版 | 変更内容 |
+|---|---|---|
+| 2026-10-11 | 1.0 | 初版 |
