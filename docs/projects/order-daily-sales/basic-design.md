@@ -44,6 +44,9 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     サンプル01「選ばない場面: 取込後の集計がSQL1本で済む → サンプル04（Tasklet）を検討」、
     サンプル04「選ぶ: 集計・変換が SQL で表現できる」）
   - ファイル存在・ヘッダのチェックと、ワークテーブルの初期化は単発処理のため Tasklet（§3.1「前処理・後処理 → Tasklet」）
+  - **batch-core の拡張**（本案件で追加する基盤部品。下記2点）
+    - `CsvHeaderCheckTasklet`（新規）: ヘッダ行の照合
+    - `CsvItemReaderFactory`（拡張）: 読み取ったレコードへ行番号を設定する生成メソッドの追加（重複検出に使う）
   - ヘッダ行の照合は業務に依存しない汎用処理のため、業務側で独自に作らず **batch-core に
     `CsvHeaderCheckTasklet`（`com.example.batch.core.tasklet`）を追加**して使う（architecture.md §2
     「基盤部品に不足があれば batch-core を拡張する」）。入力ファイル・文字コード・期待するヘッダ項目名の並びを
@@ -77,15 +80,21 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     既出キーは Processor がメモリ上で **「キー → 最初に現れた行番号」の対応**として保持する（最大10万キー、数MB）。
     Skip やロールバックでチャンクが再処理されると、同じ行が Processor に再度渡される。このとき行番号が
     保持している行番号と同じなら同一行の再処理とみなし、重複として扱わない（行番号が異なる場合だけ重複）。
-    このため入力レコードは行番号を持つ（Reader で付与する。付与方法は詳細設計で定める）
+    このため入力レコードは行番号を持つ。行番号は Reader で付与する。基盤部品 `CsvItemReaderFactory` には
+    行番号を付ける機能がないため、**batch-core の `CsvItemReaderFactory` を拡張**し、行番号をレコードへ
+    設定できる生成メソッドを追加する（業務側で独自の Reader を作らない。architecture.md §2）。
+    リスタート対応（`name` 指定・`saveState(true)`）は既存の生成メソッドと同じく維持する
+  - キーを既出として登録するのは、**他のチェック（項目定義・受注日）をすべて通った行だけ**とする。
+    1件目が他の理由で Skip された場合、同じキーの2件目は（他のチェックを通れば）正常に取り込む。
+    重複として Skip するのは「既に正常として登録されたキー」を持つ別の行だけである
   - リスタート時は Step 開始時に、ワークテーブル（＝リスタート前にコミット済みの行）からキーと行番号を
     読み込み、対応を復元する。このためワークテーブルは行番号（`line_seq`）を持つ
   - 明細金額（単価×数量）を算出し、ワークの `amount` に設定する
 - **リラン設計**:
   - **前提: JDBC ジョブリポジトリ**（`spring-boot-starter-batch-jdbc`。architecture.md §9.1）
   - **異常終了からの復旧は同一パラメータでリスタート**（§6.1）。失敗した Step から再開し、
-    Step 4 は処理済みチャンクの続きから再開する（Reader は基盤部品 `CsvItemReaderFactory` の
-    リスタート対応 `FlatFileItemReader`）。完了済みの Step 3（ワーク初期化）はリスタートで再実行されないため、
+    Step 4 は処理済みチャンクの続きから再開する（Reader は基盤部品 `CsvItemReaderFactory`（行番号付与の
+    拡張を含む）のリスタート対応 `FlatFileItemReader`）。完了済みの Step 3（ワーク初期化）はリスタートで再実行されないため、
     ワークへのコミット済みの取込結果は消えない
   - **ECシステムから訂正ファイルを受け取った場合の再実行（洗い替え）**は、新しい `scheduledTime` と
     同じ `targetDate` を指定して新しい JobInstance として実行する。Step 5 が対象日の受注明細・集計を
@@ -110,6 +119,8 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 | 受注日が対象日と不一致 | 業務エラー | `BusinessException` | Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
 | 同一ファイル内の受注番号＋明細番号の重複 | 業務エラー | `BusinessException` | 2件目以降を Skip しエラーファイルへ退避 | 完走すれば 2（警告） |
 | Skip 件数が `skipLimit` を超過 | 業務エラーの閾値超過 | `SkipLimitExceededException` | Step 4 で失敗 | 1（異常） |
+| `scheduledTime` 未指定・オフセット付き ISO-8601 として解釈できない | システムエラー（起動不備） | `JobParametersInvalidException`（ジョブの Validator が検出） | Step 実行前に失敗 | 1（異常） |
+| `targetDate` が `java.time.LocalDate` に変換できない | システムエラー（起動不備） | パラメータ変換時の例外（起動時の JobParameters 変換で失敗） | ジョブ起動時に失敗 | 1（異常） |
 | DB 接続断・一意制約違反（想定外）・設定不備 | システムエラー | `SystemException` 等 | 即時異常終了（Skip しない） | 1（異常） |
 
   - `skipLimit` は既定 **10**（§5.2）とし、設定で外部化する。超過時は入力ファイル自体の品質問題とみなして
@@ -259,3 +270,4 @@ order_detail へそのまま引き継ぐ。
 | 2026-10-11 | 1.0 | 初版 |
 | 2026-10-11 | 1.1 | 洗い替えをワークテーブル経由に変更（architecture.md §4 の「削除と登録を同一Tx」に合わせる）。Step 3 を ClearWorkStep に、Step 5 を ReplaceStep（削除＋登録＋集計を1Tx）に変更し、order_detail_work を追加 |
 | 2026-10-11 | 1.2 | 設計レビュー指摘の反映: `scheduledTime` を UTC のオフセット付き文字列で受け JST に変換して対象日を導出／エラーファイルを実行ごとに別名・追記と明記／重複検出をチャンク再処理に耐える方式（キー→行番号）に変更しワークに `line_seq` を追加／Skip・警告判定が実行回ごとである旨と運用を明記／Step 5 の Tx 規模の根拠と見直し閾値を追記／ヘッダ照合を batch-core の `CsvHeaderCheckTasklet` に変更／Step 間受け渡しの記述を修正／`inputFile`・`errorFile` を任意とし要件定義書を改訂 |
+| 2026-10-11 | 1.3 | 再レビュー指摘の反映: 行番号付与を batch-core `CsvItemReaderFactory` の拡張で行うと明記／起動パラメータ不正をエラー処理表に追加／重複キーの登録は他のチェックを通った行だけと明記 |
