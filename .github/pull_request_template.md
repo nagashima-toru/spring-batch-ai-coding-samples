@@ -1,23 +1,20 @@
+<!-- 汎用の既定テンプレート（設計・実装以外の PR。開発プロセス・ドキュメント・設定・依存更新など）。
+     設計書の PR は ?template=design.md、ジョブの実装 PR は ?template=implementation.md を付けて作る
+     （.github/PULL_REQUEST_TEMPLATE/。使い分けは docs/development-guide.md §3） -->
+
 ## 概要
 
 （何を・なぜ。Closes #issue番号）
 
-## 設計書リンク（SSoT）
+## 変更内容
 
-- 基本設計書: docs/projects/{案件}/basic-design.md
-- 詳細設計書: docs/projects/{案件}/detail-design/{ジョブID}.md
+（変更したファイル・仕組みと、その要点）
 
-※ 設計変更を伴う場合は、コードより先に設計書が更新されていること
+## 確認したこと
 
-## セルフチェック
-
-- [ ] `./mvnw verify` がローカルで成功する（単体＋結合＋静的解析＋カバレッジ）
-- [ ] `/review-design` を実施し、指摘を反映した（設計変更がある場合）
-- [ ] `/review-code` を実施し、指摘を反映した
-- [ ] 基盤部品（batch-core）で実現できる処理を独自実装していない
-- [ ] リスタート動作を確認した（結合テストまたは手動。取込・更新系ジョブの場合）
-- [ ] Flyway は新規ファイル追加のみ（適用済みファイルを変更していない）
+- [ ] 変更に応じた確認を実施した（例: `./mvnw verify`、`bash scripts/smoke.sh`、手動での動作確認）
+- [ ] 変更した仕組みを参照している docs・Skill・スクリプトも合わせて更新した
 
 ## レビュー実施記録
 
-（review-design / review-code の指摘件数と対応状況を記載）
+（人・レビュー Skill の指摘と対応。指摘が無ければ「なし」）

@@ -13,7 +13,7 @@ description: 実装コードを規約準拠・基盤部品利用・性能/トラ
 |---|---|
 | 入力 | 実装コード＋テストコード（対象パッケージ/差分）と詳細設計書 |
 | 基準 | `docs/coding-standards.md`、`docs/architecture.md`、`references/code-review-checklist.md` |
-| 出力 | レビュー指摘一覧（会話で提示）。反映後、PR 本文に実施記録を残す（PRテンプレートのチェック欄） |
+| 出力 | レビュー指摘一覧（会話で提示）。反映後、PR 本文に実施記録を残す（実装 PR 用テンプレート `.github/PULL_REQUEST_TEMPLATE/implementation.md` のレビュー実施記録） |
 | 次工程 | 指摘反映 → PR 作成（`docs/development-guide.md` §3） |
 
 ## 進め方
