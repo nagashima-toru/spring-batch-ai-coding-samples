@@ -14,7 +14,7 @@
 | Git / GitHub CLI | 最新 | `gh auth login` 済みであること |
 | Claude Code | 最新 | 標準開発環境 |
 
-Maven はリポジトリ同梱の Maven Wrapper（`./mvnw`、3.9.16 固定）を使用するためインストール不要。
+Maven はリポジトリ同梱の Maven Wrapper（`./mvnw`、3.10.0 固定）を使用するためインストール不要。
 
 ### 1.2 初回セットアップ
 
