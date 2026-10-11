@@ -123,6 +123,31 @@ flowchart TD
 要件定義書が確定済みなら、上記の `/basic-design` 以降を `/sdd-pipeline` で一括実行できる
 （`.claude/skills/sdd-pipeline/SKILL.md`）。
 
+### 2.4 ハーネスで実装以降を進める場合
+
+ハーネスで進めるのは、詳細設計がレビュー済み（`/review-design` を通った）ジョブの
+implementation〜system-test である。要件定義〜設計レビュー（requirements・basic-design・
+detail-design・review-design）は従来どおり人と Skills で対話して進める。
+`/plan` には次のようにゴールを渡す。
+
+```text
+> /plan docs/projects/sales/detail-design/SALES-001.md（レビュー済み）の SALES-001 を implementation〜system-test のタスクに分けて実装・検証する
+```
+
+`/sdd-pipeline` は廃止せず併存させる（既存の利用者と手順を壊さないため）。使い分けは次のとおり。
+
+| 観点 | /sdd-pipeline | ハーネス（/plan・/run） |
+|---|---|---|
+| 対象工程 | basic-design〜system-test と PR 作成 | implementation〜system-test（要件定義〜設計レビューは人と Skills で対話して進める） |
+| 開始の前提 | 確定済みの requirements.md | レビュー済みの詳細設計書 |
+| 判断が要る時 | 主エージェントへの報告とモデル昇格（§5.3） | creator が `[Ask]` などを blocked にし、人が `/plan unblock` で答える |
+| 検証のしかた | 各工程内の検証ループ（§5） | creator と別の verifier が受け入れ基準（`./mvnw verify -DskipITs`、結合テストを含むタスクは `./mvnw verify`）で判定する |
+
+ハーネスでは1計画で1ジョブを扱い、implementation・unit-test・integration-test・review-code・
+system-test の5工程のタスクに分ける。分け方と各工程のルールは `vault/rules/`
+（`vault/rules/planner/job-task-split.md`・`vault/rules/creator/skill-workflow.md`・
+`vault/rules/verifier/build-verification.md`）にある。
+
 ## 3. ブランチ運用・PR
 
 **GitHub Flow** を採用する。
@@ -196,6 +221,8 @@ flowchart LR
 サブエージェントへ昇格して再試行**してよい（推論不足が原因のケースを救うため）。ただし
 **昇格は1回まで・昇格後は最大2ラウンド**とし、それでも解消しなければ上記1〜3を添えてユーザーに報告する。
 主エージェント自身が実行している場合、および昇格後も解消しない場合は、昇格せずに報告する。
+
+**ハーネスで実行する場合**: ハーネス（`/plan`・`/run`）ではモデル昇格（Sonnet→Opus）を使わない。verifier が FAIL にしたタスクは attempt を上げて再試行し、上限（`HARNESS_MAX_ATTEMPTS`、既定3）を超えたら blocked にして人に引き継ぐ。
 
 ### 5.4 反則の禁止（ガードレール）
 
