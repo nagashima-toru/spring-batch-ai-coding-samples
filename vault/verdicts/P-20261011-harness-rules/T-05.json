@@ -1,0 +1,29 @@
+{
+  "task": "P-20261011-harness-rules/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-11 21:13",
+  "criteria": [
+    {
+      "text": "python3 -c \"import json;json.load(open('.claude/settings.json'))\" が終了コード0で終わる（JSON として読める）",
+      "ok": true,
+      "note": "worktree の .claude/settings.json で実行 / 出力: rc=0"
+    },
+    {
+      "text": "python3 -c \"...all(x in a for x in [...])\" の出力が True である",
+      "ok": true,
+      "note": "同コマンドを実行 / 出力: True。allow 末尾4件は Bash(env *), Bash(./mvnw *), Bash(docker compose *), Bash(docker info*)"
+    },
+    {
+      "text": "git show work/p-20261011-harness-rules との比較コマンドの出力が True である（既存の allow を消さず、deny・hooks・worktree を変えていない）",
+      "ok": true,
+      "note": "同コマンドを worktree で実行 / 出力: True"
+    },
+    {
+      "text": "bash scripts/smoke.sh 2>&1 | tail -1 の出力が fail=0 で終わる",
+      "ok": true,
+      "note": "実行コマンド: bash scripts/smoke.sh 2>&1 | tail -1 / 出力: smoke: pass=524 fail=0"
+    }
+  ],
+  "reasons": []
+}
