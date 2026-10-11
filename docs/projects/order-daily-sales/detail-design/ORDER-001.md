@@ -35,10 +35,15 @@
   `,java.time.LocalDate` 付きで日付に変換できない値を渡した場合は、起動時の JobParameters 変換で失敗する（基本設計書 §2 エラー処理）
 
 **実行時パラメータの確定（省略時の補完）**: `OrderDailySalesRunParameters`（新規 record。`targetDate: LocalDate`・
-`inputFile: Path`・`errorFile: Path`）を `@JobScope` の Bean `orderDailySalesRunParameters` として生成し、各 Step の
-Bean はこれを注入して使う（ジョブパラメータを Step ごとに解釈し直さない）。補完規則は record の static メソッド
+`inputFile: Path`・`errorFile: Path`）の static メソッド
 `resolve(String scheduledTime, LocalDate targetDate, String inputFile, String errorFile, OrderDailySales settings)`
-に実装する（単体テスト可能にするため Config に書かない）。
+に補完規則を実装する（単体テスト可能にするため Config に書かない）。
+- この record は **Bean にしない**。record は final クラスのため `@JobScope`・`@StepScope` のスコーププロキシ
+  （クラスを継承して作る）を作れず、起動時に Bean 生成エラーになるため
+- 値が必要な `@StepScope` の Bean メソッド（Bean 一覧の備考に「RunParameters の」とあるもの）は、
+  ジョブパラメータ4つ（`#{jobParameters['scheduledTime']}` String・`['targetDate']` LocalDate・`['inputFile']` String・
+  `['errorFile']` String。省略時は null）と `SampleProperties` を受け取り、Config の private メソッド
+  `runParameters(...)` 経由で `OrderDailySalesRunParameters.resolve(...)` を呼んで使う。補完規則は resolve の1か所にだけある
 
 | 値 | 指定時 | 省略時 |
 |---|---|---|
@@ -79,17 +84,19 @@ Bean はこれを注入して使う（ジョブパラメータを Step ごとに
 | Bean名 | 型 | スコープ | 備考 |
 |---|---|---|---|
 | `orderDailySalesJob` | `Job` | singleton | Validator・2リスナー・5 Step |
-| `orderDailySalesRunParameters` | `OrderDailySalesRunParameters` | `@JobScope` | `#{jobParameters['scheduledTime']}`（String）・`['targetDate']`（LocalDate。省略時 null）・`['inputFile']`・`['errorFile']`（String。省略時 null）と `SampleProperties` から `resolve` で生成 |
-| `orderDailySalesFileCheckTasklet` | `FileExistenceCheckTasklet` | `@StepScope` | `runParameters.inputFile()` |
-| `orderDailySalesHeaderCheckTasklet` | `CsvHeaderCheckTasklet` | `@StepScope` | `runParameters.inputFile()`・UTF-8・`OrderCsvRecord.COLUMN_NAMES` |
+| `orderDailySalesFileCheckTasklet` | `FileExistenceCheckTasklet` | `@StepScope` | RunParameters の `inputFile()` |
+| `orderDailySalesHeaderCheckTasklet` | `CsvHeaderCheckTasklet` | `@StepScope` | RunParameters の `inputFile()`・UTF-8・`OrderCsvRecord.COLUMN_NAMES` |
 | `orderDailySalesClearWorkTasklet` | `OrderDetailWorkClearTasklet` | singleton | `OrderDetailWorkMapper` |
-| `orderDailySalesReader` | `FlatFileItemReader<OrderCsvRecord>` | `@StepScope` | §2 Step 4 |
-| `orderDailySalesProcessor` | `OrderItemProcessor` | `@StepScope` | §2 Step 4。ジョブ実行ごとに既出キーの状態を新しく持つため Step スコープ |
+| `orderDailySalesReader` | `FlatFileItemReader<OrderCsvRecord>` | `@StepScope` | §2 Step 4。RunParameters の `inputFile()` |
+| `orderDailySalesProcessor` | `OrderItemProcessor` | `@StepScope` | §2 Step 4。ジョブ実行ごとに既出キーの状態を新しく持つため Step スコープ。RunParameters の `targetDate()` |
 | `orderDailySalesWriter` | `MyBatisBatchItemWriter<OrderDetailWork>` | singleton | statementId `...OrderDetailWorkMapper.insert` |
-| `orderDailySalesErrorRecordSkipListener` | `ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork>` | `@StepScope` | `runParameters.errorFile()` |
-| `orderDailySalesReplaceTasklet` | `OrderDailySalesReplaceTasklet` | `@StepScope` | `runParameters.targetDate()`・`OrderDetailMapper`・`DailyStoreSalesMapper` |
+| `orderDailySalesErrorRecordSkipListener` | `ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork>` | `@StepScope` | RunParameters の `errorFile()` |
+| `orderDailySalesReplaceTasklet` | `OrderDailySalesReplaceTasklet` | `@StepScope` | RunParameters の `targetDate()`・`OrderDetailMapper`・`DailyStoreSalesMapper` |
 
 - Mapper は `@Mapper` インタフェースとし MyBatis Starter の自動登録に任せる（Config で `@Bean` 定義しない）
+- **`@StepScope` で生成するクラスは final にしない**（record も不可）。スコーププロキシがクラスを継承して作られるため。
+  本案件で新規作成する対象は `CsvHeaderCheckTasklet`（batch-core）・`OrderItemProcessor`・`OrderDailySalesReplaceTasklet`。
+  Bean メソッドの戻り値の型は具象クラスにする（プロキシが `StepExecutionListener` 等のインタフェースも実装するように）
 
 ## 2. Step 詳細設計
 
@@ -155,11 +162,13 @@ Bean はこれを注入して使う（ジョブパラメータを Step ごとに
 
 #### 処理フロー
 
-1. **Step 開始時（`beforeStep`）**: `OrderDetailWorkMapper#selectKeys` で、ワークテーブルの全行の
+1. **Step 開始時（`beforeStep`）**: まず既出キーの対応を**空にしてから**、`OrderDetailWorkMapper#selectKeys` で、ワークテーブルの全行の
    `(order_no, line_no, line_seq)` を `ResultHandler` で1行ずつ受け取り、既出キーの対応
    （`Map<String, Integer>`。キーは `order_no + "\t" + line_no`、値は `line_seq`）へ登録する。
    初回実行では Step 3 で空にした直後のため0件、リスタート時はリスタート前にコミット済みの行が入る。
-   読み込んだ件数を INFO ログに出す
+   読み込んだ件数を INFO ログに出す。
+   `beforeStep` は何度呼ばれても結果が同じになるようにする（Processor は明示的にリスナー登録するが、
+   Spring Batch が processor に渡した Bean を自動でもリスナー登録する場合があり、2回呼ばれうるため）
 2. **読取**: Reader が1行を読み、`OrderCsvRecord` に行番号を付けて返す。列数不一致などのパース不能行は
    `FlatFileParseException` となり、`BusinessSkipPolicy` により Skip される（エラーファイルには元の行文字列）
 3. **形式チェック**: `ValidatingItemProcessorBase` が Bean Validation（下表の「Bean Validation」）を実行する。
@@ -294,6 +303,7 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 失敗時 | 不一致・空ファイル・読取不可は `BusinessException`（メッセージに期待値と実際の1行目を含める） |
 | ログ | 一致時に INFO「ヘッダ行を確認しました: file={}」 |
 | 戻り値 | `RepeatStatus.FINISHED` |
+| クラス修飾子 | `public class`（final にしない。`@StepScope` で使うため。§1 Bean 一覧の注記） |
 | 制約 | ヘッダ行がクォートされている形式には対応しない（拡張ポイントとして Javadoc に記載） |
 
 ### 6.2 `CsvItemReaderFactory#createWithLineNumber`（追加）と `LineNumberedFieldSetMapper`（新規）
@@ -339,3 +349,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 日付 | 版 | 変更内容 |
 |---|---|---|
 | 2026-10-11 | 1.0 | 初版 |
+| 2026-10-11 | 1.1 | 設計レビュー指摘の反映: `OrderDailySalesRunParameters` を `@JobScope` Bean にせず各 `@StepScope` Bean で resolve を呼ぶ方式に変更（record はスコーププロキシ不可）／`@StepScope` のクラスを final にしない制約を明記／`beforeStep` を冪等にする（対応を空にしてから読み込む）と明記 |
