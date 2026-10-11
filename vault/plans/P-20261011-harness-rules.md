@@ -19,8 +19,8 @@ spring-batch-ai-coding-samples で、詳細設計がレビュー済みのジョ�
 | T-01 | done | 1 | - | 共通ルール：正本の docs を役割ごとに案内する | |
 | T-02 | done | 1 | - | planner ルール：ジョブ1本を工程タスクに分けて after でつなぐ | |
 | T-03 | done | 1 | - | creator ルール：工程 Skill に従い確認手順を読み替える | |
-| T-04 | todo | 0 | - | verifier ルール：ビルドを実行して判定する | |
-| T-05 | todo | 0 | - | settings.json の permissions.allow にビルドと Docker の許可を足す | |
+| T-04 | doing | 1 | - | verifier ルール：ビルドを実行して判定する | |
+| T-05 | doing | 1 | - | settings.json の permissions.allow にビルドと Docker の許可を足す | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
