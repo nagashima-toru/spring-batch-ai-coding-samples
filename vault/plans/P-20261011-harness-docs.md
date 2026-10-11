@@ -19,7 +19,7 @@ spring-batch-ai-coding-samples の利用者が、`sdd-pipeline` とハーネス�
 | T-01 | done | 1 | - | development-guide.md にハーネスで進める節（§2.4）と §5.3 の追記を足す | |
 | T-02 | done | 1 | T-01 | CLAUDE.md の Skills の節から development-guide.md §2.4 へリンクする | |
 | T-03 | done | 1 | - | docs/decisions.md を新規作成し、docs に無い決定事項を残す | |
-| T-04 | blocked | 2 | T-01,T-02,T-03 | 設計文書 D-20261011-spring-batch-adapt を削除する | worktree の分岐元が計画ブランチと一致しない：creator の worktree が計画ブランチ work/p-20261011-harness-docs（3d24dae）ではなく main 相当（d1f3d7f）から作られ、T-01〜T-03 の成果物とタスク票が無かった（creator は何も変更せず blocked で返した。worktree は変更なしで自動削除済み）。セッション再開時に作業ディレクトリが /home/user で始まり、このリポジトリの .claude/settings.json（worktree.baseRef: head）が読まれていない可能性がある。 |
+| T-04 | todo | 0 | T-01,T-02,T-03 | 設計文書 D-20261011-spring-batch-adapt を削除する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある

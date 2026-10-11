@@ -14,3 +14,4 @@
 - 2026-10-11 21:47 T-04 todo→doing attempt=1
 - 2026-10-12 06:59 T-04 doing→doing attempt=2 中断から再開（API 利用上限で creator が停止）
 - 2026-10-12 07:00 T-04 doing→blocked attempt=2 worktree の分岐元不一致（worktree は自動削除済み）
+- 2026-10-12 07:01 T-04 blocked→todo 人の指示: /plan unblock P-20261011-harness-docs T-04
