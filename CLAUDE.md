@@ -84,3 +84,8 @@ java -jar batch-sample/target/batch-sample-*.jar \
 - 終了コード: 0=正常 / 2=警告(Skip発生) / 1=異常（変更禁止。architecture.md §7）
 - スキーマ: `batch`=ジョブメタデータ / `app`=業務（SQL はスキーマ修飾必須）
 - ブランチ: GitHub Flow（main + feature、PR必須。テンプレートのチェック欄を埋める）
+
+<!-- ai-harness:begin v1 -->
+# AI協働ハーネス 共通ルール
+@.claude/ai-harness.md
+<!-- ai-harness:end -->
