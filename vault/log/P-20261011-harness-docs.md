@@ -13,3 +13,4 @@
 - 2026-10-11 21:47 T-02 review→done attempt=1 verifier=sonnet
 - 2026-10-11 21:47 T-04 todo→doing attempt=1
 - 2026-10-12 06:59 T-04 doing→doing attempt=2 中断から再開（API 利用上限で creator が停止）
+- 2026-10-12 07:00 T-04 doing→blocked attempt=2 worktree の分岐元不一致（worktree は自動削除済み）
