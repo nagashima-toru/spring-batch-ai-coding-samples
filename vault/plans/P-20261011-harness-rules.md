@@ -1,6 +1,6 @@
 ---
 id: P-20261011-harness-rules
-status: approved
+status: done
 ---
 # ゴール
 spring-batch-ai-coding-samples で、詳細設計がレビュー済みのジョブを `/plan` に渡せば implementation〜system-test の工程をタスクに分けて実行・検証できるように、`vault/rules/` の各役割（common・planner・creator・verifier）に docs を参照する薄いルールを置き、`.claude/settings.json` の `permissions.allow` にビルドと Docker の許可を足す。（設計文書 `vault/designs/D-20261011-spring-batch-adapt.md` のフェーズ1）
