@@ -1,5 +1,6 @@
 <!-- 実装 PR 用テンプレート（コード・テスト・システムテスト記録を含む PR）。
-     設計書だけの PR は設計 PR 用テンプレート（design.md）を使う。使い分けは docs/development-guide.md §3 -->
+     設計書だけの PR は設計 PR 用テンプレート（design.md）を使う。それ以外の PR は既定の汎用テンプレート（.github/pull_request_template.md）を使う。
+     使い分けは docs/development-guide.md §3 -->
 
 ## 概要
 

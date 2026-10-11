@@ -1,5 +1,6 @@
 <!-- 設計 PR 用テンプレート（要件定義書・基本設計書・詳細設計書のみを含む PR）。
-     実装 PR は実装 PR 用テンプレート（implementation.md）を使う。使い分けは docs/development-guide.md §3 -->
+     実装 PR は実装 PR 用テンプレート（implementation.md）を使う。それ以外の PR は既定の汎用テンプレート（.github/pull_request_template.md）を使う。
+     使い分けは docs/development-guide.md §3 -->
 
 ## 概要
 

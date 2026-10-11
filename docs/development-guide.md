@@ -158,17 +158,20 @@ system-test の5工程のタスクに分ける。分け方と各工程のルー�
 3. `./mvnw verify` がローカルで通ることを確認（システムテストまで完了した最終状態で通すこと。§2.1）
 4. PR を作成（テンプレートに従い、**設計書へのリンク**と**レビュー Skill 実行結果**を記載）
 
-PR テンプレートは PR の種類で使い分ける。2つとも `.github/PULL_REQUEST_TEMPLATE/` に置き、既定のテンプレートは置かない
+PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装 PR 用は同じ置き場（`.github/PULL_REQUEST_TEMPLATE/`）に
+同じ命名規則で置き、既定のテンプレート（`.github/pull_request_template.md`）は設計・実装のチェックを持たない汎用のものにする
 （設計と実装で観点が異なり、どちらかを既定にすると取り違えるため）。
 
 | PR の種類 | テンプレート | 確認する観点 |
 |---|---|---|
 | 設計 PR（要件定義書・基本設計書・詳細設計書のみ） | `.github/PULL_REQUEST_TEMPLATE/design.md` | 要件の確定、`/review-design`、architecture.md への準拠、トレーサビリティ、未確定事項、batch-core 拡張の要否 |
 | 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw verify`、`/review-code`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
+| 上記以外（開発プロセス・ドキュメント・設定・依存更新など） | `.github/pull_request_template.md`（既定） | 変更に応じた確認、参照箇所の追従 |
 
-- GitHub の画面で PR を作る時は、PR 作成画面の URL に `?template=design.md` または `?template=implementation.md` を付ける
-  （例: `.../compare/main...{ブランチ}?template=implementation.md`）。付けないとテンプレートは入らない
-- どちらのテンプレートも、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-code`）を
+- GitHub の画面で PR を作る時、設計 PR・実装 PR は PR 作成画面の URL に `?template=design.md` または
+  `?template=implementation.md` を付ける（例: `.../compare/main...{ブランチ}?template=implementation.md`）。
+  付けなければ既定の汎用テンプレートが入る
+- 設計 PR・実装 PR のテンプレートは、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-code`）を
   **[Must]・[Should] の指摘が 0 件になるまで繰り返し実行した**ことを確認し、回ごとの指摘件数をレビュー実施記録に書く
 - `gh api`・GitHub MCP・ハーネス（`scripts/vcs_finish.sh`）で PR を作る時はテンプレートが自動では入らない。
   本文を渡す側が該当テンプレートの見出しに沿って書く
