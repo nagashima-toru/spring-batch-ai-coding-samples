@@ -57,6 +57,9 @@ java -jar batch-sample/target/batch-sample-*.jar \
 要件定義書（requirements.md、確定済み）がある案件に対して使う。設計・レビューはOpusサブエージェント、
 実装・テスト等の作業はSonnetサブエージェントに委譲する（詳細は `.claude/skills/sdd-pipeline/SKILL.md`）。
 
+詳細設計がレビュー済みのジョブの `implementation`〜`system-test` は、`/sdd-pipeline` の代わりにハーネス（`/plan`・`/run`）でも進められる。
+使い分けは [docs/development-guide.md §2.4](docs/development-guide.md#24-ハーネスで実装以降を進める場合) を参照。
+
 ## 禁止事項
 
 - **Spring Batch 5系のサンプルコード流用禁止**（6系でAPI・パッケージが変更。
