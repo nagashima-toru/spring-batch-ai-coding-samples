@@ -1,0 +1,15 @@
+{
+  "task": "P-20261011-harness-rules/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-11 20:39",
+  "criteria": [
+    {"text": "`bash scripts/rules.sh creator | grep -cx 'vault/rules/common/project-docs.md'` の出力が `1` である（common のルールとして全役割に渡る）", "ok": true, "note": "実行コマンド: worktree で `bash scripts/rules.sh creator | grep -cx vault/rules/common/project-docs.md` / 出力: 1"},
+    {"text": "`grep -cE '^## (目的|ルール|確認方法)$' vault/rules/common/project-docs.md` の出力が `3` である（`vault/templates/rule.md` の見出しで書かれている）", "ok": true, "note": "実行コマンド: `grep -cE '^## (目的|ルール|確認方法)$' vault/rules/common/project-docs.md` / 出力: 3。見出しは目的・ルール・確認方法の順"},
+    {"text": "`grep -cE '^- `(docs/architecture\\.md|docs/coding-standards\\.md|docs/development-guide\\.md|CLAUDE\\.md)` .*読む役割: ' vault/rules/common/project-docs.md` の出力が `4` である（正本4つを1行ずつ、読む役割つきで案内している）", "ok": true, "note": "実行コマンド: 同grep / 出力: 4。4つの正本が1行ずつ"},
+    {"text": "`wc -l vault/rules/common/project-docs.md` の行数が100以下で、`grep -c '^```' vault/rules/common/project-docs.md` の出力が `0` である（docs の本文をコードブロックで書き写していない）", "ok": true, "note": "実行コマンド: `wc -l` / 出力: 16。`grep -c '^```'` / 出力: 0"},
+    {"text": "ファイル中の `§` で示した節番号が、参照先の docs に見出しとして実在する（verifier が `grep -n '^#' docs/architecture.md` などで照合する）。`CLAUDE.md` は節番号の代わりに見出し名（「禁止事項」など）で参照している", "ok": true, "note": "実行コマンド: 3つの docs で `grep -n '^#'`。architecture §3,5,6,7,9,12,13 / coding-standards §4.2,7,9 / development-guide §2.1,2.2,5 が全て実在。CLAUDE.md は `## 禁止事項`(60行)・`## ハマりどころ（Boot 4 / Batch 6 固有）`(70行)が実在し、見出し名で参照している"},
+    {"text": "ファイルの本文が docs の文章を書き写しておらず、各参照の説明が1行の要点（何のために読むか）に留まっている（verifier が Read で確認する）", "ok": true, "note": "確認方法: `cat vault/rules/common/project-docs.md` で全文を確認。16行で、各参照は節番号と「〜を確かめるため」の1行要点のみ。docs 本文の転記なし"}
+  ],
+  "reasons": []
+}
