@@ -44,6 +44,10 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     サンプル01「選ばない場面: 取込後の集計がSQL1本で済む → サンプル04（Tasklet）を検討」、
     サンプル04「選ぶ: 集計・変換が SQL で表現できる」）
   - ファイル存在・ヘッダのチェックと、ワークテーブルの初期化は単発処理のため Tasklet（§3.1「前処理・後処理 → Tasklet」）
+  - ヘッダ行の照合は業務に依存しない汎用処理のため、業務側で独自に作らず **batch-core に
+    `CsvHeaderCheckTasklet`（`com.example.batch.core.tasklet`）を追加**して使う（architecture.md §2
+    「基盤部品に不足があれば batch-core を拡張する」）。入力ファイル・文字コード・期待するヘッダ項目名の並びを
+    受け取り、1行目が一致しなければ `BusinessException` を送出する（`FileExistenceCheckTasklet` と同じ扱い）
   - **洗い替えはワークテーブル経由で行う**。architecture.md §4 は洗い替えの削除と登録を同一 Step（同一Tx）で
     行うことを求める（途中失敗時に旧データを残すため）。取込はチャンク単位でコミットする Chunk Step のため、
     本テーブルへ直接取り込むと削除と登録を同一Txにできない。そこで CSV はいったんワークテーブル
@@ -52,12 +56,12 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     旧データのまま残り、照会側に取込途中の状態が見えない
   - 10万件はサンプル01の「数十万件超で処理時間が課題 → パーティショニング」の閾値を下回り、
     05:00 の期限（3時間）にも十分収まるためパーティショニングは採用しない
-- **Step構成（概要）**: 1 Step 1 責務（§3.2）。Step 間の受け渡しは DB（受注明細テーブル）を介す
+- **Step構成（概要）**: 1 Step 1 責務（§3.2）。Step 間の受け渡しは DB（ワークテーブル `order_detail_work`）を介す
 
 | # | Step名 | 方式 | 処理内容 |
 |---|---|---|---|
 | 1 | orderDailySales.01FileCheckStep | Tasklet（基盤部品 `FileExistenceCheckTasklet`） | 入力ファイルの存在・読取可能性を確認する。無ければ異常終了 |
-| 2 | orderDailySales.02HeaderCheckStep | Tasklet（業務 Tasklet） | 入力ファイルの1行目（ヘッダ行）が IF-ORDER-I01 の項目名の並びと一致することを確認する。不一致なら異常終了 |
+| 2 | orderDailySales.02HeaderCheckStep | Tasklet（基盤部品 `CsvHeaderCheckTasklet`。本案件で batch-core に追加） | 入力ファイルの1行目（ヘッダ行）が IF-ORDER-I01 の項目名の並びと一致することを確認する。不一致なら異常終了 |
 | 3 | orderDailySales.03ClearWorkStep | Tasklet | ワークテーブル `order_detail_work` を空にする（`TRUNCATE`） |
 | 4 | orderDailySales.04ImportStep | Chunk | 受注CSVを読取（Reader）→ 検証・変換（Processor）→ ワークテーブルへ登録（Writer）。不正行は Skip しエラーファイルへ退避 |
 | 5 | orderDailySales.05ReplaceStep | Tasklet | 1Tx で次の3つの SQL を順に実行する: ① 対象日の受注明細（`order_date = targetDate`）と日次売上集計（`sales_date = targetDate`）を削除 ② ワークの全行を受注明細へ `INSERT ... SELECT` ③ 対象日の受注明細を店舗ごとに集計し日次売上集計へ `INSERT ... SELECT ... GROUP BY` |
@@ -70,8 +74,12 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
   - 項目定義（IF-ORDER-I01）の必須・型・桁・値域
   - 受注日がジョブの対象日（`targetDate`）と一致すること
   - 同一ファイル内で受注番号＋明細番号が重複しないこと（2件目以降を業務エラーにする）。
-    既出キーは Processor がメモリ上の集合で保持する（最大10万キー、数MB）。リスタート時は Step 開始時に
-    ワークテーブル（＝リスタート前にコミット済みの行）からキーを読み込み、集合を復元する
+    既出キーは Processor がメモリ上で **「キー → 最初に現れた行番号」の対応**として保持する（最大10万キー、数MB）。
+    Skip やロールバックでチャンクが再処理されると、同じ行が Processor に再度渡される。このとき行番号が
+    保持している行番号と同じなら同一行の再処理とみなし、重複として扱わない（行番号が異なる場合だけ重複）。
+    このため入力レコードは行番号を持つ（Reader で付与する。付与方法は詳細設計で定める）
+  - リスタート時は Step 開始時に、ワークテーブル（＝リスタート前にコミット済みの行）からキーと行番号を
+    読み込み、対応を復元する。このためワークテーブルは行番号（`line_seq`）を持つ
   - 明細金額（単価×数量）を算出し、ワークの `amount` に設定する
 - **リラン設計**:
   - **前提: JDBC ジョブリポジトリ**（`spring-boot-starter-batch-jdbc`。architecture.md §9.1）
@@ -108,6 +116,12 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     異常終了させ、ECシステムへ訂正ファイルを依頼する
   - Skip した行は基盤部品 `ErrorRecordSkipListener` でエラーファイルへ退避する（元レコード＋エラー理由）
   - 警告終了（終了コード2）の条件: Skip が1件以上発生して完走（§5.3）
+  - **Skip 件数と警告判定は実行回（JobExecution）ごと**とする（基盤部品 `LoggingJobExecutionListener`・
+    `BusinessSkipPolicy` の標準動作のまま。前回の実行回から引き継がない）。このため次の2点に注意する
+    - 1回目の実行で Skip が発生して異常終了し、リスタートで Skip が発生しなかった場合、終了コードは 0 になる。
+      1回目の Skip 行はエラーファイルに残っている（リスタートは同じファイルへ追記する）ため、
+      **運用者は異常終了からのリスタート後、終了コードにかかわらずエラーファイルを確認する**（§5 運用設計）
+    - `skipLimit` も実行回ごとに数えるため、リスタートをまたいだ合計は `skipLimit` を超えうる
   - Step 1〜5 のどこで失敗しても、本テーブル（受注明細・日次売上集計）は旧データのまま変わらない
     （本テーブルを変更するのは Step 5 だけで、Step 5 は1Txのため）。Step 4 の失敗ではワークに
     コミット済みチャンクまでが残り、リスタートでその続きから取り込む
@@ -115,21 +129,30 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 
 | パラメータ名 | 型 | 必須 | 例 | 説明 |
 |---|---|---|---|---|
-| scheduledTime | java.time.LocalDateTime | ○ | 2026-10-12T02:00:00 | 起動時刻（EventBridge Scheduler の実行予定時刻を JST で渡す）。JobInstance の識別に使用する。リスタート時は同一値、訂正ファイルでの再実行時は実行時の時刻を指定する |
-| targetDate | java.time.LocalDate | - | 2026-10-11 | 対象日（受注日）。省略時は `scheduledTime` の日付の前日とする（要件定義書 §4） |
+| scheduledTime | String（ISO-8601 のオフセット付き日時） | ○ | 2026-10-11T17:00:00Z | 起動時刻。EventBridge Scheduler の実行予定時刻（`<aws.scheduler.scheduled-time>`。**UTC**）をそのまま渡す。手動実行では `2026-10-12T09:30:00+09:00` のようにオフセット付きで指定する。JobInstance の識別に使用する。リスタート時は同一値、訂正ファイルでの再実行時は実行時の時刻を指定する |
+| targetDate | java.time.LocalDate | - | 2026-10-11 | 対象日（受注日）。省略時は `scheduledTime` を **Asia/Tokyo に変換した日付の前日**とする（要件定義書 §4。例: `2026-10-11T17:00:00Z` → JST 2026-10-12 02:00 → 対象日 2026-10-11） |
 | inputFile | String | - | /data/in/orders_20261011.csv | 受注CSVのパス。省略時は設定値の入力ディレクトリ配下の `orders_{targetDate:yyyyMMdd}.csv` |
-| errorFile | String | - | /data/error/orders_20261011_error.txt | エラーファイルのパス。省略時は設定値のエラーディレクトリ配下の `orders_{targetDate:yyyyMMdd}_error.txt` |
+| errorFile | String | - | /data/error/orders_20261011_20261012020000_error.txt | エラーファイルのパス。省略時は設定値のエラーディレクトリ配下の `orders_{targetDate:yyyyMMdd}_{scheduledTime(JST):yyyyMMddHHmmss}_error.txt`（実行ごとに別ファイル。§3.1 IF-ORDER-E01） |
 
-  - `JobParametersValidators.required("scheduledTime")` で必須検証する
+  - `scheduledTime` は UTC で渡ってくるため、日付の導出に使う前に必ず Asia/Tokyo へ変換する
+    （UTC のまま日付を取ると JST 02:00 が前日 17:00 になり、2日前を処理してしまう）。
+    Spring Batch の標準変換で扱える型ではないため String で受け取り、ジョブ内で `OffsetDateTime` として解釈する
+  - 検証: `scheduledTime` の必須に加え、オフセット付き ISO-8601 として解釈できることを起動直後に検証する
+    （`JobParametersValidators.requiredAndOptional` ＋ 書式チェックの Validator。不正なら Step 実行前に異常終了＝1）
   - `targetDate`・`inputFile`・`errorFile` の省略時の補完は詳細設計で定める（EventBridge Scheduler は
     日付演算・パス組み立てができないため、ジョブ側で補完する）
 - **処理量とチャンクサイズ**:
   - 想定件数: 1日最大 **10万件**（要件定義書 §3.2・§5）
   - チャンクサイズ初期値 **100**（§3.3。設定で外部化）。コミット約1,000回、`MyBatisBatchItemWriter`
-    （バッチ実行モード）による一括 INSERT で取込は数分、集計 SQL は数秒を見込む。05:00 の期限（3時間）に対し
-    十分な余裕がある
-  - 方式見直しの閾値: 1日の件数が数十万件を超え処理時間が課題になった場合、チャンクサイズ調整 →
-    パーティショニング（サンプル07）の順で検討する（要件定義書 未確定 No.2）
+    （バッチ実行モード）による一括 INSERT で Step 4（ワークへの取込）は数分を見込む
+  - Step 5 は1Txで最大10万件の削除＋10万件の `INSERT ... SELECT`＋集計を行う。すべて DB 内で完結する
+    SQL 3本で、`(order_date, store_code)` インデックスにより対象日の行を特定するため、**数十秒以内**を見込む。
+    architecture.md §4 は長大な更新を Tasklet にしないことを求めるが、この規模ならロック時間・undo 量とも
+    許容範囲と判断する（対象日の行だけをロックし、他の日の照会・更新を妨げない）
+  - 全体で十数分以内を見込み、05:00 の期限（3時間）に対し十分な余裕がある
+  - 方式見直しの閾値: 1日の件数が **10万件**を超えるようになった場合、Step 5 の1Tx の大きさを再評価する
+    （一時テーブル＋`RENAME` 方式など。architecture.md §4）。数十万件を超え Step 4 の処理時間が課題になった場合は、
+    チャンクサイズ調整 → パーティショニング（サンプル07）の順で検討する（要件定義書 未確定 No.2）
 
 ## 3. IF設計
 
@@ -138,7 +161,7 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 | IF-ID | ファイル名 | 形式 | 文字コード | 方向 | レイアウト |
 |---|---|---|---|---|---|
 | IF-ORDER-I01 | orders_{yyyyMMdd}.csv（`inputFile` で指定可） | CSV（カンマ区切り・ヘッダ行あり・改行コード LF/CRLF） | UTF-8（BOMなし） | 入力 | 下表 |
-| IF-ORDER-E01 | orders_{yyyyMMdd}_error.txt（`errorFile` で指定可） | テキスト（1行1レコード、改行コード LF） | UTF-8 | 出力 | 基盤部品 `ErrorRecordSkipListener` の標準形式（`元レコード<TAB>エラー理由`）。上書き生成 |
+| IF-ORDER-E01 | orders_{targetDate:yyyyMMdd}_{scheduledTime(JST):yyyyMMddHHmmss}_error.txt（`errorFile` で指定可） | テキスト（1行1レコード、改行コード LF） | UTF-8 | 出力 | 基盤部品 `ErrorRecordSkipListener` の標準形式（`元レコード<TAB>エラー理由`）。**追記**で書く（同部品の動作）。既定のファイル名は実行ごとに異なるため、訂正ファイルでの再実行では新しいファイルになり、リスタートでは同じファイルに追記される。Skip が0件ならファイルは作られない |
 
 **IF-ORDER-I01 レイアウト**（要件定義書 §3.2 の案。ヘッダ行の項目名は下表の「ヘッダ名」で固定）:
 
@@ -175,8 +198,14 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 
 #### order_detail_work（受注明細ワーク）
 
-`order_detail` と同じカラム構成・同じ主キー（`order_no`, `line_no`）とする（下記 order_detail の定義を参照）。
-インデックスは主キーのみ（Step 5 は全件を読むため）。`created_at` には取込時刻を入れ、Step 5 で
+`order_detail` と同じカラム構成・同じ主キー（`order_no`, `line_no`）に、次の1列を加える（他の列は下記
+order_detail の定義を参照）。インデックスは主キーのみ（Step 5 は全件を読むため）。
+
+| カラム名 | 型 | NULL | キー | 説明 |
+|---|---|---|---|---|
+| line_seq | integer | NOT NULL | | 入力ファイル上の行番号（ヘッダ行を1行目とする物理行番号）。リスタート時の重複検出の復元に使う（§2）。order_detail へは引き継がない |
+
+`created_at` には取込時刻を入れ、Step 5 で
 order_detail へそのまま引き継ぐ。
 
 #### order_detail（受注明細）
@@ -217,9 +246,9 @@ order_detail へそのまま引き継ぐ。
 
 | 項目 | 内容 |
 |---|---|
-| スケジュール（EventBridge） | EventBridge Scheduler で毎日 **02:00（JST）** に起動し、`scheduledTime` に実行予定時刻（JST）を渡す。`targetDate`・`inputFile`・`errorFile` は省略する（前日分を既定パスから取り込む） |
+| スケジュール（EventBridge） | EventBridge Scheduler で毎日 **02:00（JST。スケジュールのタイムゾーンを Asia/Tokyo に設定）** に起動し、`scheduledTime` に `<aws.scheduler.scheduled-time>`（UTC）をそのまま渡す。`targetDate`・`inputFile`・`errorFile` は省略する（前日分を既定パスから取り込む） |
 | 依存フロー（Step Functions 要否） | 不要（単独ジョブ。ECシステムとはファイル配置で疎結合。売上照会・帳票とは集計テーブル経由） |
-| 失敗時の運用（通知先・リラン手順） | 終了コード1: CloudWatch（終了コード・ログ）で検知し運用者へ通知。ファイル未着・ヘッダ不正・Skip 上限超過は ECシステムへ訂正ファイルを依頼し、新しい `scheduledTime`＋同じ `targetDate` で再実行（洗い替え）。システムエラーは原因除去後に同一パラメータでリスタート。終了コード2: エラーファイルを確認し、必要なら訂正ファイルで再実行 |
+| 失敗時の運用（通知先・リラン手順） | 終了コード1: CloudWatch（終了コード・ログ）で検知し運用者へ通知。ファイル未着・ヘッダ不正・Skip 上限超過は ECシステムへ訂正ファイルを依頼し、新しい `scheduledTime`＋同じ `targetDate` で再実行（洗い替え）。システムエラーは原因除去後に同一パラメータでリスタート（リスタート後は終了コードにかかわらずエラーファイルを確認する。§2 エラー処理）。終了コード2: エラーファイルを確認し、必要なら訂正ファイルで再実行 |
 | 終了コードと運用アクション | 0=正常 / 2=警告: エラーファイル確認 / 1=異常: 原因除去後リスタートまたは訂正ファイルで再実行 |
 | 処理時間の監視 | 05:00 までに完了しない場合は運用者へ通知する（EventBridge / CloudWatch の設定。本バッチ側の実装は不要） |
 
@@ -229,3 +258,4 @@ order_detail へそのまま引き継ぐ。
 |---|---|---|
 | 2026-10-11 | 1.0 | 初版 |
 | 2026-10-11 | 1.1 | 洗い替えをワークテーブル経由に変更（architecture.md §4 の「削除と登録を同一Tx」に合わせる）。Step 3 を ClearWorkStep に、Step 5 を ReplaceStep（削除＋登録＋集計を1Tx）に変更し、order_detail_work を追加 |
+| 2026-10-11 | 1.2 | 設計レビュー指摘の反映: `scheduledTime` を UTC のオフセット付き文字列で受け JST に変換して対象日を導出／エラーファイルを実行ごとに別名・追記と明記／重複検出をチャンク再処理に耐える方式（キー→行番号）に変更しワークに `line_seq` を追加／Skip・警告判定が実行回ごとである旨と運用を明記／Step 5 の Tx 規模の根拠と見直し閾値を追記／ヘッダ照合を batch-core の `CsvHeaderCheckTasklet` に変更／Step 間受け渡しの記述を修正／`inputFile`・`errorFile` を任意とし要件定義書を改訂 |
