@@ -10,7 +10,7 @@
 
 | ジョブID | ジョブ名（Bean名） | 概要 | 方式 | 実行タイミング | 先行ジョブ |
 |---|---|---|---|---|---|
-| ORDER-001 | orderDailySalesJob | 対象日の受注CSVを受注明細へ取り込み（対象日分は洗い替え）、受注日×店舗の日次売上集計を作成する | Chunk（取込）＋ Tasklet（チェック・削除・集計） | 日次 02:00 | なし |
+| ORDER-001 | orderDailySalesJob | 対象日の受注CSVを受注明細へ取り込み（対象日分は洗い替え）、受注日×店舗の日次売上集計を作成する | Chunk（ワークへ取込）＋ Tasklet（チェック・洗い替え・集計） | 日次 02:00 | なし |
 
 **ジョブ分割の検討**: 要件の処理一覧（No.1〜3）は実行タイミング（日次 02:00）・リラン単位（対象日）・
 依存関係（取込→集計の順序固定）がすべて同じであり、別ジョブにする理由がないため **1ジョブ**とする。
@@ -33,7 +33,7 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 
 ### ORDER-001: orderDailySalesJob
 
-- **方式**: Chunk（取込）＋ Tasklet（前処理・洗い替え削除・集計）
+- **方式**: Chunk（ワークテーブルへの取込）＋ Tasklet（前処理・ワーク初期化・洗い替え＋集計）
 - **選定理由**:
   - 取込は入力が件数上限のないファイル（最大10万件/日）であり、architecture.md §3.1 の判断基準
     「入力データが件数無制限（ファイル）→ Chunk」に該当する。不正行を Skip してエラーファイルへ退避し
@@ -43,7 +43,13 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     （§3.1「集計 SQL 1本で完結する処理 → Tasklet」、§9.2「集計は SQL で行い Java 側で集計ループを避ける」。
     サンプル01「選ばない場面: 取込後の集計がSQL1本で済む → サンプル04（Tasklet）を検討」、
     サンプル04「選ぶ: 集計・変換が SQL で表現できる」）
-  - ファイル存在・ヘッダのチェックと、対象日分の削除は単発処理のため Tasklet（§3.1「前処理・後処理 → Tasklet」）
+  - ファイル存在・ヘッダのチェックと、ワークテーブルの初期化は単発処理のため Tasklet（§3.1「前処理・後処理 → Tasklet」）
+  - **洗い替えはワークテーブル経由で行う**。architecture.md §4 は洗い替えの削除と登録を同一 Step（同一Tx）で
+    行うことを求める（途中失敗時に旧データを残すため）。取込はチャンク単位でコミットする Chunk Step のため、
+    本テーブルへ直接取り込むと削除と登録を同一Txにできない。そこで CSV はいったんワークテーブル
+    （`order_detail_work`）へ取り込み、本テーブルの「対象日分の削除 → ワークからの登録 → 集計」を
+    1つの Tasklet（1Tx）で行う。これにより、途中で失敗しても本テーブル（受注明細・日次売上集計）は
+    旧データのまま残り、照会側に取込途中の状態が見えない
   - 10万件はサンプル01の「数十万件超で処理時間が課題 → パーティショニング」の閾値を下回り、
     05:00 の期限（3時間）にも十分収まるためパーティショニングは採用しない
 - **Step構成（概要）**: 1 Step 1 責務（§3.2）。Step 間の受け渡しは DB（受注明細テーブル）を介す
@@ -52,29 +58,37 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 |---|---|---|---|
 | 1 | orderDailySales.01FileCheckStep | Tasklet（基盤部品 `FileExistenceCheckTasklet`） | 入力ファイルの存在・読取可能性を確認する。無ければ異常終了 |
 | 2 | orderDailySales.02HeaderCheckStep | Tasklet（業務 Tasklet） | 入力ファイルの1行目（ヘッダ行）が IF-ORDER-I01 の項目名の並びと一致することを確認する。不一致なら異常終了 |
-| 3 | orderDailySales.03ClearStep | Tasklet | 対象日の受注明細（`order_date = targetDate`）と日次売上集計（`sales_date = targetDate`）を削除する（洗い替えの準備） |
-| 4 | orderDailySales.04ImportStep | Chunk | 受注CSVを読取（Reader）→ 検証・変換（Processor）→ 受注明細へ登録（Writer）。不正行は Skip しエラーファイルへ退避 |
-| 5 | orderDailySales.05AggregateStep | Tasklet | 対象日の受注明細を店舗ごとに集計し、日次売上集計へ `INSERT ... SELECT ... GROUP BY` で登録する |
+| 3 | orderDailySales.03ClearWorkStep | Tasklet | ワークテーブル `order_detail_work` を空にする（`TRUNCATE`） |
+| 4 | orderDailySales.04ImportStep | Chunk | 受注CSVを読取（Reader）→ 検証・変換（Processor）→ ワークテーブルへ登録（Writer）。不正行は Skip しエラーファイルへ退避 |
+| 5 | orderDailySales.05ReplaceStep | Tasklet | 1Tx で次の3つの SQL を順に実行する: ① 対象日の受注明細（`order_date = targetDate`）と日次売上集計（`sales_date = targetDate`）を削除 ② ワークの全行を受注明細へ `INSERT ... SELECT` ③ 対象日の受注明細を店舗ごとに集計し日次売上集計へ `INSERT ... SELECT ... GROUP BY` |
+
+  - Step 5 は「洗い替え」と「集計」の2つの処理を持つが、両者を同一Txにすることが §4 の要件
+    （失敗時に旧データを残す・明細と集計の不整合を見せない）であるため1 Step とする（§3.2 の
+    「1 Step 1 責務」の例外。責務は「対象日の本テーブルを入れ替える」の1つとみなす）
 
 - **Processor の検証内容**（`ValidatingItemProcessorBase` を継承。Bean Validation ＋ 業務チェック）:
   - 項目定義（IF-ORDER-I01）の必須・型・桁・値域
   - 受注日がジョブの対象日（`targetDate`）と一致すること
   - 同一ファイル内で受注番号＋明細番号が重複しないこと（2件目以降を業務エラーにする）。
     既出キーは Processor がメモリ上の集合で保持する（最大10万キー、数MB）。リスタート時は Step 開始時に
-    対象日の受注明細（＝リスタート前にコミット済みの行）からキーを読み込み、集合を復元する
-  - 明細金額（単価×数量）を算出し、受注明細の `amount` に設定する
+    ワークテーブル（＝リスタート前にコミット済みの行）からキーを読み込み、集合を復元する
+  - 明細金額（単価×数量）を算出し、ワークの `amount` に設定する
 - **リラン設計**:
   - **前提: JDBC ジョブリポジトリ**（`spring-boot-starter-batch-jdbc`。architecture.md §9.1）
   - **異常終了からの復旧は同一パラメータでリスタート**（§6.1）。失敗した Step から再開し、
     Step 4 は処理済みチャンクの続きから再開する（Reader は基盤部品 `CsvItemReaderFactory` の
-    リスタート対応 `FlatFileItemReader`）。完了済みの Step 3（削除）はリスタートで再実行されないため、
-    コミット済みの取込結果は消えない
+    リスタート対応 `FlatFileItemReader`）。完了済みの Step 3（ワーク初期化）はリスタートで再実行されないため、
+    ワークへのコミット済みの取込結果は消えない
   - **ECシステムから訂正ファイルを受け取った場合の再実行（洗い替え）**は、新しい `scheduledTime` と
-    同じ `targetDate` を指定して新しい JobInstance として実行する。Step 3 が対象日の受注明細・集計を
+    同じ `targetDate` を指定して新しい JobInstance として実行する。Step 5 が対象日の受注明細・集計を
     削除してから入れ直すため、二重計上は起きない（§6.2 冪等性。要件定義書 §5 リラン要件）
   - 成功済みジョブを同一パラメータで再実行するとエラーになるのは正しい挙動（§6.1）
-  - 受注明細の主キー（受注番号＋明細番号）は二重登録の最終防御とする。Processor の重複検出を
-    すり抜けて一意制約違反になった場合はシステムエラーとして異常終了する（設計上発生しない想定）
+  - ワーク・受注明細の主キー（受注番号＋明細番号）は二重登録の最終防御とする。Processor の重複検出を
+    すり抜けて一意制約違反になった場合はシステムエラーとして異常終了する（設計上発生しない想定）。
+    Step 5 で違反した場合（別の日に同じ受注番号＋明細番号が登録済みの場合）は Tx 全体がロールバックされ、
+    本テーブルは旧データのまま残る
+  - ワークテーブルは次回実行の Step 3 で空にするまで残す（異常時の調査に使えるようにする）。
+    二重起動防止によりジョブは同時に1つしか動かないため、ワークを対象日で分ける必要はない
   - 二重起動防止: 基盤部品 `DuplicateRunPreventingJobExecutionListener` ＋ EventBridge 側の
     同時実行抑止（§6.3 多層防御）
 - **エラー処理**（事象ごとの分類と動作）:
@@ -94,8 +108,9 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
     異常終了させ、ECシステムへ訂正ファイルを依頼する
   - Skip した行は基盤部品 `ErrorRecordSkipListener` でエラーファイルへ退避する（元レコード＋エラー理由）
   - 警告終了（終了コード2）の条件: Skip が1件以上発生して完走（§5.3）
-  - Step 4 が失敗した場合、対象日の受注明細はコミット済みチャンクまで登録され、日次売上集計は空の状態で
-    残る（Step 3 で削除済み・Step 5 未実行）。リスタートまたは訂正ファイルでの再実行で整合した状態に戻る
+  - Step 1〜5 のどこで失敗しても、本テーブル（受注明細・日次売上集計）は旧データのまま変わらない
+    （本テーブルを変更するのは Step 5 だけで、Step 5 は1Txのため）。Step 4 の失敗ではワークに
+    コミット済みチャンクまでが残り、リスタートでその続きから取り込む
 - **ジョブパラメータ**:
 
 | パラメータ名 | 型 | 必須 | 例 | 説明 |
@@ -150,12 +165,19 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 
 | テーブル名 | 用途 | 新規/変更 | 想定件数 |
 |---|---|---|---|
+| order_detail_work | 受注明細ワーク（取込中の一時置き場。Step 3 で毎回空にする） | 新規 | 最大10万件（1日分） |
 | order_detail | 受注明細（受注CSVの1行=1レコード） | 新規 | 最大10万件/日（保持期間は未確定。要件定義書 未確定 No.3） |
 | daily_store_sales | 日次売上集計（受注日×店舗） | 新規 | 店舗数/日 |
 
 ※ `order` は SQL の予約語のため、テーブル名は `order_detail` とする。
 
 ### 4.2 テーブル定義
+
+#### order_detail_work（受注明細ワーク）
+
+`order_detail` と同じカラム構成・同じ主キー（`order_no`, `line_no`）とする（下記 order_detail の定義を参照）。
+インデックスは主キーのみ（Step 5 は全件を読むため）。`created_at` には取込時刻を入れ、Step 5 で
+order_detail へそのまま引き継ぐ。
 
 #### order_detail（受注明細）
 
@@ -189,7 +211,7 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 
 - 受注が0件の店舗はレコードを作らない（要件定義書 §3.4）
 
-**Flyway マイグレーション**: `V5__create_order_daily_sales_tables.sql`（上記2テーブルを app スキーマへ作成。SQL はスキーマ修飾必須）
+**Flyway マイグレーション**: `V5__create_order_daily_sales_tables.sql`（上記3テーブルを app スキーマへ作成。SQL はスキーマ修飾必須）
 
 ## 5. 運用設計
 
@@ -206,3 +228,4 @@ member-point-expiry 案件と同じ判断。architecture.md §11 の `jobNN_{内
 | 日付 | 版 | 変更内容 |
 |---|---|---|
 | 2026-10-11 | 1.0 | 初版 |
+| 2026-10-11 | 1.1 | 洗い替えをワークテーブル経由に変更（architecture.md §4 の「削除と登録を同一Tx」に合わせる）。Step 3 を ClearWorkStep に、Step 5 を ReplaceStep（削除＋登録＋集計を1Tx）に変更し、order_detail_work を追加 |
