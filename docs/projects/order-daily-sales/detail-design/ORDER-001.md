@@ -4,7 +4,7 @@
 |---|---|
 | ジョブID / ジョブ名（Bean名） | ORDER-001 / `orderDailySalesJob` |
 | 入力（基本設計書） | docs/projects/order-daily-sales/basic-design.md（1.3 版・承認済み） |
-| ステータス | 作成中 |
+| ステータス | レビュー済み |
 
 ## 1. ジョブ構成
 
