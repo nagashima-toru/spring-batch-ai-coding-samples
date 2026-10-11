@@ -1,0 +1,148 @@
+{
+  "version": "2026-10-11 19:42",
+  "files": {
+    ".claude/agents/creator.md": "0179ae9d2d14fbd0f427bc4eaabc92112eb7c4610f45cb374f346b03f2ba8696",
+    ".claude/agents/planner.md": "113e70094bf3d5aaf03c71dde67a775ff82c2335773cc115508793da88b02526",
+    ".claude/agents/verifier.md": "2cb26a277bec79fdeaea9ba459deb2f7b74498f4fe2ffea9f021b56c45f338d1",
+    ".claude/ai-harness.md": "3da715266c6d4663126824c5c32fa2cbf54753051546c5a840c3446c260cd960",
+    ".claude/hooks/_hooklib.py": "6c7c4eebd73a5beaf41e08ca7be298be2b2494ae3a7038068c07809884c0f23f",
+    ".claude/hooks/agent_write_guard.py": "3ad1a98c70a83f26286119afe70d499ea79c0ea61407fa1988b93c02e5e0e255",
+    ".claude/hooks/plan_guard.py": "a89b3167481d1d51e8fc145e2b7bd01acfaa0a457e55b136d4eabe25ef0b2280",
+    ".claude/hooks/stop_gate.py": "943701301f95a70ef128a41303a7cb7ebe4b38c75ac3a3976dbae899ea2e192c",
+    ".claude/skills/design/SKILL.md": "c5e44bdffa70757753f13fe39b3522c21d51b87e83d9bc400dcae4f0d17e94d4",
+    ".claude/skills/plan/SKILL.md": "6ad465dda26260c317d0502450e1b98734972febecfaf54869a8ce3a3d9eb072",
+    ".claude/skills/run/SKILL.md": "38a66d6742f3a95ed938e5e093f7a6afefebe9f00e75fd079f063f17ce673452",
+    "docs/vault-spec.md": "1a7555999cbd8e535aa31ebb76a36bced9e326a01c73604dd37107f229f2d590",
+    "scripts/current_plan.sh": "77edce738d30a9d9a368b20cde7d68a5d667b8f4f8fa93e457c7e34620dec6be",
+    "scripts/diff_gate.py": "9ef503344a9f326673f13bdcde68bf1c45ce9c1016e11b3b5cafaa9c8fd0128c",
+    "scripts/discard_worktree.sh": "5ef7c3b59400d30bb3fe3238cab83dcbd437da013669ead9b6bb5f79ce9ade6e",
+    "scripts/install.sh": "5e09fbe0912b99d997fa4f8fab009506551e7e4056eec31ba65ad29276f58496",
+    "scripts/merge_claude_md.py": "3cd3c9a591fc862ec5c1ad8132c264300ec00a1a75dfb258e5d9769aedf6139a",
+    "scripts/merge_settings_json.py": "d6a413c13255e9f37c08280a49caa0a321812cbc1c94e685f817c33a7118eeb0",
+    "scripts/model_stats.py": "2d6ed664ac86ad8faab801ce57be7b40e79a3031cb67589a9abf7c4f78506cc2",
+    "scripts/plan_record.py": "2bdaa268869c159c2817301cabebf4b84a7648314c39c90a7099fc3758297f2e",
+    "scripts/pr_body.py": "107ff195b1328a30c682c775cc8fc6a69aca974b39ea2d1438b5479c999becbd",
+    "scripts/purge_plan.sh": "0b7c2aafd9a061a82783634564003aafe4843b3947e6406c0c6d1b4caf9d5694",
+    "scripts/rules.sh": "b0bfcce0bcebdc4f4660251dea2bc09a02a2d6188deac434a79f6eb5719cff8b",
+    "scripts/run_unattended.py": "ea33fb63fb590359b88ce0d5c092edaf67a6216fc421a4f8a86b6630e4a9de1a",
+    "scripts/smoke.sh": "7d7be09430bee57bd4ade5c7c6578181bf7d126fd0a91a703eebb63218830097",
+    "scripts/transition.py": "51f8e41bf21c84efbb54aebae148e4dab44dc43b35dc784863d56af35419c5da",
+    "scripts/uninstall.sh": "73c5c92f9eec7e67833320f341cbecf0a3a0f96f43380e1029901656af45bbee",
+    "scripts/unmerge_claude_md.py": "51a87d9ef2092b9e507304bf0e3372711678fe0726a4d14e9ada987d6fdfa583",
+    "scripts/unmerge_settings_json.py": "9850ae83e46195d2aa83145966e44a9e1b708b3a946822e89c2859a07fe97fb7",
+    "scripts/usage_stats.py": "3a0e6ca8debdb4cc2d627599601bf16b940614c6b6cfad86003df4380cfc640a",
+    "scripts/vcs_finish.sh": "2edd4ef70df73ebe82b6326ce9ab91ebff22e39285445fc80177b8bdd236c89e",
+    "scripts/verdict_notes.py": "70858114960172c3eca95c74f494ef920a1f7cfc8da3c9b2843accd484902e21",
+    "vault/rules/README.md": "68f0ca195826929ee12365794d9d1a207b11bd81e1451618a34775cff46f0b0c",
+    "vault/templates/design.md": "ae7978dc03533d2f66b0138eff3e86d985907a2bf3e93ad7a818170872ba7cf6",
+    "vault/templates/plan.md": "ed6f5c2a747cdec74478df9bb149a23a095aa4c7b59bc175ff936974e2cda4ba",
+    "vault/templates/rule.md": "1f1f8b49de96f2bb2fb06b2ca585acae247cfe5cd08cc02c81fbcdc9f463af61",
+    "vault/templates/task.md": "ee75b703e2cee147306b34da7ee1ba88e241a4212787b269710e5f29c6a12067"
+  },
+  "settings_src": {
+    "worktree": {
+      "baseRef": "head"
+    },
+    "permissions": {
+      "allow": [
+        "Read",
+        "Edit",
+        "Write",
+        "Glob",
+        "Grep",
+        "Agent",
+        "Skill",
+        "Bash(git *)",
+        "Bash(gh pr *)",
+        "Bash(gh issue *)",
+        "Bash(python3 *)",
+        "Bash(python *)",
+        "Bash(bash scripts/*)",
+        "Bash(bash *)",
+        "Bash(sh *)",
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(head *)",
+        "Bash(tail *)",
+        "Bash(wc *)",
+        "Bash(grep *)",
+        "Bash(find *)",
+        "Bash(diff *)",
+        "Bash(test *)",
+        "Bash(echo *)",
+        "Bash(printf *)",
+        "Bash(date *)",
+        "Bash(TZ=Asia/Tokyo date *)",
+        "Bash(mkdir *)",
+        "Bash(touch *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(pwd)",
+        "Bash(which *)",
+        "Bash(true)",
+        "Bash(awk *)",
+        "Bash(sed *)",
+        "Bash(sort *)",
+        "Bash(uniq *)",
+        "Bash(cut *)",
+        "Bash(tr *)",
+        "Bash(xargs *)",
+        "Bash(jq *)",
+        "Bash(basename *)",
+        "Bash(dirname *)",
+        "Bash(env *)"
+      ],
+      "deny": [
+        "Bash(rm -rf *)",
+        "Bash(rm -fr *)",
+        "Bash(rm -r *)",
+        "Bash(rm -Rf *)",
+        "Bash(sudo *)",
+        "Bash(git push --force*)",
+        "Bash(git push -f*)",
+        "Bash(git push * --force*)",
+        "Bash(git push * -f*)",
+        "Bash(git push --force-with-lease*)",
+        "Bash(gh pr merge*)",
+        "Bash(glab mr merge*)"
+      ]
+    },
+    "hooks": {
+      "Stop": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/stop_gate.py\"",
+              "timeout": 30
+            }
+          ]
+        }
+      ],
+      "PreToolUse": [
+        {
+          "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/agent_write_guard.py\"",
+              "timeout": 30
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "Write|Edit|MultiEdit|Bash",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/plan_guard.py\"",
+              "timeout": 30
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

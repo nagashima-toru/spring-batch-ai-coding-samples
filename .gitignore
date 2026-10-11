@@ -20,3 +20,9 @@ tmp/
 # ローカル環境設定（機密情報はコミット禁止）
 .env
 application-local-secret.yml
+
+# ai-harness
+__pycache__/
+*.pyc
+.claude/settings.local.json
+*.bak-*
