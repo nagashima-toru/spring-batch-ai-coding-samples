@@ -158,20 +158,24 @@ system-test の5工程のタスクに分ける。分け方と各工程のルー�
 3. `./mvnw verify` がローカルで通ることを確認（システムテストまで完了した最終状態で通すこと。§2.1）
 4. PR を作成（テンプレートに従い、**設計書へのリンク**と**レビュー Skill 実行結果**を記載）
 
-PR テンプレートは PR の種類で使い分ける。
+PR テンプレートは PR の種類で使い分ける。2つとも `.github/PULL_REQUEST_TEMPLATE/` に置き、既定のテンプレートは置かない
+（設計と実装で観点が異なり、どちらかを既定にすると取り違えるため）。
 
-| PR の種類 | テンプレート | 選び方 |
+| PR の種類 | テンプレート | 確認する観点 |
 |---|---|---|
-| 設計 PR（要件定義書・基本設計書・詳細設計書のみ） | `.github/PULL_REQUEST_TEMPLATE/design.md` | PR 作成画面の URL に `?template=design.md` を付ける（例: `.../compare/main...{ブランチ}?template=design.md`） |
-| 実装 PR（コード・テスト・システムテスト） | `.github/pull_request_template.md` | 既定（何も付けなければこれが入る） |
+| 設計 PR（要件定義書・基本設計書・詳細設計書のみ） | `.github/PULL_REQUEST_TEMPLATE/design.md` | 要件の確定、`/review-design`、architecture.md への準拠、トレーサビリティ、未確定事項、batch-core 拡張の要否 |
+| 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw verify`、`/review-code`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
 
-- どちらのテンプレートも、レビュー Skill（`/review-design`・`/review-code`）を **[Must]・[Should] の指摘が
-  0 件になるまで繰り返し実行した**ことを確認する。回ごとの指摘件数をレビュー実施記録に書く
+- GitHub の画面で PR を作る時は、PR 作成画面の URL に `?template=design.md` または `?template=implementation.md` を付ける
+  （例: `.../compare/main...{ブランチ}?template=implementation.md`）。付けないとテンプレートは入らない
+- どちらのテンプレートも、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-code`）を
+  **[Must]・[Should] の指摘が 0 件になるまで繰り返し実行した**ことを確認し、回ごとの指摘件数をレビュー実施記録に書く
 - `gh api`・GitHub MCP・ハーネス（`scripts/vcs_finish.sh`）で PR を作る時はテンプレートが自動では入らない。
   本文を渡す側が該当テンプレートの見出しに沿って書く
 - 設計と実装を別 PR にする場合（ハーネスで実装以降を進める場合など。§2.4）は、設計 PR をマージしてから
   main で `/plan` を実行する
-5. CI（build / test / 静的解析 / カバレッジ）が成功し、レビュー承認後にマージ
+- 設計と実装を1つの PR にする場合（`/sdd-pipeline`）は、実装 PR 用テンプレートを基本とし、設計 PR 用テンプレートの
+  セルフチェックとレビュー実施記録（`/review-design` の回ごとの件数）も本文に含める
 
 ```mermaid
 flowchart LR
