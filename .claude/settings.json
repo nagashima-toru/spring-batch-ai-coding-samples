@@ -49,7 +49,10 @@
       "Bash(jq *)",
       "Bash(basename *)",
       "Bash(dirname *)",
-      "Bash(env *)"
+      "Bash(env *)",
+      "Bash(./mvnw *)",
+      "Bash(docker compose *)",
+      "Bash(docker info*)"
     ],
     "deny": [
       "Bash(rm -rf *)",
