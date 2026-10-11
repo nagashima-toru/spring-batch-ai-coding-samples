@@ -4,7 +4,7 @@
 |---|---|
 | 案件名 | 受注CSV取込・日次売上集計バッチ（order-daily-sales） |
 | 入力（要件定義書） | docs/projects/order-daily-sales/requirements.md（2026-10-11 版・確定） |
-| ステータス | レビュー待ち |
+| ステータス | 承認済み |
 
 ## 1. ジョブ一覧
 
