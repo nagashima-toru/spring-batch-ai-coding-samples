@@ -1,6 +1,6 @@
 ---
 id: P-20261011-harness-docs
-status: approved
+status: done
 ---
 # ゴール
 spring-batch-ai-coding-samples の利用者が、`sdd-pipeline` とハーネス（`/plan`・`/run`）のどちらを使えばよいか docs から分かるように、`docs/development-guide.md` にハーネスを使う工程の節を足し、`CLAUDE.md` の Skills の説明から辿れるようにする。最後に、決定事項を `docs/decisions.md` に残して設計文書 `vault/designs/D-20261011-spring-batch-adapt.md` を削除する（設計文書 D-20261011-spring-batch-adapt のフェーズ2）。
