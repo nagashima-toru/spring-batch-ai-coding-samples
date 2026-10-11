@@ -1,3 +1,5 @@
+<!-- 実装 PR 用の既定テンプレート。設計書だけの PR は ?template=design.md で設計 PR 用テンプレートを使う（docs/development-guide.md §3） -->
+
 ## 概要
 
 （何を・なぜ。Closes #issue番号）
@@ -12,12 +14,12 @@
 ## セルフチェック
 
 - [ ] `./mvnw verify` がローカルで成功する（単体＋結合＋静的解析＋カバレッジ）
-- [ ] `/review-design` を実施し、指摘を反映した（設計変更がある場合）
-- [ ] `/review-code` を実施し、指摘を反映した
+- [ ] `/review-design` を [Must]・[Should] の指摘が 0 件になるまで繰り返し実行した（設計変更がある場合）
+- [ ] `/review-code` を [Must]・[Should] の指摘が 0 件になるまで繰り返し実行した
 - [ ] 基盤部品（batch-core）で実現できる処理を独自実装していない
 - [ ] リスタート動作を確認した（結合テストまたは手動。取込・更新系ジョブの場合）
 - [ ] Flyway は新規ファイル追加のみ（適用済みファイルを変更していない）
 
 ## レビュー実施記録
 
-（review-design / review-code の指摘件数と対応状況を記載）
+（review-design / review-code の回ごとの指摘件数と対応状況を記載。最終回は Must・Should とも 0 件であること）
