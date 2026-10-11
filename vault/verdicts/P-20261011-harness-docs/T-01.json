@@ -1,0 +1,15 @@
+{
+  "task": "P-20261011-harness-docs/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-11 21:46",
+  "criteria": [
+    {"text": "`### 2.4 ハーネスで実装以降を進める場合` の見出しが1行だけあり、`### 2.3` の見出しより後、`## 3.` の見出しより前にある（`grep -n '^##' docs/development-guide.md` の出力で確かめる）", "ok": true, "note": "実行コマンド: `grep -n '^##' docs/development-guide.md`（worktree内） / 出力: 108:### 2.3、126:### 2.4 ハーネスで実装以降を進める場合、151:## 3. ブランチ運用・PR。2.4は1行のみ"},
+    {"text": "§2.4 に決定済みのゴール文の例の行がそのまま1行ある（`grep -c -x -F '> /plan docs/projects/sales/detail-design/SALES-001.md（レビュー済み）の SALES-001 を implementation〜system-test のタスクに分けて実装・検証する' docs/development-guide.md` が `1`）", "ok": true, "note": "実行コマンド: 同grep -c -x -F / 出力: 1。sedで§2.4内の ```text ブロック中にあることも確認"},
+    {"text": "§2.4 に `sdd-pipeline` とハーネスの使い分け表があり、ヘッダ行と決定済みの4行の行見出しがある（`grep -c -x -F '| 観点 | /sdd-pipeline | ハーネス（/plan・/run） |' docs/development-guide.md` が `1`、`grep -c -E '^\\| (対象工程|開始の前提|判断が要る時|検証のしかた) \\|' docs/development-guide.md` が `4`）", "ok": true, "note": "実行コマンド: 2本のgrep -c / 出力: 1 と 4。表は§2.4内にあることをsedで確認"},
+    {"text": "§2.4 の「対象工程」の行に、ハーネスは implementation〜system-test を扱い、要件定義〜設計レビュー（requirements・basic-design・detail-design・review-design）は従来どおり人と Skills で対話して進めることが書かれている（目視で確かめる）", "ok": true, "note": "確認方法: §2.4を sed で出力し目視。対象工程行に「implementation〜system-test（要件定義〜設計レビューは人と Skills で対話して進める）」とある。4工程名は同節冒頭の本文に列挙されている"},
+    {"text": "§5.3 の中（`### 5.3` と `### 5.4` の見出しの間）に、ハーネスではモデル昇格を使わず attempt の再試行と blocked で扱うことを書いた段落がある（`grep -n -E '^\\*\\*ハーネスで実行する場合\\*\\*.*モデル昇格.*attempt.*blocked' docs/development-guide.md` が1行を出し、その行番号が `grep -n '^### 5\\.' docs/development-guide.md` の 5.3 と 5.4 の行番号の間にある）", "ok": true, "note": "実行コマンド: 該当grep -n / 出力: 225行目の1行のみ。5.3は210行、5.4は227行なので範囲内"},
+    {"text": "既存の行を削除・変更せず追記だけにしている（`git diff main --numstat -- docs/development-guide.md` の2列目が `0`）", "ok": true, "note": "実行コマンド: `git diff main --numstat -- docs/development-guide.md`（worktree内） / 出力: 27 0 docs/development-guide.md"}
+  ],
+  "reasons": []
+}
