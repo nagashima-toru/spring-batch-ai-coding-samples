@@ -19,7 +19,7 @@ spring-batch-ai-coding-samples の利用者が、`sdd-pipeline` とハーネス�
 | T-01 | done | 1 | - | development-guide.md にハーネスで進める節（§2.4）と §5.3 の追記を足す | |
 | T-02 | done | 1 | T-01 | CLAUDE.md の Skills の節から development-guide.md §2.4 へリンクする | |
 | T-03 | done | 1 | - | docs/decisions.md を新規作成し、docs に無い決定事項を残す | |
-| T-04 | doing | 1 | T-01,T-02,T-03 | 設計文書 D-20261011-spring-batch-adapt を削除する | |
+| T-04 | doing | 2 | T-01,T-02,T-03 | 設計文書 D-20261011-spring-batch-adapt を削除する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
