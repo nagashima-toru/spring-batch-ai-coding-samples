@@ -1,0 +1,15 @@
+{
+  "task": "P-20261011-harness-rules/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-11 20:39",
+  "criteria": [
+    {"text": "`bash scripts/rules.sh planner | grep -cx 'vault/rules/planner/job-task-split.md'` の出力が `1` である", "ok": true, "note": "実行コマンド: `bash scripts/rules.sh planner | grep -cx 'vault/rules/planner/job-task-split.md'`（worktree内）/ 出力: 1"},
+    {"text": "`grep -cE '^## (目的|ルール|確認方法)$' vault/rules/planner/job-task-split.md` の出力が `3` である", "ok": true, "note": "実行コマンド: 同grep / 出力: 3（Readで目的・ルール・確認方法の順を確認）"},
+    {"text": "`grep -cF 'implementation → unit-test → integration-test → review-code → system-test' vault/rules/planner/job-task-split.md` と ``grep -cF '`after` に直前の工程のタスク ID を書く' vault/rules/planner/job-task-split.md`` の出力がともに1以上である（工程の順と `after` での直列のつなぎ方が書かれている）", "ok": true, "note": "実行コマンド: 両grep -cF / 出力: 1 と 1。10行目に工程順、11行目に after で直列（並行させない）の記述あり"},
+    {"text": "`grep -cF '詳細設計書がレビュー済み' vault/rules/planner/job-task-split.md` と `grep -cF '## 人への質問' vault/rules/planner/job-task-split.md` の出力がともに1以上である（レビュー済みを前提にし、確かめられない時は人への質問にすることが書かれている）", "ok": true, "note": "実行コマンド: 両grep -cF / 出力: 1 と 3。7-8行目に前提と、確かめられない時はタスクを起こさず人への質問に書くとある"},
+    {"text": "``grep -cF '`./mvnw verify -DskipITs`' vault/rules/planner/job-task-split.md`` と ``grep -cE '`\\*IT\\.java`.*`\\./mvnw verify`' vault/rules/planner/job-task-split.md`` の出力がともに1以上である（全タスクに `-DskipITs` の成功、結合テストを含むタスクにだけ `./mvnw verify` の成功を入れることが書かれている）", "ok": true, "note": "実行コマンド: 両grep / 出力: 2 と 2。13行目が全タスクに -DskipITs、14行目が *IT.java を含むタスクだけ ./mvnw verify と記述"},
+    {"text": "`wc -l vault/rules/planner/job-task-split.md` の行数が100以下で、``grep -c '^```' vault/rules/planner/job-task-split.md`` の出力が `0` であり、§ で示した節番号が参照先の docs に見出しとして実在する（verifier が `grep -n '^#' <docs>` で照合する）", "ok": true, "note": "実行コマンド: `wc -l` / 22行、コードフェンス grep -c / 0。`grep -n '^#' docs/development-guide.md docs/architecture.md` で 5.5 は development-guide.md:209「### 5.5 SSoT との関係」、2.1 は architecture.md:48「### 2.1 ジョブ実装のパッケージ構成」と実在"}
+  ],
+  "reasons": []
+}
