@@ -1,0 +1,14 @@
+{
+  "task": "P-20261011-harness-docs/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-11 21:47",
+  "criteria": [
+    {"text": "`CLAUDE.md` に決定済みのリンクがちょうど1つある（`grep -c -F '](docs/development-guide.md#24-ハーネスで実装以降を進める場合)' CLAUDE.md` が `1`）", "ok": true, "note": "実行コマンド: worktree の CLAUDE.md に対し `grep -c -F '](docs/development-guide.md#24-ハーネスで実装以降を進める場合)' CLAUDE.md` / 出力: 1"},
+    {"text": "そのリンクの行が「## Skills（開発工程）」の見出しより後、「## 禁止事項」の見出しより前にある（`grep -n -e '^## ' -e 'docs/development-guide.md#24-' CLAUDE.md` の出力の並びで確かめる）", "ok": true, "note": "実行コマンド: `grep -n -e '^## ' -e 'docs/development-guide.md#24-' CLAUDE.md` / 出力: 40:## Skills（開発工程）、61:リンク行、63:## 禁止事項 の順"},
+    {"text": "リンク先の見出しが実在する（`grep -c -x -F '### 2.4 ハーネスで実装以降を進める場合' docs/development-guide.md` が `1`）", "ok": true, "note": "実行コマンド: `grep -c -x -F '### 2.4 ハーネスで実装以降を進める場合' docs/development-guide.md` / 出力: 1"},
+    {"text": "ハーネスのマーカーブロックが元の4行のまま連続している（`grep -A3 -F '<!-- ai-harness:begin v1 -->' CLAUDE.md` の出力が `<!-- ai-harness:begin v1 -->`・`# AI協働ハーネス 共通ルール`・`@.claude/ai-harness.md`・`<!-- ai-harness:end -->` の4行）", "ok": true, "note": "実行コマンド: `grep -A3 -F '<!-- ai-harness:begin v1 -->' CLAUDE.md` / 出力: 指定の4行がその順で出力された"},
+    {"text": "マーカーブロックの行に差分が無い（`git diff main -- CLAUDE.md | grep -cE '^[+-](<!-- ai-harness|# AI協働ハーネス|@\\.claude/ai-harness\\.md)'` が `0`）", "ok": true, "note": "実行コマンド: `git diff main -- CLAUDE.md | grep -cE '^[+-](<!-- ai-harness|# AI協働ハーネス|@\\.claude/ai-harness\\.md)'` / 出力: 0。差分全体は Skills 節末尾への3行追加（空行含む）のみ"}
+  ],
+  "reasons": []
+}
