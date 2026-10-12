@@ -1,7 +1,7 @@
 ---
 name: plan
-description: ゴールをタスクに分割して計画を作り、そのまま実行する。「計画を立てて」「タスクに分割して」「これをやりたい」「plan」と言われたら必ずこのスキルを使う。計画 ID とブランチを決め、planner サブエージェントで draft を作り、粒度の確認を通ったら計画票の status を approved にしてコミットし、続けて /run の手順を実行する（人の承認を待たない）。blocked になったタスクの解除（unblock）にも使う。「blocked を解除」「T-02 の blocked を戻して」と言われたらこのスキルを使い、人が `/plan unblock <計画ID> <id> [回答]` のコマンドを打つよう案内する。
-argument-hint: [ゴール | unblock <計画ID> <id> [回答]]
+description: ゴールをタスクに分割して計画を作り、そのまま実行する。「計画を立てて」「タスクに分割して」「これをやりたい」「plan」と言われたら必ずこのスキルを使う。計画 ID とブランチを決め、planner サブエージェントで draft を作り、粒度の確認を通ったら計画票の status を approved にしてコミットし、続けて /run の手順を実行する（人の承認を待たない）。blocked になったタスクの解除（unblock）にも使う。「blocked を解除」「T-02 の blocked を戻して」と言われたらこのスキルを使い、人が `/plan unblock <計画ID> <id> [--fresh] [回答]` のコマンドを打つよう案内する。
+argument-hint: [ゴール | unblock <計画ID> <id> [--fresh] [回答]]
 ---
 
 ゴールを計画（`vault/plans/<計画ID>.md`）とタスク票（`vault/tasks/<計画ID>/T-01.md`）に分割し、粒度の確認を通ったら計画票の `status` を `approved` にし、続けて `/run` を実行する。blocked になったタスクは、人の `/plan unblock` の指示で `todo` に戻す。仕様は `docs/vault-spec.md`。
@@ -12,7 +12,7 @@ argument-hint: [ゴール | unblock <計画ID> <id> [回答]]
 
 ## A. 計画を作る（引数がゴールの時）
 1. 計画 ID を決める：`P-<TZ=Asia/Tokyo date '+%Y%m%d'>-<slug>`（採番は不要）。`slug` はゴールの内容から英小文字・ハイフン区切りで人が読める形を選ぶ（迷ったら人に確認してよい）
-2. 現在のブランチがベースブランチ（環境変数 `HARNESS_BASE_BRANCH` の値。前後の空白を除いて空なら `main`）であることを確認する。確認は `git branch --show-current` の出力と、`echo "${HARNESS_BASE_BRANCH:-}"` の出力（前後の空白を除き、空なら `main`）を比べる。一致すればベースブランチ上とみなす。一致しない時は、下の確認の前に `git fetch origin <ベースブランチ>:<ベースブランチ>` を1回行う（fast-forward できる時だけローカルのベースブランチの ref を進める非破壊の操作。現在のブランチがベースブランチ自身の時は git がチェックアウト中のブランチへの fetch を拒否するので、一致した時は行わない）。この fetch は best-effort で、失敗しても（ネットワーク不可・リモートが無い・fast-forward できない等）止まらず、そのまま下の確認に進む。一致しなくても、`echo "${HARNESS_PUSH_BRANCH:-}"` の出力（前後の空白を除いた値。空なら未設定）が設定され、現在のブランチ（`git branch --show-current`）がその値で、`git rev-parse HEAD` の出力と `git rev-parse --verify <ベースブランチ>` の出力が同じ（ローカルのベースブランチの ref とだけ比べる。`origin/<ベース>` とは比べない）なら、ベース上とみなし、現在の HEAD から`work/<計画IDの英小文字>`を切る。どちらの条件も満たさなければ従来どおり、ブランチを切らず「ベースブランチ（`<値>`）に戻ってから `/plan` を実行してください」と伝えて**止まる**。`git rev-parse --verify <ベースブランチ>` が失敗した時（ローカルにベースブランチが無い）も止まる。環境変数に無く、実行環境の指示で push 先が決められている時（クラウドセッションなど）は、オーケストレーターがその値を `env HARNESS_PUSH_BRANCH=<指定ブランチ> …` でコマンドに渡す（開始条件の確認と `vcs_finish.sh` の両方。`env` で始めると許可リストの `Bash(env *)` で通る）。（既存の作業ブランチに別の計画を重ねる運用は入れない）
+2. 現在のブランチがベースブランチ（環境変数 `HARNESS_BASE_BRANCH` の値。前後の空白を除いて空なら `main`）であることを確認する。確認は `git branch --show-current` の出力と、`echo "${HARNESS_BASE_BRANCH:-}"` の出力（前後の空白を除き、空なら `main`）を比べる。一致すればベースブランチ上とみなす。一致しない時は、下の確認の前に `git fetch origin <ベースブランチ>:<ベースブランチ>` を1回行う（fast-forward できる時だけローカルのベースブランチの ref を進める非破壊の操作。現在のブランチがベースブランチ自身の時は git がチェックアウト中のブランチへの fetch を拒否するので、一致した時は行わない）。この fetch は best-effort で、失敗しても（ネットワーク不可・リモートが無い・fast-forward できない等）止まらず、そのまま下の確認に進む。`git branch --show-current` の出力が空（detached HEAD）の時は、この fetch の後で `git rev-parse HEAD` の出力と `git rev-parse --verify <ベースブランチ>` の出力を比べ、同じなら `git checkout <ベースブランチ>` してベースブランチ上とみなす（`git checkout -f`・`git reset`・`git stash` は使わない非破壊の操作）。違う時、`git rev-parse --verify <ベースブランチ>` が失敗した時、`git checkout <ベースブランチ>` が失敗した時（未コミットの変更とぶつかる等）は、ブランチを切らず、下のどちらの条件も満たさない時と同じ案内を伝えて**止まる**。一致しなくても、`echo "${HARNESS_PUSH_BRANCH:-}"` の出力（前後の空白を除いた値。空なら未設定）が設定され、現在のブランチ（`git branch --show-current`）がその値で、`git rev-parse HEAD` の出力と `git rev-parse --verify <ベースブランチ>` の出力が同じ（ローカルのベースブランチの ref とだけ比べる。`origin/<ベース>` とは比べない）なら、ベース上とみなし、現在の HEAD から`work/<計画IDの英小文字>`を切る。どちらの条件も満たさなければ従来どおり、ブランチを切らず「ベースブランチ（`<値>`）に戻ってから `/plan` を実行してください」と伝えて**止まる**。`git rev-parse --verify <ベースブランチ>` が失敗した時（ローカルにベースブランチが無い）も止まる。環境変数に無く、実行環境の指示で push 先が決められている時（クラウドセッションなど）は、オーケストレーターがその値を `env HARNESS_PUSH_BRANCH=<指定ブランチ> …` でコマンドに渡す（開始条件の確認と `vcs_finish.sh` の両方。`env` で始めると許可リストの `Bash(env *)` で通る）。（既存の作業ブランチに別の計画を重ねる運用は入れない）
 3. `git checkout -b work/<計画IDの英小文字>` でブランチを作る
 4. Agent ツールで `planner` サブエージェントを呼ぶ。prompt にはゴールと、手順1で決めた計画 ID、関係するファイルのパスがあればそれを渡す。planner はこの計画 ID をそのまま使ってファイルを書く。この Agent ツール呼び出しは `run_in_background: false` を指定し、同期的に完了を待つこと（手順5以降で生成物を読んで判定するため、結果に依存する）
    - それでも Agent ツールの結果が起動通知（バックグラウンド起動）だった時は、ターンを終えて完了通知を待ち、完了通知が来るまで手順5以降に進まない。起動通知かどうかは、結果に「Async agent launched」「バックグラウンド」など起動を表す文言があり、planner の完了の報告（計画 ID・タスク一覧）が無いことで見分ける（文言の完全一致には頼らない）
@@ -25,14 +25,23 @@ argument-hint: [ゴール | unblock <計画ID> <id> [回答]]
 10. `git add vault/plans/<計画ID>.md vault/tasks/<計画ID>/ vault/log/<計画ID>.md` でファイルを名前で指定して stage し、`git commit`（メッセージ例：`<計画ID>: 計画を作り自動承認する`）する。work ブランチ上で行う。`git add .` や `git add -A` は使わない。stage とコミットは別々の Bash 呼び出しにし、コミットメッセージにコマンド置換を使わない
 11. 続けて `/run`（`.claude/skills/run/SKILL.md`）の手順1から実行する。セッションのモデルは変えない（creator・verifier はサブエージェントで、それぞれの定義のモデルで動く）
 
-## B. blocked を解除する（引数が `unblock <計画ID> <id> [回答]` のコマンドの時）
-1. 解除の指示が `/plan unblock <計画ID> <id> [回答]` のコマンドで来たことを確認する。人が自然文で解除を伝えた場合（引数が `unblock <計画ID> <id>` の形でない場合）は解除せず、「`/plan unblock <計画ID> <id> [回答]` を打ってください」と案内して**止まる**
+## B. blocked を解除する（引数が `unblock <計画ID> <id> [--fresh] [回答]` のコマンドの時）
+`--fresh` は `<id>` の直後にだけ書ける。回答の中の `--fresh` の文字列は回答の一部として扱う。`--fresh` が無い既定は worktree の引き継ぎ：unblock では worktree に触れず、再着手の時に `/run` が `scripts/transition.py` の `--resume-worktree` で log のその id の最後の記録行の worktree を引き継ぐ（残っていなければ `/run` が新しい worktree で作り直す）。`--fresh` の時は、unblock の中で前回の worktree を破棄するので、再着手は新しい worktree で始まる。
+
+1. 解除の指示が `/plan unblock <計画ID> <id> [--fresh] [回答]` のコマンドで来たことを確認する。人が自然文で解除を伝えた場合（引数が `unblock <計画ID> <id>` の形でない場合）は解除せず、「`/plan unblock <計画ID> <id> [--fresh] [回答]` を打ってください」と案内して**止まる**
 2. `vault/plans/<計画ID>.md` のタスク表で、`<id>` の行の status が `blocked` であることを確認する。`blocked` でなければ解除せず状況を伝えて止まる
-3. 回答があれば、タスク票 `vault/tasks/<計画ID>/<id>.md` の「決定済み」に回答を追記する。回答が無い時は何も追記しない（ハングやマージコンフリクトなど、答える質問が無い blocked）。回答の内容で受け入れ基準を直す必要がある時は、回答に基づく追記までにとどめ、大きな書き換えは planner を呼ぶよう案内する。回答が、解除する `<id>` 以外のタスクにも効く前提（手順・使うツール・確認コマンドの書き方など）を変える時は、計画票のタスク表を見て、同じ前提を持つ未着手（todo）のタスク票の「決定済み」にも同じ回答を追記する。追記した票は手順6の git add に名前を指定して含める。todo 以外の票には追記しない（done の票はフックが書き込みを拒否する。doing・review・blocked の票はそれぞれの流れで扱う）
-4. 計画票の `<id>` の行の status を `todo`、attempt を `0`、question を空にする
-5. `TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M'` で日時を取り、`vault/log/<計画ID>.md` に次の1行を追記する：`- <日時> <id> blocked→todo 人の指示: /plan unblock <計画ID> <id>`
-6. `git add vault/plans/<計画ID>.md vault/tasks/<計画ID>/<id>.md vault/log/<計画ID>.md` でファイルを名前で指定して stage し、`git commit`（メッセージ例：`<計画ID>: <id> の blocked を解除する`）する。回答が無く、タスク票を変えなかった時は、タスク票を add に含めない。work ブランチ上で行う。`git add .` や `git add -A` は使わない
-7. 解除したことを報告し、「`/run` で再開できます」と伝える
+3. 回答が成果物の追加（宣言されていないファイルを変えてよい）や受け入れ基準の変更を含む時は、タスク票の「成果物」「受け入れ基準」を Edit で直さず、次のコマンドで直す（タスク票と log をコミットするので、手順4の「決定済み」への追記より前に行う）：
+   `python3 scripts/amend_task.py <計画ID> <id> [--add-deliverable <パス>]... [--replace-criterion <番号> <文>]...`
+   受け入れ基準と食い違う回答は、「決定済み」に読み替えの注記を書いて済ませず、`--replace-criterion` で基準そのものを差し替える（verifier は基準を判定するので、注記と基準が食い違うと判定不能になる）。基準の行の追加・削除が要る時（行数が変わる時）や、成果物の主を変えるほどの書き換えの時は、amend_task.py では行わず、人にその旨を伝えて**止まる**
+4. 回答があれば、タスク票 `vault/tasks/<計画ID>/<id>.md` の「決定済み」に回答を追記する。回答が無い時は何も追記しない（ハングやマージコンフリクトなど、答える質問が無い blocked）
+5. 回答が、解除する `<id>` 以外のタスクにも効く時は、回答文に書かれたタスク ID に頼らず追記先を探す。blocked の question と回答が関わる受け入れ基準の行（または「決定済み」の前提の行）から、タスク ID を含まない特徴的な部分文字列を選び、次のコマンドで同じ文字列を持つタスク票を探す：
+   `grep -l -F -e '<文字列>' vault/tasks/<計画ID>/`
+   見つかった票のうち、計画票のタスク表で todo の票だけに、同じ回答を「決定済み」に追記する。成果物の追加・基準の差し替えが要るものは、手順3と同じく amend_task.py で直す（基準の番号はその票で数え直す）。追記した票は手順9の git add に名前を指定して含める。todo 以外の票には追記しない（done の票はフックが書き込みを拒否する。doing・review・blocked の票はそれぞれの流れで扱う）
+6. `--fresh` の時だけ、status を todo に戻す前に、`vault/log/<計画ID>.md` のその id の最後の記録行のパスとブランチ名を取り、そのパスが `git worktree list` にあれば `bash scripts/discard_worktree.sh <パス> <ブランチ名>` で破棄する（記録行が無い・パスが無い時は何もしない）。`--fresh` が無い時は何もしない
+7. 計画票の `<id>` の行の status を `todo`、attempt を `0`、question を空にする
+8. `TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M'` で日時を取り、`vault/log/<計画ID>.md` に次の1行を追記する：`- <日時> <id> blocked→todo 人の指示: /plan unblock <計画ID> <id>`。`--fresh` の時は末尾を `/plan unblock <計画ID> <id> --fresh` にする
+9. `git add vault/plans/<計画ID>.md vault/tasks/<計画ID>/<id>.md vault/log/<計画ID>.md` でファイルを名前で指定して stage し、`git commit`（メッセージ例：`<計画ID>: <id> の blocked を解除する`）する。回答が無く、タスク票を変えなかった時は、タスク票を add に含めない。work ブランチ上で行う。`git add .` や `git add -A` は使わない
+10. 解除したことを報告し、worktree を引き継ぐか作り直すか（`--fresh` の有無）も伝え、「`/run` で再開できます」と伝える
 
 1回のコマンドで解除するのは1行だけ。複数行を解除する時は、人がコマンドを行の数だけ打つ。
 
