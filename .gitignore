@@ -26,3 +26,4 @@ __pycache__/
 *.pyc
 .claude/settings.local.json
 *.bak-*
+.claude/worktrees/
