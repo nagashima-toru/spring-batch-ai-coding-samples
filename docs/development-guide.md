@@ -26,14 +26,15 @@ cd spring-batch-ai-coding-samples
 docker compose -f docker/compose.yaml up -d
 
 # ビルド＋全テスト（初回は依存ダウンロードで数分かかる）
-./mvnw verify
+./mvnw clean verify
 ```
 
 ### 1.3 よく使うコマンド
 
 ```bash
-./mvnw verify                 # ビルド＋単体＋結合＋静的解析＋カバレッジ
-./mvnw verify -DskipITs       # 結合テスト（Docker 必須）を除外
+./mvnw clean verify           # ビルド＋単体＋結合（Docker 必須）＋静的解析。batch-sample のカバレッジ80%はここで判定
+./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false   # 結合テストを除外（Docker 不要）。カバレッジ不足では止めない
+./mvnw clean verify -DskipITs -pl batch-core                 # batch-core のカバレッジ80%を判定
 ./mvnw test -pl batch-core    # モジュール指定で単体テストのみ
 ./mvnw checkstyle:check       # 規約チェックのみ
 
