@@ -1,0 +1,418 @@
+package com.example.batch.sample.job_order_daily_sales;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.job.JobInstance;
+import org.springframework.batch.core.job.parameters.InvalidJobParametersException;
+import org.springframework.batch.core.job.parameters.JobParameters;
+import org.springframework.batch.core.job.parameters.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.infrastructure.item.ExecutionContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import com.example.batch.core.execution.BatchExitCodes;
+import com.example.batch.sample.AbstractJobIT;
+
+/**
+ * ORDER-001（受注CSV取込・日次売上集計）の結合テスト。
+ *
+ * <p>詳細設計書 docs/projects/order-daily-sales/detail-design/ORDER-001.md の §3 エラー処理設計・
+ * §5 リラン設計・§7「結合テスト」の観点に基づく。ジョブパラメータの Validator が未知のキーを拒否するため、
+ * {@code uniqueParameters()} は使わず、テストごとに異なる {@code scheduledTime} で JobInstance の重複を避ける。</p>
+ */
+class OrderDailySalesJobIT extends AbstractJobIT {
+
+    private static final LocalDate TARGET_DATE = LocalDate.of(2026, 10, 11);
+    private static final String HEADER = "order_no,line_no,order_date,store_code,item_code,quantity,unit_price";
+    private static final OffsetDateTime BASE_TIME = OffsetDateTime.of(2026, 10, 11, 17, 0, 0, 0, ZoneOffset.UTC);
+    private static final AtomicInteger SEQUENCE = new AtomicInteger();
+
+    @Autowired
+    private JobOperator jobOperator;
+
+    @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
+    @Qualifier("orderDailySalesJob")
+    private Job job;
+
+    @TempDir
+    Path tempDir;
+
+    @BeforeEach
+    void setUp() {
+        truncateAppTable("order_detail_work");
+        truncateAppTable("order_detail");
+        truncateAppTable("daily_store_sales");
+    }
+
+    // ---------------------------------------------------------------- ヘルパー
+
+    /** テストごとに異なる scheduledTime（JobInstance を重複させない）。 */
+    private static String nextScheduledTime() {
+        return BASE_TIME.plusSeconds(SEQUENCE.incrementAndGet()).toString();
+    }
+
+    private JobParameters parameters(String scheduledTime, Path inputFile, Path errorFile) {
+        return new JobParametersBuilder()
+                .addString("scheduledTime", scheduledTime)
+                .addLocalDate("targetDate", TARGET_DATE)
+                .addString("inputFile", inputFile.toString())
+                .addString("errorFile", errorFile.toString())
+                .toJobParameters();
+    }
+
+    private JobParameters parameters(Path inputFile, Path errorFile) {
+        return parameters(nextScheduledTime(), inputFile, errorFile);
+    }
+
+    private Path writeCsv(String fileName, String header, List<String> rows) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add(header);
+        lines.addAll(rows);
+        Path file = tempDir.resolve(fileName);
+        Files.write(file, lines, StandardCharsets.UTF_8);
+        return file;
+    }
+
+    private Path writeCsv(String fileName, List<String> rows) throws IOException {
+        return writeCsv(fileName, HEADER, rows);
+    }
+
+    private List<String> errorLines(Path errorFile) throws IOException {
+        return Files.exists(errorFile) ? Files.readAllLines(errorFile, StandardCharsets.UTF_8) : List.of();
+    }
+
+    private List<String> detailRows() {
+        return jdbcTemplate.queryForList(
+                "SELECT order_no || '|' || line_no || '|' || order_date || '|' || store_code || '|' || item_code"
+                        + " || '|' || quantity || '|' || unit_price || '|' || amount"
+                        + " FROM app.order_detail ORDER BY order_no, line_no",
+                String.class);
+    }
+
+    private List<String> salesRows() {
+        return jdbcTemplate.queryForList(
+                "SELECT sales_date || '|' || store_code || '|' || order_count || '|' || line_count"
+                        + " || '|' || total_quantity || '|' || total_amount"
+                        + " FROM app.daily_store_sales ORDER BY sales_date, store_code",
+                String.class);
+    }
+
+    private long count(String table) {
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM app." + table, Long.class);
+    }
+
+    private void insertDetail(String orderNo, int lineNo, String orderDate, String storeCode, int quantity,
+            int unitPrice) {
+        jdbcTemplate.update(
+                "INSERT INTO app.order_detail (order_no, line_no, order_date, store_code, item_code, quantity,"
+                        + " unit_price, amount) VALUES (?, ?, ?::date, ?, 'OLD', ?, ?, ?)",
+                orderNo, lineNo, orderDate, storeCode, quantity, unitPrice, (long) quantity * unitPrice);
+    }
+
+    private void insertSales(String salesDate, String storeCode, int orders, int lines, long qty, long amount) {
+        jdbcTemplate.update(
+                "INSERT INTO app.daily_store_sales (sales_date, store_code, order_count, line_count,"
+                        + " total_quantity, total_amount) VALUES (?::date, ?, ?, ?, ?, ?)",
+                salesDate, storeCode, orders, lines, qty, amount);
+    }
+
+    /** 対象日（2026-10-11）に旧データを入れ、他の日（2026-10-10）のデータも入れる。 */
+    private void insertOldData() {
+        insertDetail("OLD1", 1, "2026-10-11", "S09", 1, 100);
+        insertSales("2026-10-11", "S09", 1, 1, 1, 100);
+        insertDetail("PREV", 1, "2026-10-10", "S08", 2, 50);
+        insertSales("2026-10-10", "S08", 1, 1, 2, 100);
+    }
+
+    private static final List<String> OLD_DETAIL = List.of(
+            "OLD1|1|2026-10-11|S09|OLD|1|100|100", "PREV|1|2026-10-10|S08|OLD|2|50|100");
+    private static final List<String> OLD_SALES = List.of(
+            "2026-10-10|S08|1|1|2|100", "2026-10-11|S09|1|1|1|100");
+
+    // ---------------------------------------------------------------- テスト
+
+    @Test
+    void 複数店舗複数受注のファイルを取り込むと明細と集計が登録され終了コードCOMPLETEDでエラーファイルは作られない()
+            throws Exception {
+        Path input = writeCsv("orders.csv", List.of(
+                "A001,1,2026-10-11,S01,I01,2,100",
+                "A001,2,2026-10-11,S01,I02,1,500",
+                "A002,1,2026-10-11,S01,I01,3,100",
+                "B001,1,2026-10-11,S02,I03,5,1000",
+                "B001,2,2026-10-11,S02,I01,1,0"));
+        Path error = tempDir.resolve("error.txt");
+
+        JobExecution execution = jobOperator.start(job, parameters(input, error));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        assertThat(detailRows()).containsExactly(
+                "A001|1|2026-10-11|S01|I01|2|100|200",
+                "A001|2|2026-10-11|S01|I02|1|500|500",
+                "A002|1|2026-10-11|S01|I01|3|100|300",
+                "B001|1|2026-10-11|S02|I03|5|1000|5000",
+                "B001|2|2026-10-11|S02|I01|1|0|0");
+        // 受注件数は受注番号の重複を除く（S01 は A001・A002 の2件、明細は3行）
+        assertThat(salesRows()).containsExactly(
+                "2026-10-11|S01|2|3|6|1000",
+                "2026-10-11|S02|1|2|6|5000");
+        assertThat(Files.exists(error)).isFalse();
+    }
+
+    @Test
+    void 不正行を含むファイルでは正常行だけ取り込みエラーファイルに退避して終了コードCOMPLETED_WITH_WARNINGになる()
+            throws Exception {
+        Path input = writeCsv("orders.csv", List.of(
+                "A001,1,2026-10-11,S01,I01,2,100",       // line 2 正常
+                "A003,1,2026-10-10,S01,I01,1,100",       // line 3 対象日不一致
+                "A004,1,2026-10-11,S01,I01,0,100",       // line 4 数量0
+                "bad,line",                              // line 5 列数不一致
+                "A001,1,2026-10-11,S01,I01,9,9",         // line 6 ファイル内の重複
+                "A005,1,2026-10-11,S01,I02,1,300"));     // line 7 正常
+        Path error = tempDir.resolve("error.txt");
+
+        JobExecution execution = jobOperator.start(job, parameters(input, error));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(execution.getExitStatus().getExitCode())
+                .isEqualTo(BatchExitCodes.COMPLETED_WITH_WARNING.getExitCode());
+        assertThat(detailRows()).containsExactly(
+                "A001|1|2026-10-11|S01|I01|2|100|200",
+                "A005|1|2026-10-11|S01|I02|1|300|300");
+        assertThat(salesRows()).containsExactly("2026-10-11|S01|2|2|3|500");
+        List<String> errors = errorLines(error);
+        assertThat(errors).hasSize(4);
+        // 読取時の Skip は即時、加工時の Skip はチャンク終了時に書かれるため、出力順ではなく内容で確かめる
+        assertThat(errors).anySatisfy(l -> assertThat(l).startsWith("line=3,A003,1,2026-10-10,S01,I01,1,100"));
+        assertThat(errors).anySatisfy(l -> assertThat(l).startsWith("line=4,A004,1,2026-10-11,S01,I01,0,100"));
+        assertThat(errors).anySatisfy(l -> assertThat(l).startsWith("bad,line"));
+        assertThat(errors).anySatisfy(l -> assertThat(l).startsWith("line=6,A001,1,2026-10-11,S01,I01,9,9"));
+    }
+
+    @Test
+    void 同じtargetDateを別のscheduledTimeで2回実行すると1回目の内容が2回目に置き換わり他の日のデータは変わらない()
+            throws Exception {
+        insertDetail("PREV", 1, "2026-10-10", "S08", 2, 50);
+        insertSales("2026-10-10", "S08", 1, 1, 2, 100);
+        Path first = writeCsv("first.csv", List.of(
+                "A001,1,2026-10-11,S01,I01,2,100",
+                "A002,1,2026-10-11,S02,I01,3,100"));
+        Path second = writeCsv("second.csv", List.of(
+                "A001,1,2026-10-11,S01,I09,5,200",
+                "C001,1,2026-10-11,S03,I01,1,1000"));
+
+        JobExecution firstExecution = jobOperator.start(job, parameters(first, tempDir.resolve("e1.txt")));
+        assertThat(firstExecution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        assertThat(salesRows()).containsExactly(
+                "2026-10-10|S08|1|1|2|100", "2026-10-11|S01|1|1|2|200", "2026-10-11|S02|1|1|3|300");
+
+        JobExecution secondExecution = jobOperator.start(job, parameters(second, tempDir.resolve("e2.txt")));
+
+        assertThat(secondExecution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        assertThat(detailRows()).containsExactly(
+                "A001|1|2026-10-11|S01|I09|5|200|1000",
+                "C001|1|2026-10-11|S03|I01|1|1000|1000",
+                "PREV|1|2026-10-10|S08|OLD|2|50|100");
+        assertThat(salesRows()).containsExactly(
+                "2026-10-10|S08|1|1|2|100",
+                "2026-10-11|S01|1|1|5|1000",
+                "2026-10-11|S03|1|1|1|1000");
+    }
+
+    @Test
+    void 入力ファイルが存在しない場合は終了コードFAILEDで本テーブルは変わらない() throws Exception {
+        insertOldData();
+        Path missing = tempDir.resolve("not-found.csv");
+
+        JobExecution execution = jobOperator.start(job, parameters(missing, tempDir.resolve("error.txt")));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+    }
+
+    @Test
+    void ヘッダ行が不正な場合は終了コードFAILEDで本テーブルは変わらない() throws Exception {
+        insertOldData();
+        Path input = writeCsv("orders.csv",
+                "order_no,line_no,order_date,store_code,item_code,unit_price,quantity",
+                List.of("A001,1,2026-10-11,S01,I01,2,100"));
+
+        JobExecution execution = jobOperator.start(job, parameters(input, tempDir.resolve("error.txt")));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+        assertThat(count("order_detail_work")).isZero();
+    }
+
+    @Test
+    void Skip件数がskipLimitを超過した場合は終了コードFAILEDで本テーブルは変わらず旧データが残る() throws Exception {
+        insertOldData();
+        List<String> rows = new ArrayList<>();
+        rows.add("A001,1,2026-10-11,S01,I01,2,100");
+        // 数量0の不正行を skipLimit（既定10）を超える11件並べる
+        for (int i = 1; i <= 11; i++) {
+            rows.add("X001," + i + ",2026-10-11,S01,I01,0,100");
+        }
+        Path input = writeCsv("orders.csv", rows);
+        Path error = tempDir.resolve("error.txt");
+
+        JobExecution execution = jobOperator.start(job, parameters(input, error));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+        // 超過までの Skip 行はエラーファイルに残る
+        assertThat(errorLines(error)).isNotEmpty();
+    }
+
+    @Test
+    void 別の日に同じ受注番号と明細番号が登録済みでStep5が一意制約違反になると終了コードFAILEDで本テーブルは全体ロールバックされる()
+            throws Exception {
+        insertOldData();
+        // 別の日（2026-10-10）に同じ order_no＋line_no を登録済み
+        insertDetail("A001", 1, "2026-10-10", "S08", 1, 10);
+        List<String> detailBefore = detailRows();
+        List<String> salesBefore = salesRows();
+        Path input = writeCsv("orders.csv", List.of(
+                "A000,1,2026-10-11,S01,I01,1,100",
+                "A001,1,2026-10-11,S01,I01,2,100"));
+
+        JobExecution execution = jobOperator.start(job, parameters(input, tempDir.resolve("error.txt")));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        // 対象日の旧データの削除も含めて全体がロールバックされている
+        assertThat(detailRows()).containsExactlyElementsOf(detailBefore);
+        assertThat(salesRows()).containsExactlyElementsOf(salesBefore);
+        assertThat(detailRows()).contains("OLD1|1|2026-10-11|S09|OLD|1|100|100");
+        // ワークは残る（Step 5 をやり直せるように）
+        assertThat(count("order_detail_work")).isEqualTo(2);
+    }
+
+    @Test
+    void Step4の途中でDB例外により失敗しても同一パラメータでリスタートすると続きから取り込みリスタートをまたいだ重複もSkipされる()
+            throws Exception {
+        // 250行（チャンクサイズ100で3チャンク）＋ 1行目付近(line_no=5)と重複する最終行
+        List<String> rows = new ArrayList<>();
+        for (int i = 1; i <= 250; i++) {
+            rows.add("R001," + i + ",2026-10-11,S01,I01,1,10");
+        }
+        rows.add("R001,5,2026-10-11,S01,I01,1,10"); // ファイル252行目: リスタート前にコミット済みの行との重複
+        Path input = writeCsv("orders.csv", rows);
+        Path error = tempDir.resolve("error.txt");
+        JobParameters params = parameters(input, error);
+
+        // 2チャンク目の line_no=120 の INSERT だけ失敗させるトリガを一時的に足す
+        jdbcTemplate.execute("CREATE OR REPLACE FUNCTION app.it_fail_on_line() RETURNS trigger AS $$ "
+                + "BEGIN IF NEW.line_no = 120 THEN RAISE EXCEPTION 'IT による意図的な失敗'; END IF; RETURN NEW; END; "
+                + "$$ LANGUAGE plpgsql");
+        jdbcTemplate.execute("CREATE TRIGGER it_fail_trigger BEFORE INSERT ON app.order_detail_work "
+                + "FOR EACH ROW EXECUTE FUNCTION app.it_fail_on_line()");
+        JobExecution failed;
+        try {
+            failed = jobOperator.start(job, params);
+        } finally {
+            jdbcTemplate.execute("DROP TRIGGER IF EXISTS it_fail_trigger ON app.order_detail_work");
+            jdbcTemplate.execute("DROP FUNCTION IF EXISTS app.it_fail_on_line()");
+        }
+
+        assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(failed.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        // コミット済みの1チャンク目（100行）だけがワークに残り、本テーブルは不変
+        assertThat(count("order_detail_work")).isEqualTo(100);
+        assertThat(count("order_detail")).isZero();
+        assertThat(count("daily_store_sales")).isZero();
+
+        JobExecution restarted = jobOperator.restart(failed);
+
+        assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        // リスタートで重複行が1件 Skip される
+        assertThat(restarted.getExitStatus().getExitCode())
+                .isEqualTo(BatchExitCodes.COMPLETED_WITH_WARNING.getExitCode());
+        // 1回で成功した場合と同じ結果（250行・重複行は取り込まれない）
+        assertThat(count("order_detail")).isEqualTo(250);
+        assertThat(salesRows()).containsExactly("2026-10-11|S01|1|250|250|2500");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT quantity FROM app.order_detail WHERE order_no = 'R001' AND line_no = 5", Integer.class))
+                .isEqualTo(1);
+        List<String> errors = errorLines(error);
+        assertThat(errors).hasSize(1);
+        assertThat(errors.get(0)).startsWith("line=252,R001,5,2026-10-11,S01,I01,1,10");
+    }
+
+    @Test
+    void 同じジョブの実行中の実行がある状態で起動すると二重起動防止により終了コードFAILEDになり本テーブルは変わらない()
+            throws Exception {
+        insertOldData();
+        Path input = writeCsv("orders.csv", List.of("A001,1,2026-10-11,S01,I01,2,100"));
+        // STARTED のまま終了していない実行を作る（別の scheduledTime の別 JobInstance）
+        JobParameters runningParams = parameters(nextScheduledTime(), input, tempDir.resolve("running-error.txt"));
+        JobInstance runningInstance = jobRepository.createJobInstance(job.getName(), runningParams);
+        JobExecution running = jobRepository.createJobExecution(runningInstance, runningParams,
+                new ExecutionContext());
+        running.setStatus(BatchStatus.STARTED);
+        running.setStartTime(LocalDateTime.now());
+        jobRepository.update(running);
+        JobExecution execution;
+        try {
+            execution = jobOperator.start(job, parameters(input, tempDir.resolve("error.txt")));
+        } finally {
+            // 後続のテストに影響しないよう、仕込んだ実行を終了させる
+            running.setStatus(BatchStatus.FAILED);
+            running.setEndTime(LocalDateTime.now());
+            jobRepository.update(running);
+        }
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("FAILED");
+        assertThat(execution.getExitStatus().getExitDescription()).contains("二重起動");
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+    }
+
+    @Test
+    void scheduledTimeを渡さない場合はジョブパラメータ検証エラーで起動失敗し本テーブルは変わらない() throws Exception {
+        insertOldData();
+        Path input = writeCsv("orders.csv", List.of("A001,1,2026-10-11,S01,I01,2,100"));
+        JobParameters params = new JobParametersBuilder()
+                .addLocalDate("targetDate", TARGET_DATE)
+                .addString("inputFile", input.toString())
+                .addString("errorFile", tempDir.resolve("error.txt").toString())
+                .toJobParameters();
+
+        assertThatThrownBy(() -> jobOperator.start(job, params))
+                .isInstanceOf(InvalidJobParametersException.class);
+
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+    }
+}
