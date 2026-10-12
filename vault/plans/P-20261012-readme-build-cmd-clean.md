@@ -1,6 +1,6 @@
 ---
 id: P-20261012-readme-build-cmd-clean
-status: approved
+status: done
 ---
 # ゴール
 
