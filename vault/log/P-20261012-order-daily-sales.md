@@ -29,3 +29,5 @@
 - 2026-10-12 11:47 T-04 doing→blocked attempt=2 creator=sonnet
 - 2026-10-12 11:55 T-04 blocked→todo 人の指示: /plan unblock P-20261012-order-daily-sales T-04
 - 2026-10-12 11:57 T-04 todo→doing attempt=1
+- 2026-10-12 12:01 T-04 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-ad40348460d1aa5d6 branch=worktree-agent-ad40348460d1aa5d6 plan_head=96c072dab76df3b2e926f7783c40c3926fcb8141
+- 2026-10-12 12:01 T-04 doing→review attempt=1 creator=sonnet
