@@ -16,7 +16,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | todo | 0 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
+| T-01 | doing | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
 | T-02 | todo | 0 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
 | T-03 | todo | 0 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
 | T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
