@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-build-cmd-clean/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 18:47",
+  "criteria": [
+    {"text": "`grep -n 'mvnw verify' .claude/skills/unit-test/SKILL.md` の出力が空（clean の無い `./mvnw verify` が残っていない）", "ok": true, "note": "実行コマンド: `grep -n 'mvnw verify' .claude/skills/unit-test/SKILL.md`（worktree内） / 出力: 空。Read相当のsed確認でも手順5と「カバレッジ」節は clean 付きになっている"},
+    {"text": "`grep -c 'mvnw clean verify -DskipITs -pl batch-core' .claude/skills/unit-test/SKILL.md` が1以上", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。手順5の batch-core 行に該当"},
+    {"text": "`grep -c 'mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false' .claude/skills/unit-test/SKILL.md` が1以上", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。手順5の batch-sample 行に該当し、jacoco レポートで未到達箇所を確認する記述あり"},
+    {"text": "`grep -c 'batch-sample のカバレッジ80%は' .claude/skills/unit-test/SKILL.md` が1以上", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。`/integration-test` の `./mvnw clean verify` で判定する旨と理由が手順5にある"},
+    {"text": "`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1`", "ok": true, "note": "実行コマンド: `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '`（worktree内） / 出力: 1"}
+  ],
+  "reasons": []
+}
