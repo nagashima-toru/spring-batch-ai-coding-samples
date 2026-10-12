@@ -14,7 +14,8 @@
      `- `<パス>`（amend_task.py で追加）` を足す。同じパスがバッククォートで宣言済みなら
      足さず `skip <パス>（宣言済み）` を出す
   2. --replace-criterion: 「## 受け入れ基準」節の <番号> 番目の行（行頭が `- ` か `数字. `）を
-     `- <文>` の1行に置き換える。基準の追加・削除はしない
+     `- <文>` の1行に置き換える（<文> の改行は空白にし、`|` はそのまま書く）。
+     基準の追加・削除はしない
   3. vault/log/<計画ID>.md に `- <日時> <id> amend <要約>` を1行追記する（`→` は含めない）
   4. タスク票と log だけを `git commit -m "<計画ID>/<id>: amend"` する
 
@@ -213,7 +214,7 @@ def main(argv):
                     if seen == num:
                         body = lines[i].rstrip("\r\n")
                         eol = lines[i][len(body):] or "\n"
-                        lines[i] = "- %s%s" % (transition.clean_text(text), eol)
+                        lines[i] = "- %s%s" % (re.sub(r"\r\n|\r|\n", " ", text).strip(), eol)
                         break
             out.append("replace criterion %d" % num)
             summary.append("基準差し替え=%d" % num)
