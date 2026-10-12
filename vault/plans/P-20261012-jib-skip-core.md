@@ -1,6 +1,6 @@
 ---
 id: P-20261012-jib-skip-core
-status: draft
+status: approved
 ---
 # ゴール
 
@@ -25,6 +25,7 @@ GitHub Issue #55「CD の jib:build が batch-core で「Main class was not foun
 - 依存に循環がない
 - 1タスクが1コンテキストで終わる粒度である
 
-## 人への質問
+## 人への質問（回答済み）
 
 1. 計画作成時の環境（このリポジトリのクラウド環境）には JDK 21 しか無く（`java -version` が 21.0.12）、`./mvnw clean verify -DskipITs -pl batch-core` は `release version 25 not supported` でコンパイルに失敗します。T-01 の受け入れ基準のうち JDK 25 が要るもの（Issue の再現コマンドの BUILD SUCCESS とイメージ tar の生成、`./mvnw clean verify -DskipITs -pl batch-core` の成功）は、run を JDK 25（Temurin）がある環境で実行する前提でよいですか。JDK 25 を用意できない場合、それらの基準を外して JDK に依存しない基準（`-pl batch-core jib:buildTar` のスキップ、`package` を付けない reactor 実行でのスキップのログ）だけで完了としてよいか、指示をください。
+   - 回答：基準は変えない（B）。この環境に apt で `openjdk-25-jdk-headless` を入れ、`~/.mavenrc` で `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64` にしたので、`./mvnw` は JDK 25 で動く。
