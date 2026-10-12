@@ -27,3 +27,4 @@
 - 2026-10-12 11:45 T-04 doing→doing attempt=2 中断から再開（API 利用上限で creator が停止）
 - 2026-10-12 11:47 T-04 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a79db751ea7ebe61a branch=worktree-agent-a79db751ea7ebe61a plan_head=c7e588d3dce5b4e46c41056bdd218e1f5eb551fb
 - 2026-10-12 11:47 T-04 doing→blocked attempt=2 creator=sonnet
+- 2026-10-12 11:55 T-04 blocked→todo 人の指示: /plan unblock P-20261012-order-daily-sales T-04

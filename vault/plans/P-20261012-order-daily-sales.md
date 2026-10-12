@@ -19,7 +19,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 | T-01 | done | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
 | T-02 | done | 1 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
 | T-03 | done | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
-| T-04 | blocked | 2 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | 受け入れ基準1「`./mvnw verify -DskipITs` が終了コード0で BUILD SUCCESS」が満たせません。状況: `./mvnw verify -DskipITs` は終了コード1で、`jacoco:check (coverage-check) @ batch-sample` が `Coverage checks have not been met` で落ちます。batch-sample 全体の命令網羅率は 37%（jacoco-merged.exec）で、閾値 80% に届きません。内訳は job_order_daily_sales が 62%、job01・02・06・common・point_expiry・announcement が 15〜46%、job03・04・05 が 0% です。ORDER-001 のコードの問題ではなく、既存ジョブが IT で網羅される構成のためです。決定済みでカバレッジ閾値・除外設定・pom は変えないことになっているので、基準も判定側も触らず止めています。T-01・T-02 の unblock 回答は、batch-sample のカバレッジを `-DskipITs` で判定しないというものでした。質問: T-04 でも同じ扱いにして、基準1を「`-DskipITs` で全モジュールの Checkstyle・SpotBugs・単体テストと batch-core のカバレッジが通り、batch-sample のカバレッジは判定しない」に読み替えてよいですか。基準2の `./mvnw verify`（IT 込み）で batch-sample のカバレッジ 80% を判定する、という理解です。基準1以外の確認結果: `./mvnw verify`（IT 含む）は終了コード0で BUILD SUCCESS、All coverage checks have been met。禁止パターンの grep は空、pom・config の差分も空。レビュー結果は第1回で Must=0・Should=0・Ask=0。ソースコードは変更していません。 |
+| T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
 | T-05 | todo | 0 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
 
 ## 計画の受け入れ基準
