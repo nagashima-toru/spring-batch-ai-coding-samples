@@ -178,7 +178,7 @@ system-test の5工程のタスクに分ける。分け方と各工程のルー�
 1. `main` から feature ブランチを切る（`feature/{issue番号}-{内容}`。対応する Issue が無い場合は
    `feature/{案件名}`）
 2. 実装・テスト。コミットメッセージは日本語で「何を・なぜ」を書く
-3. `./mvnw verify` がローカルで通ることを確認（システムテストまで完了した最終状態で通すこと。§2.1）
+3. `./mvnw clean verify` がローカルで通ることを確認（システムテストまで完了した最終状態で通すこと。§2.1）
 4. PR を作成（テンプレートに従い、**設計書へのリンク**と**レビュー Skill 実行結果**を記載）
 
 PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装 PR 用は同じ置き場（`.github/PULL_REQUEST_TEMPLATE/`）に
@@ -188,7 +188,7 @@ PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装
 | PR の種類 | テンプレート | 確認する観点 |
 |---|---|---|
 | 設計 PR（要件定義書・基本設計書・詳細設計書のみ） | `.github/PULL_REQUEST_TEMPLATE/design.md` | 要件の確定、`/review-design`、architecture.md への準拠、トレーサビリティ、未確定事項、batch-core 拡張の要否 |
-| 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw verify`、`/review-code`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
+| 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw clean verify`、`/review-code`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
 | 上記以外（開発プロセス・ドキュメント・設定・依存更新など） | `.github/pull_request_template.md`（既定） | 変更に応じた確認、参照箇所の追従 |
 
 - GitHub の画面で PR を作る時、設計 PR・実装 PR は PR 作成画面の URL に `?template=design.md` または
@@ -207,7 +207,7 @@ PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装
 flowchart LR
     A[Issue 起票] --> B[feature ブランチ作成]
     B --> C[Skills で設計→実装→テスト→システムテスト]
-    C --> D[./mvnw verify]
+    C --> D[./mvnw clean verify]
     D --> E[PR 作成<br>設計書リンク・レビュー実施記録]
     E --> F[CI 成功＋レビュー承認]
     F --> G[main へマージ]
@@ -221,7 +221,7 @@ flowchart LR
 - [ ] Skip/Retry・エラーレコード退避が方式設計 §5 に従っている
 - [ ] `JobParametersValidator` でパラメータ検証している
 - [ ] Flyway マイグレーションを追加した（既存ファイルの変更は禁止）
-- [ ] 単体テスト＋結合テストがあり、`./mvnw verify` が通る
+- [ ] 単体テスト＋結合テストがあり、`./mvnw clean verify` が通る
 - [ ] リスタート動作（途中失敗→同一パラメータ再実行）を結合テストまたは手動で確認した
 
 ## 5. 検証ループ（自律検証の共通ルール）
