@@ -1,6 +1,6 @@
 ---
 id: P-20261012-harness-update
-status: draft
+status: approved
 ---
 # ゴール
 
@@ -22,6 +22,6 @@ ai-harness（https://github.com/nagashima-toru/ai-harness 、public）で Issue 
 - 依存に循環がない
 - 1タスクが1コンテキストで終わる粒度である
 
-## 人への質問
+## 人への質問（回答済み）
 
-1. smoke の `(install-gi) 03` の扱いについて。T-01 では「`.gitignore` に `.claude/worktrees/` を手で先に追記してから `install.sh --update` を実行する」方式（以下 B）にしています。B だと smoke は `fail=0` になりますが、manifest に `gitignore` キーが残らないため、将来 `scripts/uninstall.sh` を実行しても `.gitignore` の `.claude/worktrees/` の行は消えずに残ります（無害な1行）。もう一つの方式は「`install.sh --update` をそのまま実行し、smoke の `(install-gi) 03` の NG 1件を既知の失敗として受け入れる」（以下 A）で、install の手順には忠実ですが、以後の計画で smoke の `fail=0` を基準に持つタスクが止まります。B のままでよいですか（A にする場合は T-01 の受け入れ基準3・4を差し替えます）。なお原因は ai-harness 側（導入先で smoke を実行すると導入先の manifest の `gitignore` キーが一時導入先へ引き継がれる）にあるので、ai-harness へ Issue を起票するかどうかも合わせて決めてください（この計画の範囲には含めていません）。
+1. smoke の `(install-gi) 03` の扱い（B：`.gitignore` に `.claude/worktrees/` を手で先に追記してから `install.sh --update` を実行する／A：そのまま実行して NG 1件を受け入れる）。ai-harness へ Issue を起票するか → 回答：B で進める。ai-harness への Issue も登録する（Issue の起票はこの計画のタスクに含めず、オーケストレーターが計画の外で行う）
