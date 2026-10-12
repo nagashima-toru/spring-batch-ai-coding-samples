@@ -3,7 +3,9 @@ package com.example.batch.core.item;
 import java.nio.charset.Charset;
 
 import org.springframework.batch.infrastructure.item.file.FlatFileItemReader;
+import org.springframework.batch.infrastructure.item.file.LineMapper;
 import org.springframework.batch.infrastructure.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.infrastructure.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.core.io.Resource;
 
 /**
@@ -59,6 +61,44 @@ public final class CsvItemReaderFactory {
                 .delimited()
                 .names(columnNames)
                 .targetType(recordType)
+                .build();
+    }
+
+    /**
+     * 行番号付きで CSV ファイルを読み取る ItemReader を生成する。
+     *
+     * <p>{@link #create} と同じ設定（リスタート対応・strict・カンマ区切り）で、1行を
+     * {@link DelimitedLineTokenizer}（列数が合わない行は例外）でトークン化し、
+     * {@code mapper} に項目群と行番号を渡してレコードを生成する。行番号は {@code FlatFileItemReader} が
+     * 渡す値（ヘッダ行を含むファイル先頭からの行番号。ヘッダ1行をスキップすると最初のデータ行が2）をそのまま使う。
+     * 値はトリムしない（{@code FieldSet#readRawString} で取り出すこと）。</p>
+     *
+     * <p>トークン化・変換の例外は {@code FlatFileParseException} に包まれ、{@code BusinessSkipPolicy} で
+     * Skip 対象として扱える。</p>
+     *
+     * @param name        Reader 名（ExecutionContext のキーになるためジョブ内で一意にする）
+     * @param resource    入力ファイル
+     * @param charset     ファイルの文字コード
+     * @param linesToSkip 先頭スキップ行数（ヘッダ行がある場合は 1）
+     * @param columnNames CSV カラム名
+     * @param mapper      項目群と行番号からレコードを生成する関数
+     * @param <T>         レコード型
+     * @return リスタート対応の FlatFileItemReader
+     */
+    public static <T> FlatFileItemReader<T> createWithLineNumber(String name, Resource resource, Charset charset,
+            int linesToSkip, String[] columnNames, LineNumberedFieldSetMapper<T> mapper) {
+        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+        tokenizer.setNames(columnNames);
+        tokenizer.setStrict(true);
+        LineMapper<T> lineMapper = (line, lineNumber) -> mapper.mapFieldSet(tokenizer.tokenize(line), lineNumber);
+        return new FlatFileItemReaderBuilder<T>()
+                .name(name)
+                .resource(resource)
+                .encoding(charset.name())
+                .linesToSkip(linesToSkip)
+                .saveState(true)
+                .strict(true)
+                .lineMapper(lineMapper)
                 .build();
     }
 }

@@ -9,3 +9,8 @@ spring:
 logging:
   level:
     com.example.batch: INFO
+
+sample:
+  order-daily-sales:
+    input-dir: batch-sample/data/in
+    error-dir: batch-sample/data/error
