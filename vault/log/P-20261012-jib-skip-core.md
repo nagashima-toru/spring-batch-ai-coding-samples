@@ -4,3 +4,4 @@
 - 2026-10-12 23:38 T-01 doing→blocked attempt=1 creator=sonnet
 - 2026-10-13 00:13 T-01 amend 基準差し替え=4 人の回答: 基準4はミラー指定で確認する
 - 2026-10-13 00:13 T-01 amend 基準差し替え=4 基準4の確認コマンドをパイプ無しの形に直す
+- 2026-10-13 00:13 T-01 blocked→todo 人の指示: /plan unblock P-20261012-jib-skip-core T-01

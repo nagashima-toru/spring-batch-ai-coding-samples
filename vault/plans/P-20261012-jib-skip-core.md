@@ -18,7 +18,7 @@ GitHub Issue #55「CD の jib:build が batch-core で「Main class was not foun
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | blocked | 1 | - | batch-core の pom.xml に jib.skip=true を設定し CD の jib を batch-core でスキップさせる | Issue 再現コマンドの基準が、ベースイメージを取得できず満たせません。成果物の誤りではなく、ネットワーク側（Docker Hub の匿名プルの回数制限）が原因です。実行したコマンドは `./mvnw -B -ntp -pl batch-sample -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Djacoco.skip package jib:buildTar` です。batch-core は jib でスキップされて通過しましたが、batch-sample の jib:buildTar が `[ERROR] 429 Too Many Requests GET https://registry-1.docker.io/v2/library/eclipse-temurin/manifests/25-jre TOOMANYREQUESTS: You have reached your unauthenticated pull rate limit.` で失敗しました。このため `INFO. BUILD SUCCESS` は 0 件で、`batch-sample/target/jib-image.tar` もできていません。質問です。Docker Hub の認証情報を与えるか、制限が解けるまで待ってから、この基準だけ再実行してよいですか。または代わりにベースイメージを取得できる別の手段（ミラーなど）はありますか。他の基準は満たしています。 |
+| T-01 | todo | 0 | - | batch-core の pom.xml に jib.skip=true を設定し CD の jib を batch-core でスキップさせる | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
