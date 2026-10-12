@@ -17,7 +17,7 @@ git clone https://github.com/nagashima-toru/spring-batch-ai-coding-samples.git
 cd spring-batch-ai-coding-samples
 
 docker compose -f docker/compose.yaml up -d   # ローカルDB（PostgreSQL 16）
-./mvnw verify                                  # ビルド＋全テスト＋静的解析＋カバレッジ
+./mvnw clean verify                            # ビルド＋全テスト＋静的解析＋カバレッジ
 
 # サンプルジョブ実行（CSV取込）
 java -jar batch-sample/target/batch-sample-*.jar \
