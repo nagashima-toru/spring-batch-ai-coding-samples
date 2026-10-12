@@ -85,6 +85,13 @@ com.example.batch.sample/
 - 初期値は **100** とし、性能測定に基づいて調整する（設定で外部化し、コードに埋め込まない）
 - DB 読取は `MyBatisCursorItemReader`（カーソルフェッチ）を基本とし、全件メモリロードを禁止する
 
+### 3.4 ジョブパラメータの検証
+
+- 全ジョブに `JobParametersValidator` を設定し、必須・任意キーの検証は batch-core の `JobParametersValidators`（`required`・`requiredAndOptional`）を使う
+- `JobParametersValidators` の実体である Spring Batch 6 の `DefaultJobParametersValidator` は、必須キーの欠落だけを `InvalidJobParametersException` にし、未知のキーは WARN ログを出すだけで拒否しない（任意キーが空の `required` では未知のキーの検査自体を行わない）
+- 未知のキーの拒否が必要なジョブは、ジョブ側の個別の `JobParametersValidator` で拒否する（例：ORDER-001 の `OrderDailySalesJobParametersValidator`）。基盤部品を拒否する実装にしないのは、結合テストが `testRunId` などの補助キーを付けて `JobInstance` を分けているため
+- 書式・型の検査が要る時も同じ個別 Validator で行い、基盤部品の検証に委譲してから続ける
+
 ## 4. トランザクション方針
 
 - **Chunk Step**: Spring Batch 標準のチャンク単位コミットに従う。Writer 内で手動コミット・ロールバックを行わない

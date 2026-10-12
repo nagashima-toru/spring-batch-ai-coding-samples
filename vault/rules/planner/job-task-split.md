@@ -10,13 +10,14 @@
 - ジョブ1本は implementation → unit-test → integration-test → review-code → system-test の順の5タスクに分ける
 - 各タスクは `after` に直前の工程のタスク ID を書く。直列につなぎ、並行させない（先頭の implementation だけ `after` は空）
 - 各タスクの「成果物」のパスは、対応する工程の `.claude/skills/{工程}/SKILL.md` の「入力と出力」節と `docs/architecture.md` §2.1 に従って宣言する。パスの一覧はここに書き写さない
-- 全タスクの受け入れ基準に `./mvnw verify -DskipITs` の成功を入れる
-- 成果物に `*IT.java` を含むタスクだけ `./mvnw verify` の成功も入れる（結合テストは Docker が要るため）
+- 全タスクの受け入れ基準に、`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（全モジュールの Checkstyle・SpotBugs・単体テスト。カバレッジ不足ではビルドを止めない）と `./mvnw clean verify -DskipITs -pl batch-core`（batch-core のカバレッジ80%）の成功を入れる。`-DskipITs` の基準では batch-sample のカバレッジを判定しない
+- 成果物に `*IT.java` を含むタスクだけ `./mvnw clean verify` の成功も入れる（結合テストは Docker が要るため。batch-sample のカバレッジ80%はここで判定する）
+- ビルドの確認コマンドは、上のコマンドに `2>&1 | grep -c '^\[INFO\] BUILD SUCCESS$'` をつないだ出力が `1` になる形で書く
 - 要件定義〜設計レビュー（`requirements`・`basic-design`・`detail-design`・`review-design`）はハーネスのタスクにしない
 - 設計書と異なる実装が必要になりそうな点はタスクにせず `## 人への質問` に書く（`docs/development-guide.md` §5.5）
 
 ## 確認方法
 - 計画票のタスク表が5行で、`after` が上記の順に1本の鎖になっている（先頭以外の `after` が直前の ID だけ）
-- 各タスク票の受け入れ基準に `./mvnw verify -DskipITs` があり、`*IT.java` を成果物に持つタスクにだけ `./mvnw verify` もある
+- 各タスク票の受け入れ基準に `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と `./mvnw clean verify -DskipITs -pl batch-core` があり、`*IT.java` を成果物に持つタスクにだけ `./mvnw clean verify` もある
 - レビュー済みと確かめられない場合、タスクが無く `## 人への質問` に質問がある
 - 参照した節番号が `grep -n '^#' docs/development-guide.md docs/architecture.md` に見出しとして実在する

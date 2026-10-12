@@ -30,7 +30,7 @@
 
 - `OrderDailySalesJobParametersValidator`（`JobParametersValidator` を実装）は、まず
   `JobParametersValidators.requiredAndOptional(new String[]{"scheduledTime"}, new String[]{"targetDate", "inputFile", "errorFile"})`
-  に委譲し（未知のキーも拒否される）、続けて上表の書式・型を検証する
+  に委譲し、基盤部品が拒否しない未知のキーを許可キー以外として `InvalidJobParametersException` で拒否してから（方式設計 §3.4）、上表の書式・型を検証する
 - `targetDate` を型サフィックスなしの不正な日付文字列で渡した場合も「型が LocalDate でない」として検出する。
   `,java.time.LocalDate` 付きで日付に変換できない値を渡した場合は、起動時の JobParameters 変換で失敗する（基本設計書 §2 エラー処理）
 
@@ -353,3 +353,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-11 | 1.0 | 初版 |
 | 2026-10-11 | 1.1 | 設計レビュー指摘の反映: `OrderDailySalesRunParameters` を `@JobScope` Bean にせず各 `@StepScope` Bean で resolve を呼ぶ方式に変更（record はスコーププロキシ不可）／`@StepScope` のクラスを final にしない制約を明記／`beforeStep` を冪等にする（対応を空にしてから読み込む）と明記 |
 | 2026-10-12 | 1.2 | 結合テスト工程の指摘反映: §1 の `@StepScope` 注記を「継承元の public メソッドも final にしない」に直す（`ValidatingItemProcessorBase#process` から final を外した） |
+| 2026-10-12 | 1.3 | 基盤部品の挙動の訂正（Issue #42）: §1.1 の Validator の説明を「未知のキーは基盤部品ではなくこのクラスで拒否する」に直す（実装は変えない） |

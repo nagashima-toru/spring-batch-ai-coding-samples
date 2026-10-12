@@ -23,7 +23,8 @@ import org.springframework.batch.core.job.parameters.JobParametersValidator;
  *
  * <p><b>拡張ポイント:</b> 形式チェック（日付範囲等）が必要な場合は
  * {@link JobParametersValidator} をラムダで実装し、必須チェックと組み合わせて
- * ジョブ側で順に呼び出す。</p>
+ * ジョブ側で順に呼び出す。未知のキーの拒否が必要な場合も、ジョブ側の個別の Validator で行う
+ * （方式設計 §3.4）。</p>
  */
 public final class JobParametersValidators {
 
@@ -31,7 +32,10 @@ public final class JobParametersValidators {
     }
 
     /**
-     * 指定キーを必須とする Validator を生成する（未知のキーは許容しない）。
+     * 指定キーを必須とする Validator を生成する。
+     *
+     * <p>未知のキーは拒否しない（Spring Batch 6 の {@code DefaultJobParametersValidator} は
+     * 任意キーが空だと未知のキーを検査しない）。</p>
      *
      * @param requiredKeys 必須パラメータ名
      * @return Validator
@@ -42,6 +46,8 @@ public final class JobParametersValidators {
 
     /**
      * 必須キーと任意キーを指定する Validator を生成する。
+     *
+     * <p>未知のキーは拒否しない（WARN ログを出すだけ）。</p>
      *
      * @param requiredKeys 必須パラメータ名
      * @param optionalKeys 任意パラメータ名

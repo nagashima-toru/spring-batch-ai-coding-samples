@@ -42,6 +42,29 @@ docker compose -f docker/compose.yaml up -d
   -Dspring-boot.run.arguments="--spring.batch.job.name=sample01CsvImportJob importDate=2026-07-14,java.time.LocalDate"
 ```
 
+### 1.4 クラウド環境での準備
+
+Claude Code on the web などのクラウド環境では、JDK 25 と Docker デーモンが既定で用意されないことがある。環境の setup script かセッションの最初に次を実行する（x64 の Linux を前提にしている）。
+
+```bash
+#!/usr/bin/env bash
+# JDK 25（Temurin）と Docker デーモンを用意する
+set -euo pipefail
+if [ ! -x /opt/jdk-25/bin/java ]; then
+  mkdir -p /opt/jdk-25
+  curl -fsSL "https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse" \
+    | tar -xz -C /opt/jdk-25 --strip-components=1
+fi
+# ./mvnw は ~/.mavenrc の JAVA_HOME を使う（PATH の java が 25 でなくてもよい）
+printf 'JAVA_HOME=/opt/jdk-25\nexport JAVA_HOME\n' > ~/.mavenrc
+if ! docker info >/dev/null 2>&1; then
+  nohup dockerd >/tmp/dockerd.log 2>&1 &
+  for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
+fi
+./mvnw -v
+docker info --format '{{.ServerVersion}}'
+```
+
 ## 2. 開発の進め方（工程と Skills）
 
 各工程は Claude Code の Skill として定義されている。**前工程の成果物（Markdown）を入力とし、次工程の成果物を生成する**ことでドキュメントが連鎖し、設計書が常に SSoT となる。
@@ -141,7 +164,7 @@ detail-design・review-design）は従来どおり人と Skills で対話して�
 | 対象工程 | basic-design〜system-test と PR 作成 | implementation〜system-test（要件定義〜設計レビューは人と Skills で対話して進める） |
 | 開始の前提 | 確定済みの requirements.md | レビュー済みの詳細設計書 |
 | 判断が要る時 | 主エージェントへの報告とモデル昇格（§5.3） | creator が `[Ask]` などを blocked にし、人が `/plan unblock` で答える |
-| 検証のしかた | 各工程内の検証ループ（§5） | creator と別の verifier が受け入れ基準（`./mvnw verify -DskipITs`、結合テストを含むタスクは `./mvnw verify`）で判定する |
+| 検証のしかた | 各工程内の検証ループ（§5） | creator と別の verifier が受け入れ基準（`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と `./mvnw clean verify -DskipITs -pl batch-core`、結合テストを含むタスクは `./mvnw clean verify`）で判定する。`-DskipITs` の基準では batch-sample のカバレッジを判定しない |
 
 ハーネスでは1計画で1ジョブを扱い、implementation・unit-test・integration-test・review-code・
 system-test の5工程のタスクに分ける。分け方と各工程のルールは `vault/rules/`
@@ -267,3 +290,4 @@ flowchart LR
 | 「A job instance already exists and is complete」 | 成功済みジョブと同一パラメータで再実行している（`docs/architecture.md` §6.1 の正常挙動）。業務パラメータを変えるか、テストなら DB を初期化する |
 | ローカルDB の状態を初期化したい | `docker compose -f docker/compose.yaml down -v && docker compose -f docker/compose.yaml up -d` |
 | Checkstyle/SpotBugs 違反でビルド失敗 | `target/site` のレポートを確認し修正する。抑止が妥当な場合のみ理由コメント付きで除外設定へ追加 |
+| クラウド環境で `./mvnw` が JDK 25 以外で動く、または `docker info` が失敗する | §1.4 の準備スクリプトを実行する |

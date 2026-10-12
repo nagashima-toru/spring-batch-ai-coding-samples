@@ -28,6 +28,29 @@ class JobParametersValidatorsTest {
     }
 
     @Test
+    void 必須キーのみ指定で未知のキーがある場合＿検証を通過する() {
+        JobParametersValidator validator = JobParametersValidators.required("importDate");
+        JobParameters params = new JobParametersBuilder()
+                .addString("importDate", "2026-07-14")
+                .addString("unknownKey", "x")
+                .toJobParameters();
+
+        assertThatCode(() -> validator.validate(params)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void 必須と任意を指定し未知のキーがある場合＿検証を通過する() {
+        JobParametersValidator validator = JobParametersValidators.requiredAndOptional(
+                new String[] {"importDate"}, new String[] {"dryRun"});
+        JobParameters params = new JobParametersBuilder()
+                .addString("importDate", "2026-07-14")
+                .addString("unknownKey", "x")
+                .toJobParameters();
+
+        assertThatCode(() -> validator.validate(params)).doesNotThrowAnyException();
+    }
+
+    @Test
     void 任意パラメータは無くても検証を通過する() {
         JobParametersValidator validator = JobParametersValidators.requiredAndOptional(
                 new String[] {"importDate"}, new String[] {"dryRun"});
