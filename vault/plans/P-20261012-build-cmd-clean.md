@@ -1,6 +1,6 @@
 ---
 id: P-20261012-build-cmd-clean
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #45「工程 Skill と PR テンプレートのビルドコマンドも clean 付き・カバレッジ判定の分離にそろえる（#44 の残り）」を解消する。
