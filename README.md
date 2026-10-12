@@ -63,3 +63,20 @@ echo $?   # 0=正常 / 2=警告(Skipあり) / 1=異常
 タグ `v*` の push で ECR push＋ECS タスク定義更新が動きます。AWS 側（OIDC・IAM・ECR・
 ECS・EventBridge）と GitHub Environments の設定手順は **[docs/aws-setup.md](docs/aws-setup.md)**
 を参照してください。
+
+## ライセンス
+
+[MIT License](LICENSE) の下で公開しています。Copyright (c) 2026 Toru Nagashima
+
+## コントリビュート
+
+- 不具合報告・質問は Issue で受け付けます
+- Pull Request は事前に Issue で相談したうえで受け付けます
+- 対応や回答は保証しません（個人で保守している雛形のためです）
+
+## 注意事項
+
+- `docs/aws-setup.md` の AWS アカウント ID（`123456789012`）・ARN は例示値です。実際の値に置き換えて使ってください
+- 本リポジトリは学習・雛形用のサンプルで、無保証です（LICENSE のとおり）
+- ローカル用の DB パスワード（`docker/compose.yaml`・`application-local.yml`）はローカル専用の固定値です。本番系は Secrets Manager / SSM から環境変数で注入してください
+- `vault/` は AI 協働ハーネスの作業領域（計画票・タスク票など）で、雛形の利用には不要です
