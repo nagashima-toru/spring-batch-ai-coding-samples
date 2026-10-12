@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_order_daily_sales.OrderDetailWorkMapper">
+
+    <!-- ORDER-001 Step 3: ワークを空にする（PostgreSQL の TRUNCATE はトランザクショナル） -->
+    <update id="truncate">
+        TRUNCATE TABLE app.order_detail_work
+    </update>
+
+    <!-- ORDER-001 Step 4 Writer: ワークへ1行登録する。ON CONFLICT は付けない（重複は設計上起きず、起きたら異常終了） -->
+    <insert id="insert" parameterType="com.example.batch.sample.job_order_daily_sales.OrderDetailWork">
+        INSERT INTO app.order_detail_work (
+            order_no, line_no, order_date, store_code, item_code, quantity, unit_price, amount, line_seq, created_at
+        )
+        VALUES (
+            #{orderNo}, #{lineNo}, #{orderDate}, #{storeCode}, #{itemCode}, #{quantity}, #{unitPrice}, #{amount},
+            #{lineSeq}, now()
+        )
+    </insert>
+
+    <!-- ORDER-001 Step 4 beforeStep: 既出キーの復元用。ResultHandler で1行ずつ受け取る（全件をリストに載せない） -->
+    <select id="selectKeys" resultType="com.example.batch.sample.job_order_daily_sales.OrderKey">
+        SELECT order_no, line_no, line_seq
+          FROM app.order_detail_work
+    </select>
+
+</mapper>

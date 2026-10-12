@@ -11,13 +11,24 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param chunkSize チャンクサイズ（性能測定に基づき環境別に調整する）
  * @param skipLimit Skip 上限件数
- * @param job05     サンプル05（API連携）の設定
+ * @param job05           サンプル05（API連携）の設定
+ * @param orderDailySales 受注CSV取込・日次売上集計（ORDER-001）の設定
  */
 @ConfigurationProperties("sample")
 public record SampleProperties(
         @DefaultValue("100") int chunkSize,
         @DefaultValue("10") int skipLimit,
-        Job05 job05) {
+        Job05 job05,
+        OrderDailySales orderDailySales) {
+
+    /**
+     * 受注CSV取込・日次売上集計（ORDER-001）のファイル配置設定。
+     *
+     * @param inputDir 受注CSVの既定ディレクトリ
+     * @param errorDir エラーファイルの既定ディレクトリ
+     */
+    public record OrderDailySales(String inputDir, String errorDir) {
+    }
 
     /**
      * サンプル05の外部API設定。
