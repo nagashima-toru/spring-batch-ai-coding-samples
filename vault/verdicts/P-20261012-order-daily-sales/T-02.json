@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-order-daily-sales/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 10:37",
+  "criteria": [
+    {"text": "`./mvnw verify -DskipITs` が終了コード0で、末尾に `BUILD SUCCESS` が出る（カバレッジ80%を含む）", "ok": true, "note": "実行コマンド: `./mvnw verify -DskipITs -o -q`（worktree） / 出力: batch-core は通過、batch-sample は Checkstyle・テスト通過後に jacoco:check (coverage-check) が失敗し BUILD FAILURE 相当。基準の文面どおりでは未達だが、タスク票『決定済み』の /plan unblock 回答（2026-10-12）が T-02 の基準を『全モジュールの Checkstyle・SpotBugs・単体テストと batch-core のカバレッジ通過まで。batch-sample のカバレッジは判定しない』に改めているため、改訂後の基準で判定し、その範囲は満たす。基準が判定不能：本文の『BUILD SUCCESS・カバレッジ80%を含む』と unblock 回答が食い違う（基準文面の更新が必要）"},
+    {"text": "7つのテストクラスが実行されている（sample 側 grep -c が 5、core 側 grep -c が 2）", "ok": true, "note": "実行コマンド: 基準の ls|grep -c を worktree で実行 / 出力: sample=5, core=2。core の CsvHeaderCheckTaskletTest 12件・CsvItemReaderFactoryTest 7件 Failures 0"},
+    {"text": "詳細設計書 §7「単体テスト」の6項目に挙がった観点のそれぞれに、対応するテストメソッドがある", "ok": true, "note": "確認方法: ORDER-001.md §7 の6項目と タスク票『進捗』の観点表を突き合わせ、テストクラスを grep/Read。resolve・Validator（未知キー拒否の実装修正含む）・Processor（境界値/重複/beforeStep/amount）・HeaderCheck・createWithLineNumber・業務Tasklet2つ全て対応メソッドあり"},
+    {"text": "テストメソッド名が `docs/coding-standards.md` §7 のとおり日本語の「条件＿期待結果」である", "ok": true, "note": "参照ルール: vault/rules/common/project-docs.md。実行コマンド: @Test 直後の void 行のうち ＿ を含まないものを grep / 出力: CsvItemReaderFactoryTest の既存2件（ヘッダ付きCSVをレコード型へ…、カラム数が不正な行は…）のみ。タスク票で『既存テストは消さない・弱めない』とされた既存分で、新規は全て条件＿期待結果"},
+    {"text": "検証を弱めていない。`grep -rn '@Disabled' ...` の出力が空", "ok": true, "note": "実行コマンド: 基準の grep -rn '@Disabled' / 出力: 空。git diff main の pom.xml・batch-core/pom.xml・batch-sample/pom.xml・config は差分なし"}
+  ],
+  "reasons": ["基準が判定不能：1行目の『BUILD SUCCESS（カバレッジ80%を含む）』は batch-sample の JaCoCo 未達で満たせず、unblock 回答（batch-sample のカバレッジは T-03 以降で判定）と食い違う。回答に従い PASS とした"]
+}
