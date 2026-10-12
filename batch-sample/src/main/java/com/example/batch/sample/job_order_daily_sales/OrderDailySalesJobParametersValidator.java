@@ -3,7 +3,10 @@ package com.example.batch.sample.job_order_daily_sales;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.batch.core.job.parameters.InvalidJobParametersException;
 import org.springframework.batch.core.job.parameters.JobParameter;
@@ -23,10 +26,15 @@ public class OrderDailySalesJobParametersValidator implements JobParametersValid
 
     private static final String SCHEDULED_TIME = "scheduledTime";
     private static final String TARGET_DATE = "targetDate";
-    private static final Set<String> ALLOWED_KEYS = Set.of(SCHEDULED_TIME, TARGET_DATE, "inputFile", "errorFile");
+    private static final String[] REQUIRED_KEYS = {SCHEDULED_TIME};
+    private static final String[] OPTIONAL_KEYS = {TARGET_DATE, "inputFile", "errorFile"};
 
-    private final JobParametersValidator delegate = JobParametersValidators.requiredAndOptional(
-            new String[] {SCHEDULED_TIME}, new String[] {TARGET_DATE, "inputFile", "errorFile"});
+    /** 許可するキー（必須＋任意）。未知のキーの拒否に使う。 */
+    private static final Set<String> ALLOWED_KEYS = Stream.concat(Arrays.stream(REQUIRED_KEYS),
+            Arrays.stream(OPTIONAL_KEYS)).collect(Collectors.toUnmodifiableSet());
+
+    private final JobParametersValidator delegate =
+            JobParametersValidators.requiredAndOptional(REQUIRED_KEYS, OPTIONAL_KEYS);
 
     @Override
     public void validate(JobParameters parameters) throws InvalidJobParametersException {
