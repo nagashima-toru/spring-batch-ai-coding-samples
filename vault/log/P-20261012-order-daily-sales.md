@@ -24,3 +24,4 @@
 - 2026-10-12 11:00 T-03 doing→review attempt=1 creator=sonnet
 - 2026-10-12 11:03 T-03 review→done attempt=1 verifier=sonnet
 - 2026-10-12 11:03 T-04 todo→doing attempt=1
+- 2026-10-12 11:45 T-04 doing→doing attempt=2 中断から再開（API 利用上限で creator が停止）
