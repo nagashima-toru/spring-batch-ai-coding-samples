@@ -1,0 +1,15 @@
+{
+  "task": "P-20261012-make-repo-public/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 14:17",
+  "criteria": [
+    {"text": "README に3つの節がこの順で末尾に追加されている。確認：`grep -nE '^## ' README.md | tail -3` の出力の3行の見出しが上から `## ライセンス`・`## コントリビュート`・`## 注意事項`", "ok": true, "note": "実行コマンド: `grep -nE '^## ' README.md | tail -3`（worktree の README.md） / 出力: 67:## ライセンス / 71:## コントリビュート / 77:## 注意事項"},
+    {"text": "ライセンス節が LICENSE へのリンクと著作権者の表記を持つ。確認：`grep -cE '^\\[MIT License\\]\\(LICENSE\\) の下で公開しています。Copyright \\(c\\) 2026 Toru Nagashima$' README.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "リンク先の LICENSE が存在する。確認：`git ls-files --others --cached --exclude-standard -- LICENSE` の出力が `LICENSE`", "ok": true, "note": "実行コマンド: `git ls-files --others --cached --exclude-standard -- LICENSE` / 出力: LICENSE"},
+    {"text": "コントリビュート節が Issue 先行の PR 方針を書いている。確認：`grep -cF 'Pull Request は事前に Issue で相談したうえで受け付けます' README.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -cF / 出力: 1。節内に当該行を目視確認"},
+    {"text": "注意事項節が AWS の値が例示値であることを書いている。確認：`` grep -cE '^- `docs/aws-setup\\.md` の AWS アカウント ID（`123456789012`）・ARN は例示値です' README.md `` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -cE / 出力: 1。注意事項節内の行であることを tail で確認"},
+    {"text": "README のバッククォート内のパスがすべて存在する。確認：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"}
+  ],
+  "reasons": []
+}
