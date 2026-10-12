@@ -1,6 +1,6 @@
 ---
 id: P-20261013-amend-criterion-pipe
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #57「amend_task.py の --replace-criterion が受け入れ基準の | を ／ に置き換え、確認コマンドのパイプが壊れる」を解消する。
