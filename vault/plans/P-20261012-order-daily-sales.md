@@ -18,7 +18,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
 | T-02 | done | 1 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
-| T-03 | doing | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
+| T-03 | blocked | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | 結合テストで実装の不具合が見つかりました。`OrderDailySalesJobIT` を作りましたが、Step 4 を通るテストが `ValidatingItemProcessorBase#process` の NullPointerException で FAILED になります。修正してよいか、どこで直すかを決めてください。決定済みにある「src/main は変えない。不具合は直さず blocked」に従い、修正はしていません。【症状】Step 4 の Processor 呼び出しで `NullPointerException: Cannot invoke "jakarta.validation.Validator.validate(...)" because "this.validator" is null` が出ます（`ValidatingItemProcessorBase.process:54`）。原因の推定: `batch-core` の `ValidatingItemProcessorBase#process` が `public final` です。`@StepScope` の `orderDailySalesProcessor` は CGLIB のスコーププロキシになり、final メソッドは横取りできず、フィールドが初期化されていないプロキシ本体で実行されます。詳細設計書 §1 の「`@StepScope` で生成するクラスは final にしない」は `OrderItemProcessor` クラス自体にしか効いておらず、継承元の final メソッドは対象外でした。【影響】正常・警告・洗い替え・リスタートの4件が FAILED。skipLimit 超過と Step 5 の一意制約違反は Step 4 の NPE で先に FAILED になるだけで本来の原因での検証になっておらず、修正後に再確認が必要。【修正案】(a) `batch-core` の `ValidatingItemProcessorBase#process` から `final` を外す、またはプロキシ越しでも動くよう `validator` の持ち方を変える。(b) `orderDailySalesProcessor` を `@StepScope` にしない（設計書の Bean 一覧とリスタート時の状態管理の方針が変わるため設計書の改訂が先）。【テストの状態】OrderDailySalesJobIT は §7 の10観点＋型不正1本の計12メソッド。`./mvnw verify` は 37 件中 4 件失敗で終了コード 1。 |
 | T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
 | T-05 | todo | 0 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
 
