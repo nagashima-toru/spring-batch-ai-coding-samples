@@ -22,7 +22,9 @@ description: ジョブ単位の結合テスト（Testcontainers + Spring Batch T
 1. `docker info` で Docker が起動していることを確認する（未起動ならユーザーに起動を依頼）
 2. 詳細設計書のエラー処理設計・リラン設計から、下表の検証観点ごとにテストケースを洗い出す
 3. 既存 IT の型（下記「テストの構成」）に従って実装する
-4. **検証ループ**: `./mvnw verify` を実行する。失敗したら
+4. **検証ループ**: `./mvnw clean verify` を実行する（`clean` は `target/` に残った
+   JaCoCo の実行データで結果が変わらないようにするために付ける。batch-sample のカバレッジ80%は
+   この工程の `./mvnw clean verify` で判定する）。失敗したら
    `{module}/target/failsafe-reports/` を読み、原因が**テストコード / 実装 /
    テストデータ・コンテナ設定**のどれかを判定してから修正し再実行する（最大3ラウンド）
    - `Could not find a valid Docker environment` は修正ループの対象外。即ユーザーに
@@ -55,7 +57,9 @@ description: ジョブ単位の結合テスト（Testcontainers + Spring Batch T
 
 ## 注意
 
-- Docker が必要（`./mvnw verify`。急ぎのビルドは `-DskipITs`）
+- Docker が必要なのは `./mvnw clean verify`。Docker なしで確かめる時は
+  `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と
+  `./mvnw clean verify -DskipITs -pl batch-core` を使う。`-DskipITs` では batch-sample のカバレッジを判定しない
 - アサーションは「件数」だけでなく代表レコードの**値**まで検証する（変換ロジックの通し確認）
 - 検証で `Thread.sleep` を使わない（ジョブ起動は同期実行なので不要）
 - メタデータの永続化検証が必要な場合は `batch.batch_*` テーブルを直接参照してよい
