@@ -11,3 +11,4 @@
 - 2026-10-12 10:18 T-02 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a20701116a8ea50b4 branch=worktree-agent-a20701116a8ea50b4 plan_head=b5b795ad31a29269f7d74830b03a920a1dc8146a
 - 2026-10-12 10:18 T-02 doing→blocked attempt=1 creator=sonnet
 - 2026-10-12 10:20 T-02 blocked→todo 人の指示: /plan unblock P-20261012-order-daily-sales T-02
+- 2026-10-12 10:29 T-02 todo→doing attempt=1
