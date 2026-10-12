@@ -6,3 +6,5 @@
 - 2026-10-13 00:13 T-01 amend 基準差し替え=4 基準4の確認コマンドをパイプ無しの形に直す
 - 2026-10-13 00:13 T-01 blocked→todo 人の指示: /plan unblock P-20261012-jib-skip-core T-01
 - 2026-10-13 00:13 T-01 todo→doing attempt=1 worktree を引き継ぎ
+- 2026-10-13 00:14 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-af3d4bdba28b278f3 branch=worktree-agent-af3d4bdba28b278f3 plan_head=1ff06324978ab4183aa9f7bed2956bd7aee0dfe0
+- 2026-10-13 00:14 T-01 doing→review attempt=1 creator=sonnet
