@@ -97,6 +97,8 @@
 - **`@StepScope` で生成するクラスは final にしない**（record も不可）。スコーププロキシがクラスを継承して作られるため。
   本案件で新規作成する対象は `CsvHeaderCheckTasklet`（batch-core）・`OrderItemProcessor`・`OrderDailySalesReplaceTasklet`。
   Bean メソッドの戻り値の型は具象クラスにする（プロキシが `StepExecutionListener` 等のインタフェースも実装するように）
+  継承元の public メソッド（`ValidatingItemProcessorBase#process` など）も final にしない（final だとプロキシが上書きできず、
+  プロキシ経由の呼び出しで target の状態が使われない）
 
 ## 2. Step 詳細設計
 
@@ -350,3 +352,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 |---|---|---|
 | 2026-10-11 | 1.0 | 初版 |
 | 2026-10-11 | 1.1 | 設計レビュー指摘の反映: `OrderDailySalesRunParameters` を `@JobScope` Bean にせず各 `@StepScope` Bean で resolve を呼ぶ方式に変更（record はスコーププロキシ不可）／`@StepScope` のクラスを final にしない制約を明記／`beforeStep` を冪等にする（対応を空にしてから読み込む）と明記 |
+| 2026-10-12 | 1.2 | 結合テスト工程の指摘反映: §1 の `@StepScope` 注記を「継承元の public メソッドも final にしない」に直す（`ValidatingItemProcessorBase#process` から final を外した） |
