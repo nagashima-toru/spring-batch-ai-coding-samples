@@ -18,7 +18,7 @@ GitHub Issue #52「README・CLAUDE.md・development-guide §1 のよく使うコ
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | README.md のクイックスタートのビルドコマンドを clean 付きにする | |
 | T-02 | done | 1 | - | CLAUDE.md の「ビルド・実行コマンド」を3コマンドの使い分けにそろえる | |
-| T-03 | todo | 0 | T-01, T-02 | docs/development-guide.md §1.2・§1.3 のコマンドをそろえ、全体に残りが無いことを確かめる | |
+| T-03 | doing | 1 | T-01, T-02 | docs/development-guide.md §1.2・§1.3 のコマンドをそろえ、全体に残りが無いことを確かめる | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
