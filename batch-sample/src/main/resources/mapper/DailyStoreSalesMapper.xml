@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_order_daily_sales.DailyStoreSalesMapper">
+
+    <!-- ORDER-001 Step 5-2: 対象日の日次売上集計を削除する -->
+    <delete id="deleteBySalesDate">
+        DELETE FROM app.daily_store_sales
+         WHERE sales_date = #{targetDate}
+    </delete>
+
+    <!-- ORDER-001 Step 5-4: 対象日の受注明細を店舗ごとに集計して登録する（受注件数は受注番号の重複を除く） -->
+    <insert id="insertAggregate">
+        INSERT INTO app.daily_store_sales (
+            sales_date, store_code, order_count, line_count, total_quantity, total_amount, created_at
+        )
+        SELECT order_date, store_code, COUNT(DISTINCT order_no), COUNT(*), SUM(quantity), SUM(amount), now()
+          FROM app.order_detail
+         WHERE order_date = #{targetDate}
+         GROUP BY order_date, store_code
+    </insert>
+
+</mapper>

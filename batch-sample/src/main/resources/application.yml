@@ -47,3 +47,6 @@ sample:
       page-size: 100
       # ローカル以外は Secrets Manager から環境変数注入
       token: ${SAMPLE05_API_TOKEN:local-dummy-token}
+  order-daily-sales:
+    input-dir: /data/in
+    error-dir: /data/error

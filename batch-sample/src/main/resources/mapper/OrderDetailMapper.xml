@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.sample.job_order_daily_sales.OrderDetailMapper">
+
+    <!-- ORDER-001 Step 5-1: 対象日の受注明細を削除する -->
+    <delete id="deleteByOrderDate">
+        DELETE FROM app.order_detail
+         WHERE order_date = #{targetDate}
+    </delete>
+
+    <!-- ORDER-001 Step 5-3: ワークの全行を受注明細へ登録する（line_seq は引き継がない。created_at はワークの値） -->
+    <insert id="insertFromWork">
+        INSERT INTO app.order_detail (
+            order_no, line_no, order_date, store_code, item_code, quantity, unit_price, amount, created_at
+        )
+        SELECT order_no, line_no, order_date, store_code, item_code, quantity, unit_price, amount, created_at
+          FROM app.order_detail_work
+    </insert>
+
+</mapper>
