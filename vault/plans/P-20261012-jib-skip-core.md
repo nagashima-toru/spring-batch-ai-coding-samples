@@ -1,6 +1,6 @@
 ---
 id: P-20261012-jib-skip-core
-status: approved
+status: done
 ---
 # ゴール
 
