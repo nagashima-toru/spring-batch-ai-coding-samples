@@ -3,6 +3,7 @@ package com.example.batch.sample.job_order_daily_sales;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.Set;
 
 import org.springframework.batch.core.job.parameters.InvalidJobParametersException;
 import org.springframework.batch.core.job.parameters.JobParameter;
@@ -22,6 +23,7 @@ public class OrderDailySalesJobParametersValidator implements JobParametersValid
 
     private static final String SCHEDULED_TIME = "scheduledTime";
     private static final String TARGET_DATE = "targetDate";
+    private static final Set<String> ALLOWED_KEYS = Set.of(SCHEDULED_TIME, TARGET_DATE, "inputFile", "errorFile");
 
     private final JobParametersValidator delegate = JobParametersValidators.requiredAndOptional(
             new String[] {SCHEDULED_TIME}, new String[] {TARGET_DATE, "inputFile", "errorFile"});
@@ -29,6 +31,13 @@ public class OrderDailySalesJobParametersValidator implements JobParametersValid
     @Override
     public void validate(JobParameters parameters) throws InvalidJobParametersException {
         delegate.validate(parameters);
+
+        // Spring Batch 6 の DefaultJobParametersValidator は未知のキーを拒否しないため、ここで明示的に拒否する
+        for (String key : parameters.parameters().stream().map(JobParameter::name).toList()) {
+            if (!ALLOWED_KEYS.contains(key)) {
+                throw new InvalidJobParametersException("未知のジョブパラメータです: " + key);
+            }
+        }
 
         JobParameter<?> scheduledTime = parameters.getParameter(SCHEDULED_TIME);
         if (scheduledTime == null || !(scheduledTime.value() instanceof String text)) {
