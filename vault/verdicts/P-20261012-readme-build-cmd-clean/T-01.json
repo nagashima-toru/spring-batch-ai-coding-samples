@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-readme-build-cmd-clean/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 19:05",
+  "criteria": [
+    {"text": "README.md に clean の無い `./mvnw verify` が残っていない（`grep -c 'mvnw verify' README.md` が `0`）", "ok": true, "note": "実行コマンド: `grep -c 'mvnw verify' README.md`（worktree内） / 出力: 0"},
+    {"text": "README.md に、行頭が `./mvnw clean verify` で、その後に空白とコメント（`#`）だけが続く行がちょうど1行ある（`grep -c '^./mvnw clean verify *#' README.md` が `1`）", "ok": true, "note": "実行コマンド: `grep -c '^./mvnw clean verify *#' README.md` / 出力: 1"},
+    {"text": "README.md のクイックスタートのコードブロックに `docker compose -f docker/compose.yaml up -d` と `java -jar batch-sample/target/batch-sample-*.jar` の行が残っている（`grep -c 'docker compose -f docker/compose.yaml up -d' README.md` と `grep -c 'java -jar batch-sample/target/batch-sample-' README.md` がそれぞれ `1` 以上）", "ok": true, "note": "実行コマンド: 両grep -c / 出力: 1 と 1。diffでも該当行は変更なし"},
+    {"text": "バッククォート内のパスがすべて存在する（`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1`）", "ok": true, "note": "実行コマンド: `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '`（worktree内） / 出力: 1"},
+    {"text": "変更したのが README.md である（`git diff --merge-base work/p-20261012-readme-build-cmd-clean --name-only` の出力に `README.md` が含まれる）", "ok": true, "note": "実行コマンド: `git diff --merge-base work/p-20261012-readme-build-cmd-clean --name-only` / 出力: README.md と vault/tasks/.../T-01.md（進捗追記）。README.mdの差分は ./mvnw verify を ./mvnw clean verify に変えた1行のみ"}
+  ],
+  "reasons": []
+}

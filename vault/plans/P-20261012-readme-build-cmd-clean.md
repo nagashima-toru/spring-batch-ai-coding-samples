@@ -16,7 +16,7 @@ GitHub Issue #52「README・CLAUDE.md・development-guide §1 のよく使うコ
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | review | 1 | - | README.md のクイックスタートのビルドコマンドを clean 付きにする | |
+| T-01 | done | 1 | - | README.md のクイックスタートのビルドコマンドを clean 付きにする | |
 | T-02 | review | 1 | - | CLAUDE.md の「ビルド・実行コマンド」を3コマンドの使い分けにそろえる | |
 | T-03 | todo | 0 | T-01, T-02 | docs/development-guide.md §1.2・§1.3 のコマンドをそろえ、全体に残りが無いことを確かめる | |
 
