@@ -23,7 +23,7 @@ P-20261012-harness-build-criteria（#42・#44）でハーネスの受け入れ�
 | T-01 | done | 1 | - | unit-test Skill のビルドコマンドを clean 付き・カバレッジ判定の分離にそろえる | |
 | T-02 | done | 1 | - | integration-test Skill のビルドコマンドを clean 付き・カバレッジ判定の分離にそろえる | |
 | T-03 | done | 1 | - | review-code Skill とチェックリストのビルドコマンドを clean 付きにそろえる | |
-| T-04 | review | 1 | - | sdd-pipeline Skill のビルドコマンドを clean 付きにそろえる | |
+| T-04 | done | 1 | - | sdd-pipeline Skill のビルドコマンドを clean 付きにそろえる | |
 | T-05 | done | 1 | - | PR テンプレート（既定・実装 PR 用）のビルドコマンドを clean 付きにそろえる | |
 | T-06 | todo | 0 | T-01,T-02,T-03,T-04,T-05 | development-guide の §3・§4 のビルドコマンドを clean 付きにそろえ、ゴール範囲の残存を確かめる | |
 
