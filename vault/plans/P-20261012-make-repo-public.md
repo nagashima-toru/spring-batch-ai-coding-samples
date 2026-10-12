@@ -1,6 +1,6 @@
 ---
 id: P-20261012-make-repo-public
-status: approved
+status: done
 ---
 # ゴール
 このリポジトリ（nagashima-toru/spring-batch-ai-coding-samples、現在 private）を public にするための、リポジトリ側の準備を整える。可視性の切り替え（GitHub の Settings での操作）そのものは不可逆な外部操作なのでタスクにせず、人が PR マージ後に行う手順として公開手順チェックリストに書くにとどめる。
