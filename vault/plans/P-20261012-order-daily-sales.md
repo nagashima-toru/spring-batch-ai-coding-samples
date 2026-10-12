@@ -1,6 +1,6 @@
 ---
 id: P-20261012-order-daily-sales
-status: approved
+status: done
 ---
 # ゴール
 docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み）の ORDER-001 を implementation〜system-test のタスクに分けて実装・検証する
