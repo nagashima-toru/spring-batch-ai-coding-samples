@@ -4,3 +4,5 @@
 - 2026-10-12 17:45 T-01 doing→blocked attempt=1 creator=sonnet
 - 2026-10-12 17:49 T-01 blocked→todo 人の指示: /plan unblock P-20261012-harness-update T-01
 - 2026-10-12 17:53 T-01 todo→doing attempt=1
+- 2026-10-12 17:55 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a1154d1f61f4f37fa branch=worktree-agent-a1154d1f61f4f37fa plan_head=8d5eee79c73df3dbdd691e0d58152d741afe799d
+- 2026-10-12 17:55 T-01 doing→review attempt=1 creator=sonnet
