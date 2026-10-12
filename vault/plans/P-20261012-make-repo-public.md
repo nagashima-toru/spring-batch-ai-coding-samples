@@ -1,6 +1,6 @@
 ---
 id: P-20261012-make-repo-public
-status: draft
+status: approved
 ---
 # ゴール
 このリポジトリ（nagashima-toru/spring-batch-ai-coding-samples、現在 private）を public にするための、リポジトリ側の準備を整える。可視性の切り替え（GitHub の Settings での操作）そのものは不可逆な外部操作なのでタスクにせず、人が PR マージ後に行う手順として公開手順チェックリストに書くにとどめる。
@@ -17,7 +17,7 @@ status: draft
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | todo | 0 | - | 機密・個人・内部情報の棚卸しレポート（作業ツリーと git 履歴・リモートの ref） | |
-| T-02 | todo | 0 | - | LICENSE（Apache License 2.0 の原文）を追加する | |
+| T-02 | todo | 0 | - | LICENSE（MIT License）を追加する | |
 | T-03 | todo | 0 | T-02 | README に ライセンス・コントリビュート・注意事項 の節を追記する | |
 | T-04 | todo | 0 | T-01 | GitHub 設定・CI の確認結果を含む公開手順チェックリストを docs に作る | |
 
@@ -33,8 +33,8 @@ status: draft
 - `pom.xml` の `<licenses>` 要素の追加（Maven のメタデータにライセンスを載せる。今回のゴールには不要なので含めない）
 - `SECURITY.md`・`CONTRIBUTING.md`・Issue テンプレートの整備（README のコントリビュート節で足りなくなった時に起こす）
 
-## 人への質問
-1. ライセンス種別は Apache License 2.0 でよいか（案。理由：Spring Boot / Spring Batch 自体が Apache-2.0 で、雛形を案件へ流用する利用者に馴染みがあり特許条項も持つ）。MIT にする場合は T-02 の成果物・受け入れ基準（原文の sha256）と T-03 の README の表記を承認前に書き換える
-2. 著作権者の表記は `Copyright 2026 Toru Nagashima`（git のコミット作成者名と最初のコミットの年 2026）でよいか。README のライセンス節に書く（Apache-2.0 の LICENSE は原文のまま置き、付録の雛形は埋めない）
-3. コントリビュート方針は「Issue での不具合報告・質問を受け付ける。Pull Request は事前に Issue で相談したうえで受け付ける。対応や回答は保証しない」でよいか（T-03 の決定済みにこの方針を書いてある）
-4. git の履歴は書き換えない前提でよいか。事前の調べでは、公開すると次のものが誰でも見られるようになる：コミットの作成者のメールアドレス（53 コミット）、コミットメッセージの Claude-Session の URL（27 件）、削除済みの設計文書 `vault/designs/D-20261011-spring-batch-adapt.md`（履歴のみ）、squash マージ前の計画ブランチのコミット（vault の作業ログを含む）を保持するリモートの PR の ref（36 件）と残存ブランチ（`ccr-841df633-5hhfa9`・`work/p-20261011-harness-rules`）。T-01 はこれらを報告するだけで、書き換え・削除は行わない（残存ブランチの削除は T-04 のチェックリストに人の作業として書く）
+## 人への質問（回答済み）
+1. ライセンス種別は Apache License 2.0 でよいか → 回答：MIT License にする（T-02・T-03 を MIT に書き換えた）
+2. 著作権者の表記は `Copyright 2026 Toru Nagashima` でよいか → 回答：OK（MIT の表記として `Copyright (c) 2026 Toru Nagashima`）
+3. コントリビュート方針は「Issue での不具合報告・質問を受け付ける。Pull Request は事前に Issue で相談したうえで受け付ける。対応や回答は保証しない」でよいか → 回答：OK
+4. git の履歴は書き換えない前提でよいか → 回答：機微な情報が無ければ OK（T-01 の決定済みに、機微な情報が見つかった時は blocked にする条件を書いた）
