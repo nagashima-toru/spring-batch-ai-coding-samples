@@ -20,7 +20,7 @@ GitHub Issue #42 と #44 を解消する。
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | 方式設計書にジョブパラメータ検証の方針（未知のキーは個別 Validator で拒否）を書き、ORDER-001 の記述を直す | |
 | T-02 | todo | 0 | T-01 | JobParametersValidators の Javadoc を実際の動作に合わせ、未知のキーを通す単体テストを足す | |
-| T-03 | review | 1 | - | planner ルールのビルド基準を clean 付き・batch-sample カバレッジ非判定の2コマンドに直し、決定を decisions.md に残す | |
+| T-03 | done | 1 | - | planner ルールのビルド基準を clean 付き・batch-sample カバレッジ非判定の2コマンドに直し、決定を decisions.md に残す | |
 | T-04 | todo | 0 | T-03 | verifier・creator ルールのビルド実行を clean 付きの2コマンドに直す | |
 | T-05 | review | 1 | - | 開発ガイドにクラウド環境の準備スクリプト例を足し、ハーネスの検証コマンドの記述を直す | |
 
