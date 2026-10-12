@@ -17,7 +17,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
-| T-02 | blocked | 1 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | ORDER-001 の未知ジョブパラメータが拒否されないため、`./mvnw verify -DskipITs` が通りません。テストか実装のどちらを直しますか。【不具合の内容】テスト名: `OrderDailySalesJobParametersValidatorTest#未知のキーがある_InvalidJobParametersExceptionをスローする`。期待値: `scheduledTime=2026-10-11T17:00:00Z` と未知キー `unknown` を渡すと `InvalidJobParametersException` になる。根拠は詳細設計書 §1.1「未知のキーも拒否される」と §3 #1「未知のパラメータ」。実際の値: 例外が出ず、検証を通ってしまう。原因: Spring Batch 6.0.5 の `DefaultJobParametersValidator` は、未知キーを WARN ログに出すだけで拒否しません（`javap` で確認）。`OrderDailySalesJobParametersValidator` が委譲する batch-core の `JobParametersValidators.requiredAndOptional` も同じ挙動です。方針: 「決定済み」で `src/main` は変えないとされているため、直さず質問にしました。【選択肢】(a) `OrderDailySalesJobParametersValidator`（`src/main`）に、未知キーを `InvalidJobParametersException` で拒否する処理を足す。(b) 設計書の記述を「未知キーは WARN ログのみ」に改訂し、このテストを外す。【ビルドの状況】batch-core は 93 件が全部通り、カバレッジ閾値も通過、Checkstyle も通過。batch-sample は 116 件中 115 件が通り、失敗は上の 1 件だけ。`./mvnw verify -DskipITs` は終了コード 1。 |
+| T-02 | todo | 0 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
 | T-03 | todo | 0 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
 | T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
 | T-05 | todo | 0 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
