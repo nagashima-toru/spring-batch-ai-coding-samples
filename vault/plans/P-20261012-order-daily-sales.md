@@ -20,7 +20,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 | T-02 | done | 1 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
 | T-03 | done | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
 | T-04 | done | 1 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
-| T-05 | todo | 0 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
+| T-05 | doing | 1 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
