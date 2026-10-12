@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-order-daily-sales/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 12:14",
+  "criteria": [
+    {"text": "`./mvnw verify -DskipITs` が終了コード0で、末尾に `BUILD SUCCESS` が出る", "ok": true, "note": "実行コマンド: `./mvnw verify -DskipITs`（worktree 内）/ 出力: exit=0、末尾 BUILD SUCCESS。補足として Docker 稼働のため `./mvnw verify` も実行し exit=0・BUILD SUCCESS（参照: vault/rules/verifier/build-verification.md）"},
+    {"text": "シナリオ一覧に決定済みの No.1〜6 があり、結果がすべて OK である。`grep -c -E '^\\| [1-6] \\|.*\\| OK \\|$' docs/projects/order-daily-sales/system-test/scenarios.md` が `6`", "ok": true, "note": "実行コマンド: `grep -c -E '^\\| [1-6] \\|.*\\| OK \\|$' docs/projects/order-daily-sales/system-test/scenarios.md` / 出力: 6。一覧の No.1〜6 の分類・内容は決定済みと一致"},
+    {"text": "No.1〜6 の各シナリオ詳細に、テンプレートの「目的」「事前条件」「手順」（期待結果と実施結果の列を持つ表）「確認ポイント」「実施結果」「証跡」がそろい、証跡に実際に実行したコマンドの終了コードと、ログ抜粋または件数クエリの結果がある。`grep -c '^- \\*\\*証跡\\*\\*' docs/projects/order-daily-sales/system-test/scenarios.md` が `6`（中身は読んで確認）", "ok": true, "note": "実行コマンド: `grep -c '^- \\*\\*証跡\\*\\*' scenarios.md` / 出力: 6。scenarios.md を Read で通読し、6シナリオとも目的・事前条件・手順表（期待結果/実施結果列）・確認ポイント・実施結果・証跡があり、証跡に exit= の終了コードとログ抜粋・クエリ結果があることを確認"},
+    {"text": "No.6（処理時間）の実施記録に、10万件のファイルでのジョブ全体の所要時間と Step 5 の所要時間の実測値があり、全体が要件の制約（3時間以内）に収まっている（読んで確認）", "ok": true, "note": "scenarios.md の No.6 を Read で確認: 10万件でジョブ全体 7.62 秒・Step 5 0.87 秒（洗い替え時 8.09 秒・1.40 秒）、3時間以内。見込みとの差も所見として記載あり"},
+    {"text": "テストデータ生成スクリプトが `docs/projects/order-daily-sales/system-test/data/` にあり、`scenarios.md` の冒頭表「テストデータ」の行からそのファイル名で参照されている（`ls docs/projects/order-daily-sales/system-test/data/` の出力のファイル名が `scenarios.md` に出てくることを読んで確認）", "ok": true, "note": "実行コマンド: `ls .../system-test/data/` / 出力: actual.sql checksum.sql checksum_all.sql env.sh expected.sh fail_trigger_off.sql fail_trigger_on.sql gen_orders.sh hold_lock.sql make_scenario_files.sh run_job.sh。11ファイルすべてが scenarios.md 冒頭表のテストデータ行に記載されている。worktree の git status は未コミット無し"}
+  ],
+  "reasons": []
+}
