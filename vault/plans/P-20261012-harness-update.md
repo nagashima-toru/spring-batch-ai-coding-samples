@@ -15,7 +15,7 @@ ai-harness（https://github.com/nagashima-toru/ai-harness 、public）で Issue 
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | ai-harness 6c1063a の install.sh --update でハーネス一式を更新する | |
+| T-01 | blocked | 1 | - | ai-harness 6c1063a の install.sh --update でハーネス一式を更新する | 手順5の `bash /tmp/claude/P-20261012-harness-update-T-01/ai-harness/scripts/install.sh --update .`（worktree ルートで実行）が、Claude Code の auto mode classifier に「Code from External」として拒否された（外部リポジトリ ai-harness 6c1063a の clone 内スクリプトの実行）。この install.sh の実行の許可（Bash の permission rule への追加、または人による直接実行）が必要。手順1〜4は完了（clone は /tmp/claude/P-20261012-harness-update-T-01/ai-harness、HEAD 6c1063a。worktree の .gitignore に .claude/worktrees/ を追記済み）。手順5・6は未実施。 |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
