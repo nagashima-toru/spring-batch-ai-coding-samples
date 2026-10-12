@@ -18,7 +18,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
 | T-02 | done | 1 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
-| T-03 | doing | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
+| T-03 | review | 1 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
 | T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
 | T-05 | todo | 0 | T-04 | system-test: order-daily-sales のシステムテストのシナリオと実施記録 | |
 
