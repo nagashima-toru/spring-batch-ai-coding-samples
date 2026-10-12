@@ -15,7 +15,7 @@ ai-harness（https://github.com/nagashima-toru/ai-harness 、public）で Issue 
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | review | 1 | - | ai-harness 6c1063a の install.sh --update でハーネス一式を更新する | |
+| T-01 | done | 1 | - | ai-harness 6c1063a の install.sh --update でハーネス一式を更新する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
