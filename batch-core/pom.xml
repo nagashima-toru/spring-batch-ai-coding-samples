@@ -21,6 +21,11 @@
     <name>batch-core</name>
     <description>バッチ基盤部品（共通ライブラリ）</description>
 
+    <properties>
+        <!-- ライブラリのためコンテナイメージは作らない。CD の -am で jib が走っても batch-core はスキップする（Issue #55） -->
+        <jib.skip>true</jib.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
