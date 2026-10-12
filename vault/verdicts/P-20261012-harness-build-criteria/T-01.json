@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-harness-build-criteria/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 13:34",
+  "criteria": [
+    {"text": "`docs/architecture.md` に見出し `### 3.4 ジョブパラメータの検証` があり、§3 の小見出しが 3.1〜3.4 の順に並ぶ（`grep -n '^### 3\\.' docs/architecture.md` の出力が `### 3.1`・`### 3.2`・`### 3.3`・`### 3.4 ジョブパラメータの検証` の4行で、この順）", "ok": true, "note": "実行コマンド: `grep -n '^### 3\\.' docs/architecture.md` / 出力: 63:### 3.1 ... 77:### 3.2 ... 83:### 3.3 チャンクサイズ 88:### 3.4 ジョブパラメータの検証 の4行。§3.4 は §3.3 の直後、## 4 の前"},
+    {"text": "§3.4 に、基盤部品の実体の挙動として「未知のキーは WARN ログを出すだけで拒否しない」と書いてある（`grep -c '未知のキーは WARN ログを出すだけで拒否しない' docs/architecture.md` が `1`）", "ok": true, "note": "実行コマンド: `grep -c '未知のキーは WARN ログを出すだけで拒否しない' docs/architecture.md` / 出力: 1。Read で §3.4 の2項目目にあることも確認"},
+    {"text": "§3.4 に、拒否が必要なジョブの方針として「ジョブ側の個別の `JobParametersValidator` で拒否する」と書いてある（`grep -cF 'ジョブ側の個別の `JobParametersValidator` で拒否する' docs/architecture.md` が `1`）", "ok": true, "note": "実行コマンド: `grep -cF 'ジョブ側の個別の `JobParametersValidator` で拒否する' docs/architecture.md` / 出力: 1。§3.4 の3項目目にある"},
+    {"text": "基盤部品が未知のキーを拒否すると読める記述が docs に残っていない（`grep -rnE '未知のキーも拒否される|未知のキーは許容しない' docs` の出力が空）", "ok": true, "note": "実行コマンド: `grep -rnE '未知のキーも拒否される|未知のキーは許容しない' docs` / 出力: 空。ORDER-001.md:33 は「基盤部品が拒否しない未知のキーを許可キー以外として ... 拒否してから（方式設計 §3.4）」に直っている"},
+    {"text": "ORDER-001 の §8 変更履歴の最終行が版 `1.3` の行である（`grep -c '^| 2026-10-12 | 1\\.3 | ' docs/projects/order-daily-sales/detail-design/ORDER-001.md` が `1`）", "ok": true, "note": "実行コマンド: `grep -c '^| 2026-10-12 | 1\\.3 | ' docs/projects/order-daily-sales/detail-design/ORDER-001.md` / 出力: 1。`grep -n '^| 20' ... | tail -2` で 355 行が 1.2、356 行が 1.3 で末尾"}
+  ],
+  "reasons": []
+}
