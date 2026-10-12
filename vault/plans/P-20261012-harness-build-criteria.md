@@ -18,11 +18,11 @@ GitHub Issue #42 と #44 を解消する。
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | todo | 0 | - | 方式設計書にジョブパラメータ検証の方針（未知のキーは個別 Validator で拒否）を書き、ORDER-001 の記述を直す | |
+| T-01 | doing | 1 | - | 方式設計書にジョブパラメータ検証の方針（未知のキーは個別 Validator で拒否）を書き、ORDER-001 の記述を直す | |
 | T-02 | todo | 0 | T-01 | JobParametersValidators の Javadoc を実際の動作に合わせ、未知のキーを通す単体テストを足す | |
-| T-03 | todo | 0 | - | planner ルールのビルド基準を clean 付き・batch-sample カバレッジ非判定の2コマンドに直し、決定を decisions.md に残す | |
+| T-03 | doing | 1 | - | planner ルールのビルド基準を clean 付き・batch-sample カバレッジ非判定の2コマンドに直し、決定を decisions.md に残す | |
 | T-04 | todo | 0 | T-03 | verifier・creator ルールのビルド実行を clean 付きの2コマンドに直す | |
-| T-05 | todo | 0 | - | 開発ガイドにクラウド環境の準備スクリプト例を足し、ハーネスの検証コマンドの記述を直す | |
+| T-05 | doing | 1 | - | 開発ガイドにクラウド環境の準備スクリプト例を足し、ハーネスの検証コマンドの記述を直す | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
