@@ -54,4 +54,4 @@
 - [ ] 単体テストが観点表（unit-test Skill references）に基づいている
 - [ ] 結合テストに 正常 / 警告(Skip) / 異常 / リスタート / 冪等性 の観点がある
 - [ ] テストメソッド名が日本語の「条件＿期待結果」形式
-- [ ] `./mvnw verify` が通る（カバレッジ80%・Checkstyle・SpotBugs 含む）
+- [ ] `./mvnw clean verify` が通る（カバレッジ80%・Checkstyle・SpotBugs 含む）

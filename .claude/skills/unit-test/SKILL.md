@@ -33,9 +33,15 @@ description: 実装コードの単体テスト（JUnit 5 + Mockito）を作成�
    `{module}/target/surefire-reports/` を読み、**テストの誤りか実装のバグかを先に判定**
    してから修正し再実行する（最大3ラウンド）。実装バグの原因が設計書と実装の不一致に
    ある場合は、ループを中断して設計書の改訂を先に提案する（SSoT）
-5. **検証ループ（カバレッジ）**: 全件成功後 `./mvnw verify -DskipITs -pl {module} -am`
-   でカバレッジ閾値を確認する。未達なら `{module}/target/site/jacoco/` で未到達箇所を
-   特定し、観点表に基づく意味のあるケースを追加して再実行する（最大2ラウンド）
+5. **検証ループ（カバレッジ）**: 全件成功後、対象モジュールで書き分ける。`clean` は
+   `target/` に残った JaCoCo の実行データで結果が変わらないようにするために付ける
+   - batch-core: `./mvnw clean verify -DskipITs -pl batch-core` で閾値を確認する
+   - batch-sample: `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` を実行し、
+     `batch-sample/target/site/jacoco/` で対象ジョブのクラスの未到達箇所を確かめてケースを追加する
+     （batch-sample のカバレッジ80%は `/integration-test` の `./mvnw clean verify` で判定する。
+     モジュール全体で判定し、既存ジョブの多くは結合テストでしか網羅されないため `-DskipITs` では必ず落ちる）
+
+   未達なら未到達箇所を特定し、観点表に基づく意味のあるケースを追加して再実行する（最大2ラウンド）
 
 ループの共通ルール（上限・早期エスカレーション・検証を弱める反則の禁止）は
 `docs/development-guide.md` §5 に従う。
@@ -51,6 +57,6 @@ description: 実装コードの単体テスト（JUnit 5 + Mockito）を作成�
 
 ## カバレッジ
 
-- JaCoCo 命令カバレッジ 80% 以上（`./mvnw verify` の閾値チェックで強制）
+- JaCoCo 命令カバレッジ 80% 以上（`./mvnw clean verify` の閾値チェックで強制）
 - 数値合わせのためのテストは書かない。観点表に基づく意味のあるケースで到達させる
 - 閾値（親 pom の `jacoco.coverage.minimum`）の変更による回避は禁止
