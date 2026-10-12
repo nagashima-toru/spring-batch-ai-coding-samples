@@ -1,6 +1,6 @@
 ---
 id: P-20261012-harness-build-criteria
-status: approved
+status: done
 ---
 # ゴール
 
