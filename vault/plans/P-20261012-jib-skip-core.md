@@ -18,7 +18,7 @@ GitHub Issue #55「CD の jib:build が batch-core で「Main class was not foun
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | todo | 0 | - | batch-core の pom.xml に jib.skip=true を設定し CD の jib を batch-core でスキップさせる | |
+| T-01 | doing | 1 | - | batch-core の pom.xml に jib.skip=true を設定し CD の jib を batch-core でスキップさせる | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
