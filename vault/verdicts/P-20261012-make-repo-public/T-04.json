@@ -1,0 +1,15 @@
+{
+  "task": "P-20261012-make-repo-public/T-04",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 14:16",
+  "criteria": [
+    {"text": "チェックリストに4つの見出しがそろっている。確認：`grep -cE '^## (現状の確認結果|公開前に人が行う設定|可視性の切り替え（人が行う）|公開後の確認)$' docs/public-release-checklist.md` の出力が `4`", "ok": true, "note": "実行コマンド: 上記grep（worktreeで実行） / 出力: 4。見出し順も現状→公開前→切り替え→公開後で決定済みどおり"},
+    {"text": "決めた9項目がチェックボックスの行として1行ずつある。確認：`grep -cE '^- \\[ \\] \\*\\*(Workflow permissions|fork PR の承認|production 環境の保護|OIDC の信頼ポリシー|Secret scanning|Dependabot alerts|ブランチ保護|残存ブランチ|可視性の切り替え)\\*\\*' docs/public-release-checklist.md` の出力が `9`", "ok": true, "note": "実行コマンド: 上記grep / 出力: 9。Readで全文確認し、9項目が各1行で、1〜8が公開前の節、9が切り替えの節にあることを確認"},
+    {"text": "可視性の切り替えの項目が、人が Settings の Danger Zone で行う操作として書かれている。確認：`grep -cE '^- \\[ \\] \\*\\*可視性の切り替え\\*\\*.*Danger Zone.*Change visibility' docs/public-release-checklist.md` の出力が `1`", "ok": true, "note": "実行コマンド: 上記grep / 出力: 1。行に「人が行う。エージェントは行わない」の記述あり"},
+    {"text": "棚卸しレポートへの参照がある。確認：`grep -cE '^- \\[ \\] \\*\\*残存ブランチ\\*\\*.*`docs/public-release-inventory\\.md`' docs/public-release-checklist.md` の出力が `1`", "ok": true, "note": "実行コマンド: 上記grep / 出力: 1。残存ブランチ行に inventory への参照と PR ref が消せない旨あり"},
+    {"text": "ワークフローが public 化で危険になる書き方をしていない（fork の PR にシークレットや書き込み権限を渡す `pull_request_target` と、`secrets.` の参照が無い）。確認：`git grep -nE 'pull_request_target|secrets\\.' -- .github/` の出力が空", "ok": true, "note": "実行コマンド: `git grep -nE 'pull_request_target|secrets\\.' -- .github/` / 出力: 空。`git diff --stat -- .github docs/aws-setup.md` も空で、ワークフロー等は未変更"},
+    {"text": "全ワークフローが `permissions` を最上位で明示している。確認：`git grep -c '^permissions:' -- .github/workflows/` の出力が `.github/workflows/cd.yml:1` と `.github/workflows/ci.yml:1` の2行", "ok": true, "note": "実行コマンド: `git grep -c '^permissions:' -- .github/workflows/` / 出力: .github/workflows/cd.yml:1 と .github/workflows/ci.yml:1 の2行"}
+  ],
+  "reasons": []
+}
