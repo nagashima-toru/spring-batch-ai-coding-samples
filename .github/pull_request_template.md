@@ -12,7 +12,7 @@
 
 ## 確認したこと
 
-- [ ] 変更に応じた確認を実施した（例: `./mvnw verify`、`bash scripts/smoke.sh`、手動での動作確認）
+- [ ] 変更に応じた確認を実施した（例: `./mvnw clean verify`、`bash scripts/smoke.sh`、手動での動作確認）
 - [ ] 変更した仕組みを参照している docs・Skill・スクリプトも合わせて更新した
 
 ## レビュー実施記録
