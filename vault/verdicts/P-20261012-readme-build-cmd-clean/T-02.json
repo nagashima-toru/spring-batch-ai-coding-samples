@@ -1,0 +1,15 @@
+{
+  "task": "P-20261012-readme-build-cmd-clean/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 19:04",
+  "criteria": [
+    {"text": "CLAUDE.md に clean の無い `./mvnw verify` が残っていない（`grep -c 'mvnw verify' CLAUDE.md` が `0`）", "ok": true, "note": "実行コマンド: `grep -c 'mvnw verify' CLAUDE.md`（worktree内） / 出力: 0。目的（clean無しコマンドの除去）と対象が一致し、緩さの懸念なし"},
+    {"text": "CLAUDE.md に、結合テストを除外しカバレッジ不足で止めないコマンドの行がちょうど1行ある（`grep -c '^./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false *#' CLAUDE.md` が `1`）", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。CLAUDE.md 31行目を Read 相当で確認し、コメントは「結合テスト除外（カバレッジ不足では止めない）」"},
+    {"text": "CLAUDE.md に、batch-core のカバレッジを判定するコマンドの行がちょうど1行ある（`grep -c '^./mvnw clean verify -DskipITs -pl batch-core *#' CLAUDE.md` が `1`）", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "CLAUDE.md に、結合テストを含む全体のコマンドの行がちょうど1行あり、そのコメントに `batch-sample` が書かれている（`grep -c '^./mvnw clean verify *#.*batch-sample' CLAUDE.md` が `1`）", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。コメントは「全体（単体＋結合(要Docker)＋静的解析）。batch-sample のカバレッジ80%はここで判定」"},
+    {"text": "見出しの構成が変わっていない（`git diff --merge-base work/p-20261012-readme-build-cmd-clean -- CLAUDE.md | grep -c '^[+-]#'` が `0`）", "ok": true, "note": "実行コマンド: 同コマンド / 出力: 0。差分は mvnw の2行→3行のみ（git diff 全文で確認）"},
+    {"text": "変更したのが CLAUDE.md である（`git diff --merge-base work/p-20261012-readme-build-cmd-clean --name-only` の出力に `CLAUDE.md` が含まれる）", "ok": true, "note": "実行コマンド: 同コマンド / 出力: CLAUDE.md と vault/tasks/P-20261012-readme-build-cmd-clean/T-02.md（進捗追記）。CLAUDE.md を含む"}
+  ],
+  "reasons": []
+}
