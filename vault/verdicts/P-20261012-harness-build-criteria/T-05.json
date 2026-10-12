@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-harness-build-criteria/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 13:33",
+  "criteria": [
+    {"text": "§1 に見出し `### 1.4 クラウド環境での準備` があり、§1 の小見出しが 1.1〜1.4 の順に並ぶ（`grep -n '^### 1\\.' docs/development-guide.md` の出力が `### 1.1`・`### 1.2`・`### 1.3`・`### 1.4 クラウド環境での準備` の4行で、この順）", "ok": true, "note": "実行コマンド: `grep -n '^### 1\\.' docs/development-guide.md`（worktree内） / 出力: 8:### 1.1 前提ツール, 19:### 1.2 初回セットアップ, 32:### 1.3 よく使うコマンド, 45:### 1.4 クラウド環境での準備"},
+    {"text": "§1.4 の準備スクリプト例が、JDK 25 を `~/.mavenrc` で Maven に渡し、Docker デーモンを起動する（`grep -cF \"printf 'JAVA_HOME=/opt/jdk-25\" docs/development-guide.md` が `1`、`grep -cF 'nohup dockerd' docs/development-guide.md` が `1`）", "ok": true, "note": "実行コマンド: 両 `grep -cF` / 出力: 1 と 1"},
+    {"text": "§2.4 の使い分け表の検証コマンドが clean 付きの3コマンドになっている（`grep -cF '受け入れ基準（`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と `./mvnw clean verify -DskipITs -pl batch-core`、結合テストを含むタスクは `./mvnw clean verify`）' docs/development-guide.md` が `1`）", "ok": true, "note": "実行コマンド: 指定の `grep -cF` / 出力: 1"},
+    {"text": "開発ガイドに、ハーネスの基準としての clean 無しの `-DskipITs` コマンドが残っていない（`grep -nF '`./mvnw verify -DskipITs`' docs/development-guide.md` の出力が空）", "ok": true, "note": "実行コマンド: 指定の `grep -nF` / 出力: 空（rc=1）"},
+    {"text": "§6 トラブルシューティングの表に §1.4 を案内する行がある（`grep -cF '§1.4 の準備スクリプトを実行する' docs/development-guide.md` が `1`）", "ok": true, "note": "実行コマンド: 指定の `grep -cF` / 出力: 1"}
+  ],
+  "reasons": []
+}
