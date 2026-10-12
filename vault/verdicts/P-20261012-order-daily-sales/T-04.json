@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-order-daily-sales/T-04",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 12:10",
+  "criteria": [
+    {"text": "`./mvnw verify -DskipITs` が終了コード0で、末尾に `BUILD SUCCESS` が出る", "ok": true, "note": "実行コマンド: `cd <worktree> && ./mvnw verify -DskipITs` / 出力: exit=0、末尾 BUILD SUCCESS（batch-core・batch-sample とも SUCCESS）。ルール vault/rules/verifier/build-verification.md に従い自分で実行"},
+    {"text": "`./mvnw verify` が終了コード0で、末尾に `BUILD SUCCESS` が出る（成果物に `OrderDailySalesJobIT.java` を含むため）", "ok": true, "note": "実行コマンド: `cd <worktree> && ./mvnw verify`（docker info は Server Version 29.8.2 で成功） / 出力: exit=0、Tests run: 36 Failures 0 Errors 0（ITあり）、末尾 BUILD SUCCESS"},
+    {"text": "タスク票の「進捗」に、`/review-code` の回ごとの [Must]・[Should]・[Ask] の件数と、`| # | 区分 | ファイル:行 | 指摘 | 根拠 |` の形式の指摘一覧（[Must]・[Should] には修正内容を添える）があり、最終回の [Must]・[Should]・[Ask] がいずれも0件である（「進捗」を読んで確認）", "ok": true, "note": "確認方法: worktree の vault/tasks/P-20261012-order-daily-sales/T-04.md の「進捗」を Read。第1回 Must=0 Should=1 Ask=0（表あり、修正内容列付き）、第2回 Must=0 Should=0 Ask=0。指摘の修正（REQUIRED_KEYS/OPTIONAL_KEYS 定数化）は OrderDailySalesJobParametersValidator.java に反映済みを確認"},
+    {"text": "最終状態のコードが詳細設計書 ORDER-001 §1〜§6（Bean 一覧・Step 構成・入力チェック仕様・エラー処理・SQL）と一致している（verifier が設計書とコードを読んで突き合わせる。差異があれば FAIL）", "ok": true, "note": "確認方法: ORDER-001.md §1〜§6 と OrderDailySalesJobConfig / OrderItemProcessor / OrderCsvRecord / OrderDailySalesJobParametersValidator / OrderDailySalesReplaceTasklet / Mapper XML 3本 / V5 SQL を Read で突き合わせ。Step名・直列フロー・Bean名・スコープ・戻り値の具象型・Skip設定・リスナー登録（StepExecutionListener型変数）・Bean Validation 正規表現・業務チェック順・SQL・Flyway列/PK/index が設計どおり。差異なし"},
+    {"text": "禁止事項と検証の弱体化が無い。`grep -rn -E 'org\\.springframework\\.batch\\.item\\.|\\(Object\\)|LocalDate\\.now|java\\.time\\.Clock|@Disabled' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/ batch-sample/src/test/java/com/example/batch/sample/job_order_daily_sales/ batch-core/src/main/java/com/example/batch/core/` の出力が空、かつ `git diff --stat main -- pom.xml batch-core/pom.xml batch-sample/pom.xml config/` の出力が空（`docs/development-guide.md` §5.4）", "ok": true, "note": "実行コマンド: 上記 grep -rn（worktree で）/ 出力: 空（終了コード1）。`git diff --stat main -- pom.xml batch-core/pom.xml batch-sample/pom.xml config/` / 出力: 空"}
+  ],
+  "reasons": []
+}
