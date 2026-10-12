@@ -16,7 +16,7 @@ status: approved
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | review | 1 | - | 機密・個人・内部情報の棚卸しレポート（作業ツリーと git 履歴・リモートの ref） | |
+| T-01 | done | 1 | - | 機密・個人・内部情報の棚卸しレポート（作業ツリーと git 履歴・リモートの ref） | |
 | T-02 | review | 1 | - | LICENSE（MIT License）を追加する | |
 | T-03 | todo | 0 | T-02 | README に ライセンス・コントリビュート・注意事項 の節を追記する | |
 | T-04 | todo | 0 | T-01 | GitHub 設定・CI の確認結果を含む公開手順チェックリストを docs に作る | |
