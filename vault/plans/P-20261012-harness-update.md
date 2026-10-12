@@ -1,6 +1,6 @@
 ---
 id: P-20261012-harness-update
-status: approved
+status: done
 ---
 # ゴール
 
