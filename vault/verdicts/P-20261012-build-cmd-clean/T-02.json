@@ -1,0 +1,14 @@
+{
+  "task": "P-20261012-build-cmd-clean/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-12 18:47",
+  "criteria": [
+    {"text": "`grep -n 'mvnw verify' .claude/skills/integration-test/SKILL.md` の出力が空（clean の無い `./mvnw verify` が残っていない）", "ok": true, "note": "実行コマンド: `grep -n 'mvnw verify' .claude/skills/integration-test/SKILL.md`（worktree内） / 出力: 空"},
+    {"text": "`grep -c 'mvnw clean verify' .claude/skills/integration-test/SKILL.md` が2以上（手順4と「注意」節）", "ok": true, "note": "実行コマンド: `grep -c 'mvnw clean verify' ...` / 出力: 5。25・27行（手順4）と60〜62行（注意節）に存在"},
+    {"text": "`grep -c 'mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false' .claude/skills/integration-test/SKILL.md` が1以上", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1（61行目）"},
+    {"text": "`grep -c 'では batch-sample のカバレッジを判定しない' .claude/skills/integration-test/SKILL.md` が1以上", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1（62行目）"},
+    {"text": "`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1`", "ok": true, "note": "実行コマンド: worktreeへcdして `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"}
+  ],
+  "reasons": []
+}
