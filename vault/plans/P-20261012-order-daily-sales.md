@@ -16,7 +16,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | |
+| T-01 | blocked | 1 | - | implementation: ORDER-001 のジョブ実装・batch-core 拡張・Flyway V5 | 受け入れ基準1つ目「`./mvnw verify -DskipITs` が BUILD SUCCESS（カバレッジ80%を含む）」が満たせません。実装は一式できていますが、batch-sample の jacoco coverage-check（モジュール単位・命令カバレッジ）が 0.14 で、必要な 0.80 に届きません。原因は本タスクの追加分だけではありません。`-DskipITs` では、既存サンプル（Sample01〜06・Announcement・PointExpiry の各 JobConfig など、約1180命令）が結合テストなしで未カバーになります。ORDER-001 を足す前でも約0.21で、すでに閾値を下回るはずです（実測ではなく jacoco のクラス別内訳からの推定）。決定済みの「単体テストを先に書いてよい」で解消できる規模ではないため、単体テストは書いていません。基準・pom・jacoco 設定・閾値は変えていません。参考: Docker ありの `./mvnw verify` でも、ORDER-001 の結合テストがまだ無いため 0.68 で失敗します。質問: この基準を次のどれにするか、1つ選んでください。(a) 基準を「batch-core は `-DskipITs` でカバレッジ通過、batch-sample は Checkstyle・SpotBugs・単体テスト通過まで」に差し替える。(b) 基準を `./mvnw verify`（Docker 必須）に変え、ORDER-001 の結合テストを書く T-03 の完了後に判定する。(c) 既存サンプルの Config を単体テストで覆うタスクを別に起こす（ORDER-001 とは別件）。 |
 | T-02 | todo | 0 | T-01 | unit-test: ORDER-001 と batch-core 拡張の単体テスト | |
 | T-03 | todo | 0 | T-02 | integration-test: OrderDailySalesJobIT の結合テスト | |
 | T-04 | todo | 0 | T-03 | review-code: ORDER-001 のコードレビューと指摘の反映 | |
