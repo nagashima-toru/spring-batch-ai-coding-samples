@@ -1,0 +1,18 @@
+{
+  "task": "P-20261013-amend-criterion-pipe/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-13 00:56",
+  "criteria": [
+    {"text": "smoke が全件 OK で終わる：`bash scripts/smoke.sh 2>&1 | grep -c '^smoke: pass=[0-9]* fail=0'` が `1`", "ok": true, "note": "worktree で `bash scripts/smoke.sh` を実行 / 該当grep -c 出力: 1、末尾行: smoke: pass=548 fail=0"},
+    {"text": "smoke に追加した `|` をそのまま書く確認が OK になる：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (amend-task) 07 '` が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。scripts/smoke.sh の差分で、| を含む文を渡し1行目が `- ` + 渡した文字列そのままであることを expect_eq で比較しており、目的に合致"},
+    {"text": "smoke に追加した改行を空白にして1行に収める確認が OK になる：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (amend-task) 08 '` が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。差分で `$'前半\\n後半'` → `- 前半 後半` と基準行数不変を確認している"},
+    {"text": "`scripts/amend_task.py` が基準文の整形に `transition.clean_text` を使っていない：`grep -c 'clean_text(text)' scripts/amend_task.py` が `0`", "ok": true, "note": "実行コマンド: `grep -c 'clean_text(text)' scripts/amend_task.py` / 出力: 0。差分では re.sub(r\"\\r\\n|\\r|\\n\", \" \", text).strip() に置き換わっている"},
+    {"text": "`docs/vault-spec.md` の amend_task.py の説明に整形の仕方が書かれている：`grep -c 'の改行は空白にし、' docs/vault-spec.md` が `1`", "ok": true, "note": "実行コマンド: `grep -c 'の改行は空白にし、' docs/vault-spec.md` / 出力: 1。差分は75行目のみ"},
+    {"text": "参照切れの検査が OK のまま：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1。なお (ref-1) はこのリポジトリでは導入先として常に ok になる（タスク票の決定済みに明記）ため、この基準は参照切れの有無を保証しない"},
+    {"text": "成果物の3ファイルが変更されている：`git diff --merge-base work/p-20261013-amend-criterion-pipe --name-only -- scripts/amend_task.py scripts/smoke.sh docs/vault-spec.md` の出力が `docs/vault-spec.md`・`scripts/amend_task.py`・`scripts/smoke.sh` の3行", "ok": true, "note": "実行コマンド: 同git diff（git -C 相当で worktree 内） / 出力: docs/vault-spec.md, scripts/amend_task.py, scripts/smoke.sh の3行。--stat ではほかにタスク票の進捗のみ変更"}
+  ],
+  "reasons": [
+    "(ref-1) の基準は、このリポジトリでは検査が常に ok になる（タスク票の決定済みに明記）ため、参照切れの有無を保証しない。"
+  ]
+}

@@ -13,7 +13,7 @@ GitHub Issue #57「amend_task.py の --replace-criterion が受け入れ基準�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | review | 1 | - | amend_task.py の --replace-criterion で基準文のパイプ記号を置き換えないようにし smoke で確かめる | |
+| T-01 | done | 1 | - | amend_task.py の --replace-criterion で基準文のパイプ記号を置き換えないようにし smoke で確かめる | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
