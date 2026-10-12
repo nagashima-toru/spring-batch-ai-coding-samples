@@ -27,8 +27,9 @@ AI駆動開発（Claude Code）を前提とした Spring Batch のリファレ�
 ## ビルド・実行コマンド
 
 ```bash
-./mvnw verify              # ビルド＋単体＋結合(要Docker)＋静的解析＋カバレッジ(80%)
-./mvnw verify -DskipITs    # 結合テストを除外
+./mvnw clean verify   # 全体（単体＋結合(要Docker)＋静的解析）。batch-sample のカバレッジ80%はここで判定
+./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false   # 結合テスト除外（カバレッジ不足では止めない）
+./mvnw clean verify -DskipITs -pl batch-core   # batch-core のカバレッジ80%
 docker compose -f docker/compose.yaml up -d   # ローカルDB起動
 
 # ジョブのローカル実行例（詳細は batch-sample/docs/）
