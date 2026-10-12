@@ -18,7 +18,7 @@ import com.example.batch.core.execution.JobParametersValidators;
 /**
  * ORDER-001: ジョブパラメータの検証。
  *
- * <p>必須・任意キー（未知のキーは拒否）を基盤部品 {@link JobParametersValidators} に委譲したうえで、
+ * <p>必須・任意キーの検証を基盤部品 {@link JobParametersValidators} に委譲し、基盤部品が拒否しない未知のキーをこのクラスで拒否したうえで、
  * {@code scheduledTime} がオフセット付き ISO-8601 として解釈できること、
  * {@code targetDate} が指定された場合に型が {@link LocalDate} であることを検証する。</p>
  */
