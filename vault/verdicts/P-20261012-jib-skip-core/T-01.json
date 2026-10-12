@@ -1,0 +1,15 @@
+{
+  "task": "P-20261012-jib-skip-core/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-13 00:15",
+  "criteria": [
+    {"text": "`batch-core/pom.xml` の `<properties>` に `<jib.skip>true</jib.skip>` がちょうど1つある。確認：`grep -c 'jib.skip.true./jib.skip' batch-core/pom.xml` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c 'jib.skip.true./jib.skip' batch-core/pom.xml`（worktree 内）/ 出力: 1。git diff でも <properties> 内に追加されていることを確認"},
+    {"text": "batch-core 単体で jib を呼ぶとスキップされ成功する（JDK・ネットワーク非依存）。確認：`./mvnw -B -ntp -pl batch-core jib:buildTar 2>&1 | grep -c 'Skipping containerization because jib-maven-plugin: skip = true'` の出力が `1`、かつ `./mvnw -B -ntp -pl batch-core jib:buildTar 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw -B -ntp -pl batch-core jib:buildTar`（ログに保存して grep）/ 出力: スキップ行 1、BUILD SUCCESS 1、終了コード0"},
+    {"text": "CD と同じ `-pl batch-sample -am` の reactor 実行で batch-core の jib がスキップされる（JDK・ネットワーク非依存）。確認：`./mvnw -B -ntp -pl batch-sample -am jib:buildTar 2>&1 | grep -c 'Skipping containerization because jib-maven-plugin: skip = true'` の出力が `1`（batch-core の分だけ。親 POM は `packaging is 'pom'` という別の文言でスキップされ、batch-sample はスキップされない）", "ok": true, "note": "実行コマンド: `./mvnw -B -ntp -pl batch-sample -am jib:buildTar 2>&1 | grep -c 'Skipping containerization because jib-maven-plugin: skip = true'` / 出力: 1"},
+    {"text": "Issue の再現コマンド（push しない）に Docker Hub の回数制限を避けるミラーのベースイメージ指定を付けて成功し、batch-sample のイメージ tar が作られる（JDK 25 とベースイメージ取得が要る。pom・CD は変えない）。確認：`./mvnw -B -ntp -pl batch-sample -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip -Djacoco.skip -Djib.from.image=mirror.gcr.io/library/eclipse-temurin:25-jre package jib:buildTar > /tmp/T-01-c4.log 2>&1` を実行した後、`grep -c 'INFO. BUILD SUCCESS' /tmp/T-01-c4.log` の出力が `1`、かつ `ls batch-sample/target/jib-image.tar` が終了コード0", "ok": true, "note": "実行コマンド: 上記 mvnw コマンド（ログ出力先はスクラッチの一時ファイル）/ 出力: 終了コード0、BUILD SUCCESS 1、`ls batch-sample/target/jib-image.tar` 終了コード0。JDK は Java 25.0.4.1。差分は batch-core/pom.xml のみで pom・CD の他の変更なし"},
+    {"text": "batch-core のビルド（Checkstyle・SpotBugs・単体テスト・カバレッジ80%）が通る。確認：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw -B -ntp clean verify -DskipITs -pl batch-core` / 出力: 終了コード0、BUILD SUCCESS 1。参照ルール vault/rules/verifier/build-verification.md に従い `./mvnw -B -ntp clean verify -DskipITs -Djacoco.haltOnFailure=false`（全体）も実行し、終了コード0・BUILD SUCCESS"},
+    {"text": "計画ブランチとの分岐点からの差分に `batch-core/pom.xml` が含まれる。確認：`git diff --merge-base work/p-20261012-jib-skip-core --name-only` の出力に `batch-core/pom.xml` の行がある", "ok": true, "note": "実行コマンド: `git -C <worktree> diff --merge-base work/p-20261012-jib-skip-core --name-only` / 出力: batch-core/pom.xml（ほかに vault/tasks/P-20261012-jib-skip-core/T-01.md の進捗追記）"}
+  ],
+  "reasons": []
+}
