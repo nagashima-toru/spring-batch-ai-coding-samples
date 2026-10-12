@@ -11,3 +11,5 @@
 - 2026-10-12 18:47 T-01 review→done attempt=1 verifier=sonnet
 - 2026-10-12 18:47 T-02 review→done attempt=1 verifier=sonnet
 - 2026-10-12 18:47 T-03 review→done attempt=1 verifier=sonnet
+- 2026-10-12 18:48 T-04 todo→doing attempt=1
+- 2026-10-12 18:48 T-05 todo→doing attempt=1
