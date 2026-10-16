@@ -14,8 +14,8 @@ GitHub Issue #59「development-guide §1 のサンプル01実行例が必須パ�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | todo | 0 | - | development-guide §1.3 のサンプル01実行例を inputFile/errorFile に直す | |
-| T-02 | todo | 0 | - | architecture.md §1.2 のサンプル01実行例を inputFile/errorFile に直す | |
+| T-01 | doing | 1 | - | development-guide §1.3 のサンプル01実行例を inputFile/errorFile に直す | |
+| T-02 | doing | 1 | - | architecture.md §1.2 のサンプル01実行例を inputFile/errorFile に直す | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
