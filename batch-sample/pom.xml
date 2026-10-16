@@ -2,7 +2,7 @@
 <!--
   batch-sample: サンプルアプリケーション
 
-  batch-core の基盤部品を利用した実務パターンのリファレンス実装（サンプルジョブ9本）。
+  batch-core の基盤部品を利用した実務パターンのリファレンス実装（リファレンスサンプル9本＋案件ジョブ3本）。
   1つの実行可能Jar/コンテナに全ジョブを同梱し、起動時に spring.batch.job.name で実行ジョブを選択する。
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"

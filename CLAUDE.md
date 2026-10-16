@@ -9,7 +9,7 @@ AI駆動開発（Claude Code）を前提とした Spring Batch のリファレ�
 | パス | 役割 |
 |---|---|
 | `batch-core/` | 基盤部品（共通ライブラリ）。**全ジョブはここの部品を利用する** |
-| `batch-sample/` | サンプルジョブ9本（コア6本フル実装＋拡張3本骨格）。解説は `batch-sample/docs/` |
+| `batch-sample/` | リファレンスサンプル9本（コア6本フル実装＋拡張3本骨格）＋案件ジョブ3本。解説は `batch-sample/docs/` |
 | `docs/architecture.md` | **方式設計書（SSoT）**。全設計・実装はこれに準拠する |
 | `docs/development-guide.md` | 開発手順（Skills を使った工程フロー・PR作成まで） |
 | `docs/coding-standards.md` | コーディング規約（Checkstyle: `config/checkstyle/`） |
