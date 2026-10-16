@@ -65,7 +65,7 @@
 | 構成要素 | 実装 | 使用する基盤部品 |
 |---|---|---|
 | Reader | `notifyTargetReader`（`MyBatisCursorItemReader<NotifyCandidate>`、queryId=`NotifyTargetMapper.selectNotifyTargets`） | `MyBatisCursorItemReader`（カーソルフェッチ。§9.2。job03 と同様の構成） |
-| Processor | `NotifyCandidateProcessor`（新規、`ValidatingItemProcessorBase<NotifyCandidate, MailSend>` を継承） | `ValidatingItemProcessorBase` |
+| Processor | `NotifyCandidateItemProcessor`（新規、`ValidatingItemProcessorBase<NotifyCandidate, MailSend>` を継承） | `ValidatingItemProcessorBase` |
 | Writer | `announcementNotifyMailWriter`（`MyBatisBatchItemWriter<MailSend>`、statementId=`MailSendMapper.insert`、`assertUpdates(false)`） | `MyBatisBatchItemWriter`（ON CONFLICT DO NOTHING により更新件数0が正常発生するため job01 と同様 `assertUpdates(false)`） |
 | Skip/Retry | `BusinessSkipPolicy(properties.skipLimit())` ／ `ErrorRecordSkipListener<NotifyCandidate, MailSend>` | `BusinessSkipPolicy`、`ErrorRecordSkipListener` |
 | チャンクサイズ | `properties.chunkSize()`（`SampleProperties`。既定100） | `SampleProperties` |
@@ -108,7 +108,7 @@
 
 | # | エラー事象 | 分類 | 例外 | 動作 | 退避・出力先 |
 |---|---|---|---|---|---|
-| 1 | メールアドレス形式不正 | 業務 | `BusinessException`（`NotifyCandidateProcessor` が Bean Validation 経由で送出） | Skip（`BusinessSkipPolicy`、上限 `properties.skipLimit()` = 既定10） | エラーレコードファイル（`errorFile` パラメータ。`ErrorRecordSkipListener`）。1件以上でジョブは共通 `loggingJobExecutionListener` の既定判定（Skip件数>0）により警告終了 |
+| 1 | メールアドレス形式不正 | 業務 | `BusinessException`（`NotifyCandidateItemProcessor` が Bean Validation 経由で送出） | Skip（`BusinessSkipPolicy`、上限 `properties.skipLimit()` = 既定10） | エラーレコードファイル（`errorFile` パラメータ。`ErrorRecordSkipListener`）。1件以上でジョブは共通 `loggingJobExecutionListener` の既定判定（Skip件数>0）により警告終了 |
 | 2 | メールアドレス未設定 | 業務上の対象外（エラーではない） | なし | Step3 Reader の SQL 抽出条件で除外（Skip・エラーファイル記録の対象にしない） | - |
 | 3 | 通知区域が郵便番号マスタに1件も展開できない | 業務（お知らせ単位） | なし（Tasklet 内の SQL 判定） | Step2 で該当お知らせを `status='9'` に更新し処理継続。件数を Job レベル `ExecutionContext.regionErrorCount` に記録 | `app.announcement.status='9'`（データとして残る。ファイル退避なし） |
 | 4 | DB 接続断・マスタ/業務テーブル不存在・設定不備 | システム | `SystemException`（基盤部品の DataSource/MyBatis 例外を通じて Step が失敗） | 即時異常終了（Skip しない） | - |
