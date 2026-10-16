@@ -15,7 +15,7 @@ GitHub Issue #60「命名規約（architecture §11）を案件ジョブにも�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | architecture.md §11 を業務ジョブ主体の命名規約に改訂し §10 を実態に合わせる | |
+| T-01 | review | 1 | - | architecture.md §11 を業務ジョブ主体の命名規約に改訂し §10 を実態に合わせる | |
 | T-02 | todo | 0 | T-01 | implementation Skill の命名表を §11 と整合させ正本を §11 と明記する | |
 | T-03 | todo | 0 | T-01 | coding-standards.md の Job 設定クラス名の記述を §11 と整合させる | |
 | T-04 | todo | 0 | T-01 | 設計書 ANNOUNCE-001.md の Processor クラス名を NotifyCandidateItemProcessor に改訂する | |
