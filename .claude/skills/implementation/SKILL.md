@@ -18,6 +18,8 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 
 ### 出力ファイルの格納先・命名規則
 
+命名の正本は `docs/architecture.md` §11（命名規約）。下表は格納先と §11 の業務ジョブの命名の早見で、食い違ったら §11 を正とする。リファレンスサンプルの番号付き命名（`jobNN_{内容}`・`SampleNNJobConfig` など）は新規の業務ジョブに使わない。
+
 | 成果物 | 場所・命名 |
 |---|---|
 | Job設定クラス | `{module}/src/main/java/.../job_{内容}/{Xxx}JobConfig.java` |
@@ -25,6 +27,8 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 | Processor | 同パッケージ `{Xxx}ItemProcessor.java`（ValidatingItemProcessorBase 継承） |
 | Mapper IF / XML | `common/` または同パッケージ / `src/main/resources/mapper/{Xxx}Mapper.xml` |
 | Flyway | `src/main/resources/db/migration/V{次番}__{内容}.sql`（既存ファイル変更禁止） |
+
+ジョブ名・Step 名・Bean 名は §11 に従う。
 
 ## 進め方
 
