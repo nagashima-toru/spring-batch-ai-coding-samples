@@ -30,7 +30,7 @@ graph LR
 - 起動時に `spring.batch.job.name` プロパティで実行するジョブを **1つだけ** 選択する
 
 ```bash
-java -jar batch-sample.jar --spring.batch.job.name=sample01CsvImportJob importDate=2026-07-14,java.time.LocalDate
+java -jar batch-sample.jar --spring.batch.job.name=sample01CsvImportJob inputFile=batch-sample/data/in/customers.csv errorFile=batch-sample/data/error/customers_error.txt
 ```
 
 - ECS ではタスク定義の `command` 上書きでジョブ名・パラメータを指定する
