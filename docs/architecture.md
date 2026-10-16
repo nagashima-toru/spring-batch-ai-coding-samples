@@ -187,23 +187,41 @@ com.example.batch.sample/
 - プロファイル: `local`（既定・AWS 非依存）/ `dev` / `prod`
 - 環境差分（接続先・チャンクサイズ・リトライ回数・ファイルパス）は `application-{profile}.yml` に外部化する
 - 機密情報は環境変数参照（`${DB_PASSWORD}`）とし、AWS では Secrets Manager から注入する。`local` のみ compose の固定値を使用
-- 業務定数はタイプセーフな `@ConfigurationProperties` クラス（batch-core の設定管理部品）で受ける
+- 業務定数はタイプセーフな `@ConfigurationProperties` クラスで受ける。クラスは各モジュールに置く（例: batch-sample の `SampleProperties`）
 
 ## 11. 命名規約
 
+この表が命名の正本であり、Skill などはここを参照する。業務ジョブ（案件ジョブ）には次の規約を適用する。
+
 | 対象 | 規約 | 例 |
 |---|---|---|
-| ジョブ名（Bean名） | `{サンプル番号}{内容}Job`（camelCase） | `sample01CsvImportJob` |
-| Step 名 | `{ジョブ名}.{連番}{内容}Step` | `sample01.01ImportStep` |
-| ジョブパッケージ | `jobNN_{内容}`（snake_case） | `job01_csv_import` |
-| Job 設定クラス | `SampleNNJobConfig` | `Sample01JobConfig` |
-| Reader/Processor/Writer Bean | `{ジョブ名}{役割}` | `sample01CustomerReader` |
+| ジョブパッケージ | `job_{内容}`（snake_case） | `job_order_daily_sales` |
+| ジョブ名（Bean名） | `{内容}Job`（camelCase） | `orderDailySalesJob` |
+| Step 名 | `{ジョブ接頭辞}.{連番2桁}{内容}Step`（ジョブ接頭辞＝ジョブ名から末尾の `Job` を除いたもの） | `orderDailySales.01FileCheckStep` |
+| Job 設定クラス | `{Xxx}JobConfig`（Xxx＝ジョブ接頭辞の PascalCase） | `OrderDailySalesJobConfig` |
+| 入力レコード | `{Xxx}Record`（record 型。Xxx は扱うデータを表す名詞の PascalCase） | `OrderCsvRecord` |
+| ItemProcessor | `{Xxx}ItemProcessor`（Xxx は扱うデータを表す名詞の PascalCase） | `OrderItemProcessor` |
+| 独自 Tasklet | `{Xxx}Tasklet` | `PointExpiryTasklet` |
+| Reader/Processor/Writer 等の Bean | `{ジョブ接頭辞}{役割}` | `orderDailySalesReader` |
 | Mapper XML | `{エンティティ}Mapper.xml` | `CustomerMapper.xml` |
 | Flyway | `V{連番}__{内容}.sql`（内容は英語 snake_case） | `V2__create_customer.sql` |
 | ジョブパラメータ | camelCase。日付は `java.time.LocalDate` 型 | `importDate` |
 
 - 終了コード・ExitStatus のカスタム値は `COMPLETED_WITH_WARNING` のみ許可（乱立防止）
 - テーブル・カラム名は snake_case、テーブル名は複数形にしない
+
+### リファレンスサンプル（例外）
+
+番号付きの命名はリファレンスサンプル（batch-sample のコア6本）専用であり、新規の業務ジョブには使わない。
+
+- パッケージ `jobNN_{内容}`（例 `job01_csv_import`）
+- ジョブ名 `sampleNN{内容}Job`（例 `sample01CsvImportJob`）。ジョブ接頭辞は `sampleNN` とする（Step 例 `sample01.01ImportStep`、Bean 例 `sample01CustomerReader`）
+- 設定クラス `SampleNNJobConfig`（例 `Sample01JobConfig`）
+- 骨格サンプル：job08 はジョブを持たず設定クラスは `Sample08Config`。job09（`job09_notification`）は設定クラスを持たない
+
+### 既存名の扱い
+
+既存ジョブの Spring Batch のジョブ名・Step 名と ItemStream の名前（`setName`）は JobRepository のメタデータに残るため、規約と異なっていても改名しない（例：job_announcement_notify の `notifyTargetReader`）。
 
 ## 12. テスト方針
 
