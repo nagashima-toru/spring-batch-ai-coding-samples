@@ -16,9 +16,9 @@ GitHub Issue #60「命名規約（architecture §11）を案件ジョブにも�
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | architecture.md §11 を業務ジョブ主体の命名規約に改訂し §10 を実態に合わせる | |
-| T-02 | todo | 0 | T-01 | implementation Skill の命名表を §11 と整合させ正本を §11 と明記する | |
-| T-03 | todo | 0 | T-01 | coding-standards.md の Job 設定クラス名の記述を §11 と整合させる | |
-| T-04 | todo | 0 | T-01 | 設計書 ANNOUNCE-001.md の Processor クラス名を NotifyCandidateItemProcessor に改訂する | |
+| T-02 | doing | 1 | T-01 | implementation Skill の命名表を §11 と整合させ正本を §11 と明記する | |
+| T-03 | doing | 1 | T-01 | coding-standards.md の Job 設定クラス名の記述を §11 と整合させる | |
+| T-04 | doing | 1 | T-01 | 設計書 ANNOUNCE-001.md の Processor クラス名を NotifyCandidateItemProcessor に改訂する | |
 | T-05 | todo | 0 | T-04 | NotifyCandidateProcessor を NotifyCandidateItemProcessor に改名する（コード・テスト） | |
 | T-06 | done | 1 | - | README.md・CLAUDE.md・batch-sample/pom.xml の本数表記を実態に合わせる | |
 | T-07 | todo | 0 | T-01 | batch-sample/docs/README.md の案件ジョブの命名の記述を §11 参照に直す | |
