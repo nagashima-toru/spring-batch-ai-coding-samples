@@ -1,6 +1,6 @@
 ---
 id: P-20261017-devguide-sample01-params
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #59「development-guide §1 のサンプル01実行例が必須パラメータ不足で失敗する」を解消する。`docs/development-guide.md` §1.3「よく使うコマンド」のサンプルジョブ実行例が `importDate=2026-07-14,java.time.LocalDate` を渡しており、sample01 の必須パラメータ `inputFile` / `errorFile`（`Sample01JobConfig.java` の `JobParametersValidators.required("inputFile", "errorFile")`）を満たさずパラメータ検証で失敗する。これを `batch-sample/docs/sample01-csv-import.md` の実行方法と同じパラメータに直す。同一原因の `docs/architecture.md` §1.2 の実行例も、オーケストレーターの判断で範囲に含めて直す。
