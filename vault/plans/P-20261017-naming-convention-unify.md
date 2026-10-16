@@ -19,7 +19,7 @@ GitHub Issue #60「命名規約（architecture §11）を案件ジョブにも�
 | T-02 | done | 1 | T-01 | implementation Skill の命名表を §11 と整合させ正本を §11 と明記する | |
 | T-03 | blocked | 1 | T-01 | coding-standards.md の Job 設定クラス名の記述を §11 と整合させる | 受け入れ基準2の確認コマンドと「決定済み」の置換文言が両立しません。どちらに合わせるか決めてください。基準2のコマンド `grep -c -F '{Xxx}JobConfig。命名は方式設計 §11' docs/coding-standards.md` は `JobConfig` と `。` の間にバッククォートが無いが、「決定済み」の置換文言は「`{Xxx}JobConfig`。命名は方式設計 §11」と `JobConfig` の直後にバッククォートがある。「決定済み」のとおりに置換したため基準2の出力は 0 で通らない。選択肢：1. 基準2の検索文字列をバッククォート入りに直す 2. 「決定済み」の文言を基準2の検索文字列に合う形に直す |
 | T-04 | done | 1 | T-01 | 設計書 ANNOUNCE-001.md の Processor クラス名を NotifyCandidateItemProcessor に改訂する | |
-| T-05 | doing | 1 | T-04 | NotifyCandidateProcessor を NotifyCandidateItemProcessor に改名する（コード・テスト） | |
+| T-05 | review | 1 | T-04 | NotifyCandidateProcessor を NotifyCandidateItemProcessor に改名する（コード・テスト） | |
 | T-06 | done | 1 | - | README.md・CLAUDE.md・batch-sample/pom.xml の本数表記を実態に合わせる | |
 | T-07 | doing | 1 | T-01 | batch-sample/docs/README.md の案件ジョブの命名の記述を §11 参照に直す | |
 
