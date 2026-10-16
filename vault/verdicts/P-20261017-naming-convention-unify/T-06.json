@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-naming-convention-unify/T-06",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 08:42",
+  "criteria": [
+    {"text": "リポジトリ内の「9本」がすべてリファレンスサンプルを指している（`git grep -n '9本' -- . ':!vault' | grep -v -c 'リファレンスサンプル9本'` の出力が `0`）", "ok": true, "note": "実行コマンド: worktree で `git grep -n '9本' -- . ':!vault' | grep -v -c 'リファレンスサンプル9本'` / 出力: 0"},
+    {"text": "README.md の2箇所が新しい表記である（`grep -c 'リファレンスサンプル9本の解説' README.md` の出力が `1`、かつ `grep -c 'リファレンスサンプル9本＋案件ジョブ3本＋結合テスト' README.md` の出力が `1`）", "ok": true, "note": "実行コマンド: 2つの grep -c を README.md に実行 / 出力: 1 と 1"},
+    {"text": "CLAUDE.md の表記が新しい表記である（`grep -c 'リファレンスサンプル9本（コア6本フル実装＋拡張3本骨格）＋案件ジョブ3本' CLAUDE.md` の出力が `1`）", "ok": true, "note": "実行コマンド: 該当 grep -c を CLAUDE.md に実行 / 出力: 1"},
+    {"text": "batch-sample/pom.xml のコメントが新しい表記で、XML として正しい（`grep -c 'リファレンスサンプル9本＋案件ジョブ3本' batch-sample/pom.xml` の出力が `1`、かつ `xmllint --noout batch-sample/pom.xml` が終了コード0）", "ok": true, "note": "実行コマンド: grep -c と xmllint --noout / 出力: 1、xmllint rc=0"},
+    {"text": "smoke の参照検査が通る（`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` の出力が `1`）", "ok": true, "note": "実行コマンド: `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"},
+    {"text": "3ファイルが差分に含まれる（`git diff --merge-base work/p-20261017-naming-convention-unify --name-only` の出力に `README.md`・`CLAUDE.md`・`batch-sample/pom.xml` の3行がある）", "ok": true, "note": "実行コマンド: `git diff --merge-base work/p-20261017-naming-convention-unify --name-only` / 出力: CLAUDE.md, README.md, batch-sample/pom.xml（ほかにタスク票）。--stat で3ファイルの変更は計4行(+2/-2 相当)のみで、他の行は変更なし"}
+  ],
+  "reasons": []
+}
