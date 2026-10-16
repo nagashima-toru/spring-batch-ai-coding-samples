@@ -40,7 +40,7 @@ docker compose -f docker/compose.yaml up -d
 
 # サンプルジョブのローカル実行（プロファイル local）
 ./mvnw spring-boot:run -pl batch-sample \
-  -Dspring-boot.run.arguments="--spring.batch.job.name=sample01CsvImportJob importDate=2026-07-14,java.time.LocalDate"
+  -Dspring-boot.run.arguments="--spring.batch.job.name=sample01CsvImportJob inputFile=batch-sample/data/in/customers.csv errorFile=batch-sample/data/error/customers_error.txt"
 ```
 
 ### 1.4 クラウド環境での準備
