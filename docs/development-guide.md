@@ -172,7 +172,7 @@ system-test の5工程のタスクに分ける。分け方と各工程のルー�
 （`vault/rules/planner/job-task-split.md`・`vault/rules/creator/skill-workflow.md`・
 `vault/rules/verifier/build-verification.md`）にある。
 
-コードを変えるタスクの受け入れ基準には「`/code-review` で差分に致命的な指摘が残っていない」の行が入る（`vault/rules/planner/code-review-criterion.md`）。creator は完了報告の前に、verifier は判定の時に、そのタスクの差分（計画ブランチとの分岐点から）に組み込みの `/code-review` を実行する。指摘と `/review-standards` の区分（Must/Should/Ask）の対応は `vault/rules/creator/code-review.md`・`vault/rules/verifier/code-review.md` にある。差分の外（既存コード）への指摘は FAIL にせず、PR 本文の「verifier の指摘」に残る。直すのに設計の改訂が要る指摘は blocked になり、人が `/plan unblock` で答える。
+コードを変更する計画では、最後に「計画の差分が `/code-review` を通過する」タスク（計画単位のレビュータスク）が付く（`.claude/agents/planner.md` の「計画単位のレビュータスク」節。導入先の補足は `vault/rules/planner/code-review-criterion.md`）。通常のタスクの受け入れ基準には `/code-review` の行は入らず、review-standards のタスクも手順4の `/code-review` を行わない。creator は完了報告の前に、verifier は判定の時に、そのタスクで計画全体の差分（ベースブランチとの分岐点から）に組み込みの `/code-review` を実行する。指摘と `/review-standards` の区分（Must/Should/Ask）の対応は `vault/rules/creator/code-review.md`・`vault/rules/verifier/code-review.md` にある。差分の外（既存コード）への指摘は FAIL にせず、PR 本文の「verifier の指摘」に残る。直すのに設計の改訂が要る指摘は blocked になり、人が `/plan unblock` で答える。
 
 ## 3. ブランチ運用・PR
 
