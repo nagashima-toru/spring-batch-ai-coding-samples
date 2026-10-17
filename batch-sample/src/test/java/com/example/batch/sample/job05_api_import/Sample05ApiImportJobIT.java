@@ -29,6 +29,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.example.batch.core.exception.BusinessException;
 import com.example.batch.core.exception.RetryableSystemException;
+import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
 import com.example.batch.sample.common.ApiUserMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -57,6 +58,12 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
     /** このページ番号の時だけ、ユーザーAPIが500を返す（-1なら失敗させない）。 */
     private static volatile int errorPage;
+
+    /** 真の間、U003 のメールアドレスを入力チェックで Skip される値にする。 */
+    private static volatile boolean invalidU003;
+
+    /** 真の間、page=2 に U006 を足して6件（チャンクサイズ3のちょうど倍数）にする。 */
+    private static volatile boolean sixUsers;
 
     @Autowired
     private JobOperator jobOperator;
@@ -109,9 +116,15 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                         [{"userId":"U001","userName":"山田","email":"u001@example.com"},
                          {"userId":"U002","userName":"鈴木","email":"u002@example.com"}]""";
             } else if (page == 1) {
+                String u003Email = invalidU003 ? "not-an-email" : "u003@example.com";
                 body = """
-                        [{"userId":"U003","userName":"佐藤","email":"u003@example.com"},
-                         {"userId":"U004","userName":"高橋","email":"u004@example.com"}]""";
+                        [{"userId":"U003","userName":"佐藤","email":"%s"},
+                         {"userId":"U004","userName":"高橋","email":"u004@example.com"}]""".formatted(u003Email);
+            } else if (page == 2 && sixUsers) {
+                // page=2 もページサイズと同数（2件）になり、page=3 の空ページで終わる
+                body = """
+                        [{"userId":"U005","userName":"田中","email":"u005@example.com"},
+                         {"userId":"U006","userName":"伊藤","email":"u006@example.com"}]""";
             } else if (page == 2) {
                 body = "[{\"userId\":\"U005\",\"userName\":\"田中\",\"email\":\"u005@example.com\"}]";
             } else {
@@ -166,6 +179,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         serverError = false;
         reportedCount = 5;
         errorPage = -1;
+        invalidU003 = false;
+        sixUsers = false;
         COUNT_REQUESTS.set(0);
         USERS_REQUESTS.set(0);
     }
@@ -246,6 +261,40 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
         assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(apiUserMapper.count()).isEqualTo(5);
+    }
+
+    @Test
+    void 入力チェックでSkipした件がある場合_Skipした件も取得件数に数え件数の突き合わせが通り警告終了する() throws Exception {
+        invalidU003 = true;
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(execution.getExitStatus().getExitCode())
+                .isEqualTo(BatchExitCodes.COMPLETED_WITH_WARNING.getExitCode());
+        assertThat(findStep(execution, "sample05.01ImportStep").getProcessSkipCount()).isEqualTo(1);
+        // Skip した U003 も API から取得した件なので、取得件数は5件のまま件数APIの5件と一致する
+        assertThat(execution.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
+        assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(4);
+    }
+
+    @Test
+    void 件数がチャンクサイズの倍数の場合_空の最終チャンクで終わっても取得件数が正しい() throws Exception {
+        sixUsers = true;
+        reportedCount = 6;
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        // 2チャンク（3件＋3件）をコミットした後、終端の null だけを読む空のチャンクでも読込位置が保存される
+        assertThat(execution.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(6L);
+        assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(6);
     }
 
     @Test
