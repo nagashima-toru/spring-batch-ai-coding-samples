@@ -1,0 +1,14 @@
+{
+  "task": "P-20261017-naming-convention-unify/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 13:34",
+  "criteria": [
+    {"text": "サンプル専用の命名が残っていない（`grep -c 'SampleNNJobConfig' docs/coding-standards.md` の出力が `0`）", "ok": true, "note": "実行コマンド: `grep -c 'SampleNNJobConfig' docs/coding-standards.md`（worktree 内） / 出力: 0"},
+    {"text": "§4.1 の行が業務ジョブの命名と §11 を指している（``grep -c -F '{Xxx}JobConfig`。命名は方式設計 §11' docs/coding-standards.md`` の出力が `1`）", "ok": true, "note": "実行コマンド: `grep -c -F '{Xxx}JobConfig`。命名は方式設計 §11' docs/coding-standards.md` / 出力: 1"},
+    {"text": "リポジトリ内で `SampleNNJobConfig` が §11 の例外と Skill の注記以外に残っていない（`git grep -l SampleNNJobConfig -- . ':!vault'` の出力が `docs/architecture.md` と `.claude/skills/implementation/SKILL.md` 以外のパスを含まない）", "ok": true, "note": "実行コマンド: `git grep -l SampleNNJobConfig -- . ':!vault'` / 出力: .claude/skills/implementation/SKILL.md と docs/architecture.md の2件のみ"},
+    {"text": "変更が1箇所に収まり見出しが変わっていない（`git diff --merge-base work/p-20261017-naming-convention-unify -U0 -- docs/coding-standards.md | grep -c '^@@'` の出力が `1`、かつ `grep -c '^#' docs/coding-standards.md` の出力が `13`）", "ok": true, "note": "実行コマンド: 指定の git diff | grep -c '^@@' / 出力: 1、`grep -c '^#' docs/coding-standards.md` / 出力: 13。差分は35行目1行のみで決定済みの置換文と一致"},
+    {"text": "成果物が差分に含まれる（`git diff --merge-base work/p-20261017-naming-convention-unify --name-only | grep -c '^docs/coding-standards.md'` の出力が `1`）", "ok": true, "note": "実行コマンド: 指定の git diff --name-only | grep -c '^docs/coding-standards.md' / 出力: 1"}
+  ],
+  "reasons": []
+}
