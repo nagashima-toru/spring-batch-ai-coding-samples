@@ -1,6 +1,6 @@
 ---
 id: P-20261017-sample-catalog-index
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #62「基盤部品→実例ジョブの索引を作り、案件ジョブの位置付けをカタログに明記する」を解消する。
