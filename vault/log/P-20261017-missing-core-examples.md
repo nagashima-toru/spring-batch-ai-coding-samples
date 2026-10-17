@@ -9,3 +9,5 @@
 - 2026-10-17 15:05 T-03 blocked→todo 人の指示: /plan unblock P-20261017-missing-core-examples T-03 --fresh
 - 2026-10-17 15:05 T-01 todo→doing attempt=1
 - 2026-10-17 15:05 T-03 todo→doing attempt=1
+- 2026-10-17 15:06 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-ac074e754916006f8 branch=worktree-agent-ac074e754916006f8 plan_head=36acd3617a0677df92e33e7af750994cb6c03352
+- 2026-10-17 15:06 T-01 doing→review attempt=1 creator=sonnet

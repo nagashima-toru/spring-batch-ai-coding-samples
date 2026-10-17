@@ -18,7 +18,7 @@ GitHub Issue #61「サンプルで使われていない基盤部品の実例を�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | sample03 解説に一時出力→配置と固定長出力（format）を書く | |
+| T-01 | review | 1 | - | sample03 解説に一時出力→配置と固定長出力（format）を書く | |
 | T-02 | todo | 0 | T-01 | sample03 に一時出力→配置の Step と format=fixed の固定長出力を実装する | |
 | T-03 | doing | 1 | - | sample05 解説に件数取得 Step・inputFile リプレイ・リトライ方針を書く | |
 | T-04 | todo | 0 | T-03 | sample05 に AbstractApiCallTasklet の件数取得 Step と 5xx 異常終了の結合テストを追加する | |
