@@ -7,7 +7,7 @@
 - 計画の前提は、詳細設計書がレビュー済みであること。`/review-design` を通った `docs/projects/{案件}/detail-design/{ジョブID}.md` を指す
 - ゴール文や設計書からレビュー済みと確かめられない時は、タスクを起こさず計画票末尾の `## 人への質問` に書く
 - 1計画で扱うジョブは1本にする。複数ジョブは計画を分ける（5タスクで、1計画7タスク以下の上限に収まる）
-- ジョブ1本は implementation → unit-test → integration-test → review-code → system-test の順の5タスクに分ける
+- ジョブ1本は implementation → unit-test → integration-test → review-standards → system-test の順の5タスクに分ける
 - 各タスクは `after` に直前の工程のタスク ID を書く。直列につなぎ、並行させない（先頭の implementation だけ `after` は空）
 - 各タスクの「成果物」のパスは、対応する工程の `.claude/skills/{工程}/SKILL.md` の「入力と出力」節と `docs/architecture.md` §2.1 に従って宣言する。パスの一覧はここに書き写さない
 - 全タスクの受け入れ基準に、`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（全モジュールの Checkstyle・SpotBugs・単体テスト。カバレッジ不足ではビルドを止めない）と `./mvnw clean verify -DskipITs -pl batch-core`（batch-core のカバレッジ80%）の成功を入れる。`-DskipITs` の基準では batch-sample のカバレッジを判定しない
