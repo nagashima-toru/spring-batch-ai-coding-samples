@@ -28,3 +28,4 @@
 - 2026-10-17 13:31 T-07 review→done attempt=1 verifier=sonnet
 - 2026-10-17 13:34 T-03 amend 基準差し替え=2
 - 2026-10-17 13:34 T-03 blocked→todo 人の指示: /plan unblock P-20261017-naming-convention-unify T-03
+- 2026-10-17 13:34 T-03 todo→doing attempt=1 worktree を引き継ぎ
