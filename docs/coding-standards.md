@@ -1,6 +1,6 @@
 # コーディング規約
 
-本規約は `implementation` / `review-code` Skill から参照される。
+本規約は `implementation` / `review-standards` Skill から参照される。
 機械チェック可能なルールは Checkstyle（`config/checkstyle/checkstyle.xml`）・SpotBugs で強制され、本書はその背景と、機械チェックできない設計判断の規約を定める。
 
 ## 1. 一般規約（Java）
@@ -82,7 +82,7 @@
 
 - コミットメッセージは日本語。1行目に要約（50字程度）、本文に「なぜ」を書く
 - 1 コミット 1 論理変更。フォーマット変更と機能変更を混ぜない
-- PR には設計書リンクと `review-code` Skill の実施記録を含める（テンプレート準拠）
+- PR には設計書リンクと `review-standards` Skill の実施記録を含める（テンプレート準拠）
 
 ## 9. 禁止事項まとめ
 

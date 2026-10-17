@@ -552,6 +552,29 @@ expect "(headings-task) draft・「## 進捗」欠落・Bash → 許可（対象
 rm -f "$TMP/vault/plans/P-TEST.md"
 rm -rf "$TMP/vault/tasks"
 
+# 受け入れ基準の grep の文字列と決定済みのバッククォートの食い違い検査（Issue #204）
+make_task_literal() { # $1=受け入れ基準の1行目（grep を含む箇条）。決定済みに「`{Xxx}JobConfig`。命名は方式設計 §11」を書く
+  mkdir -p "$TMP/vault/tasks/P-TEST"
+  printf '# T-01 テスト\n\n## 目的\n\n## 入力\n\n## 成果物\n- docs/a.md\n\n## 受け入れ基準\n%s\n- 基準2\n- 基準3\n\n## 決定済み\n- 「`{Xxx}JobConfig`。命名は方式設計 §11」と書く\n\n## 進捗\n' "$1" > "$TMP/vault/tasks/P-TEST/T-01.md"
+}
+LIT_MISMATCH='- `grep -c -F '"'"'{Xxx}JobConfig。命名は方式設計 §11'"'"' docs/a.md` が 1'
+make_plan "P-TEST" "draft" "| T-01 | todo | 0 | - | A | |"
+make_task_literal "$LIT_MISMATCH"
+expect "(literal-task) draft・-F の文字列がバッククォートの有無だけで食い違う → ブロック" block "$(run_plan_guard_file Write "$TMP/vault/tasks/P-TEST/T-01.md")" "バッククォートの有無だけで食い違っています"
+make_task_literal '- `grep -c '"'"'.{Xxx}JobConfig.。命名は方式設計 §11'"'"' docs/a.md` が 1'
+expect "(literal-task) draft・バッククォートを . に置き換えたパターン → 許可" allow "$(run_plan_guard_file Write "$TMP/vault/tasks/P-TEST/T-01.md")"
+make_task_literal '- `grep -c -F '"'"'命名は方式設計 §11'"'"' docs/a.md` が 1'
+expect "(literal-task) draft・決定済みにそのまま書かれた文字列 → 許可" allow "$(run_plan_guard_file Write "$TMP/vault/tasks/P-TEST/T-01.md")"
+make_task_literal '- `grep -c -F '"'"'OldName'"'"' docs/a.md` が 0'
+expect "(literal-task) draft・決定済みにも成果物にも無い文字列 → 許可" allow "$(run_plan_guard_file Write "$TMP/vault/tasks/P-TEST/T-01.md")"
+make_task_literal "$LIT_MISMATCH"
+make_plan "P-TEST" "approved" "| T-01 | doing | 1 | - | A | |"
+expect "(literal-task) approved・食い違う票 → 許可（検査しない）" allow "$(run_plan_guard_file Write "$TMP/vault/tasks/P-TEST/T-01.md")"
+make_plan "P-TEST" "draft" "| T-01 | todo | 0 | - | A | |"
+expect "(literal-task) draft・食い違う票・Bash → 許可（対象外）" allow "$(run_plan_guard_file Bash "$TMP/vault/tasks/P-TEST/T-01.md")"
+rm -f "$TMP/vault/plans/P-TEST.md"
+rm -rf "$TMP/vault/tasks"
+
 # 計画票のタスク表行数検査（D-010 フェーズ3）
 make_plan_n() { # $1=planStatus $2=データ行数
   local rows=() i
@@ -826,6 +849,20 @@ arch_ok=ok
 for d in plans tasks verdicts log designs templates rules; do [ -d "$ITMP/vault/$d" ] || arch_ok=ng; done
 expect_eq "(inst-arch) install.sh は vault/archive/ を作らない" "ok" "$arch_ok"
 rm -rf "$ITMP"
+LGTMP="$(smoke_tmpdir)" || abort_tmp
+bash "$ROOT/scripts/install.sh" "$LGTMP" >/dev/null 2>&1
+expect_eq "(inst-log) 01 新規の install で vault/log/.gitkeep が配られる" "1" \
+  "$([ -f "$LGTMP/vault/log/.gitkeep" ] && echo 1 || echo 0)"
+out="$(bash "$ROOT/scripts/install.sh" "$LGTMP" 2>&1)"
+expect_eq "(inst-log) 02 2回目の install で skip  (exists) vault/log/.gitkeep が出る" "1" \
+  "$(printf '%s\n' "$out" | grep -cxF 'skip  (exists) vault/log/.gitkeep')"
+expect_eq "(inst-log) 03 マニフェストの files に vault/log/.gitkeep が無い" "0" \
+  "$(python3 -c "import json,sys;print(1 if 'vault/log/.gitkeep' in json.load(open(sys.argv[1]))['files'] else 0)" "$LGTMP/.claude/harness-manifest.json")"
+rm -f "$LGTMP/vault/log/.gitkeep"
+out="$(bash "$ROOT/scripts/install.sh" --update "$LGTMP" 2>&1)"
+expect_eq "(inst-log) 04 vault/log/.gitkeep が無い導入先に --update すると配られる" "1 1" \
+  "$(printf '%s\n' "$out" | grep -cxF 'copy  vault/log/.gitkeep') $([ -f "$LGTMP/vault/log/.gitkeep" ] && echo 1 || echo 0)"
+rm -rf "$LGTMP"
 IOTMP="$(smoke_tmpdir)" || abort_tmp
 bash "$ROOT/scripts/install.sh" "$IOTMP" >/dev/null 2>&1
 expect_eq "(in-out) 既定の install で作った CLAUDE.md に @docs/vision.md の行が無い" "0" \
@@ -1255,6 +1292,128 @@ bash "$ROOT/scripts/uninstall.sh" "$GI1" >/dev/null 2>&1
 expect_eq "(install-gi) 06 05 の後に uninstall → .gitignore が無い" "0" \
   "$([ -e "$GI1/.gitignore" ] && echo 1 || echo 0)"
 rm -rf "$GI1" "$GI2" "$GI3"
+GI4="$(smoke_tmpdir)" || abort_tmp
+printf 'x/\n' > "$GI4/.gitignore"
+bash "$ROOT/scripts/install.sh" "$GI4" >/dev/null 2>&1
+GI5="$(smoke_tmpdir)" || abort_tmp
+printf 'a/\n.claude/worktrees/\n' > "$GI5/.gitignore"
+gi4_mf="$(gi_mf "$GI4")"
+bash "$GI4/scripts/install.sh" "$GI5" >/dev/null 2>&1
+expect_eq "(install-gi) 07 gitignore キーのある manifest を持つ導入先を導入元にして、行が既にある導入先へ install → キー無し" "appended none" \
+  "$gi4_mf $(gi_mf "$GI5")"
+rm -rf "$GI4" "$GI5"
+
+echo "== install.sh は配布元の独自ファイルを配らない =="
+IO_BIZ=".claude/skills/biz-skill/SKILL.md .claude/skills/biz-skill/templates/t.md .claude/skills/biz-skill/references/r.md .claude/agents/biz-agent.md .claude/hooks/biz_hook.py vault/templates/biz.md"
+IO_FIXED=".claude/ai-harness.md .claude/agents/creator.md .claude/agents/planner.md .claude/agents/verifier.md .claude/hooks/_hooklib.py .claude/hooks/agent_write_guard.py .claude/hooks/plan_guard.py .claude/hooks/stop_gate.py .claude/skills/plan/SKILL.md .claude/skills/run/SKILL.md .claude/skills/design/SKILL.md"
+io_biz_files() { # $1=導入先。独自ファイル6つのうち存在する数
+  local n=0 rel
+  for rel in $IO_BIZ; do [ -e "$1/$rel" ] && n=$((n+1)); done
+  echo "$n"
+}
+io_mf_has() { # $1=導入先 $2...=相対パス。マニフェストの files に載っている数
+  local d="$1"; shift
+  python3 -c '
+import json, sys
+f = json.load(open(sys.argv[1], encoding="utf-8")).get("files") or {}
+print(sum(1 for r in sys.argv[2:] if r in f))
+' "$d/.claude/harness-manifest.json" "$@"
+}
+io_mf_biz() { # $1=導入先。独自ファイル由来のキー（.claude/skills/biz-skill/ 始まりを含む）の数
+  python3 -c '
+import json, sys
+f = json.load(open(sys.argv[1], encoding="utf-8")).get("files") or {}
+print(sum(1 for k in f if k.startswith(".claude/skills/biz-skill/") or k in sys.argv[2:]))
+' "$1/.claude/harness-manifest.json" .claude/agents/biz-agent.md .claude/hooks/biz_hook.py vault/templates/biz.md
+}
+IO_A="$(smoke_tmpdir)" || abort_tmp
+IO_B="$(smoke_tmpdir)" || abort_tmp
+IO_C="$(smoke_tmpdir)" || abort_tmp
+bash "$ROOT/scripts/install.sh" "$IO_A" >/dev/null 2>&1
+for rel in $IO_BIZ; do mkdir -p "$IO_A/$(dirname "$rel")"; echo "biz" > "$IO_A/$rel"; done
+bash "$IO_A/scripts/install.sh" "$IO_B" >/dev/null 2>&1
+expect_eq "(inst-only) 01 独自ファイルを持つ導入先を導入元にして install → 独自ファイル6つがどれも無い" "0" "$(io_biz_files "$IO_B")"
+expect_eq "(inst-only) 02 マニフェストの files に独自ファイルのキーが無い" "0" "$(io_mf_biz "$IO_B")"
+io_fixed_n=0
+for rel in $IO_FIXED; do [ -f "$IO_B/$rel" ] && io_fixed_n=$((io_fixed_n+1)); done
+# shellcheck disable=SC2086
+expect_eq "(inst-only) 03 固定リストの11ファイルがすべてあり、マニフェストにも11パス載っている" "11 11" \
+  "$io_fixed_n $(io_mf_has "$IO_B" $IO_FIXED)"
+bash "$IO_A/scripts/install.sh" --update "$IO_B" >/dev/null 2>&1
+expect_eq "(inst-only) 04 --update の後も独自ファイルが無く、マニフェストにも載らない" "0 0" "$(io_biz_files "$IO_B") $(io_mf_biz "$IO_B")"
+bash "$ROOT/scripts/install.sh" "$IO_C" >/dev/null 2>&1
+mkdir -p "$IO_C/.claude/skills/biz-skill"; echo "biz" > "$IO_C/.claude/skills/biz-skill/SKILL.md"
+python3 -c '
+import hashlib, json, sys
+m = sys.argv[1]
+d = json.load(open(m, encoding="utf-8"))
+d["files"][".claude/skills/biz-skill/SKILL.md"] = hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()
+json.dump(d, open(m, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+' "$IO_C/.claude/harness-manifest.json" "$IO_C/.claude/skills/biz-skill/SKILL.md"
+bash "$ROOT/scripts/install.sh" --update "$IO_C" >/dev/null 2>&1
+expect_eq "(inst-only) 05 旧版が記録した独自ファイルは --update でも残り、マニフェストからは外れる" "1 0" \
+  "$([ -f "$IO_C/.claude/skills/biz-skill/SKILL.md" ] && echo 1 || echo 0) $(io_mf_biz "$IO_C")"
+rm -rf "$IO_A" "$IO_B" "$IO_C"
+
+echo "== install.sh は配布元の独自スクリプトを配らない =="
+IS_BIZ="scripts/biz_tool.sh scripts/biz_tool.py"
+is_files_words() { # $1=install.sh のパス。SCRIPTS_FILES= の行の値（スペース区切り）
+  sed -n 's/^SCRIPTS_FILES="\(.*\)"$/\1/p' "$1"
+}
+IS_WORDS="$(is_files_words "$ROOT/scripts/install.sh")"
+is_biz_files() { # $1=導入先。独自スクリプトのうち存在する数
+  local n=0 rel
+  for rel in $IS_BIZ; do [ -e "$1/$rel" ] && n=$((n+1)); done
+  echo "$n"
+}
+is_mf_biz() { # $1=導入先。マニフェストの files に載っている独自スクリプトの数
+  io_mf_has "$1" $IS_BIZ
+}
+is_unlisted() { # $1=ディレクトリ。その scripts/ 直下の *.sh・*.py のうち SCRIPTS_FILES に無いものの数
+  local n=0 f rel
+  for f in "$1"/scripts/*.sh "$1"/scripts/*.py; do
+    [ -f "$f" ] || continue
+    rel="scripts/$(basename "$f")"
+    case " $IS_WORDS " in *" $rel "*) ;; *) n=$((n+1)) ;; esac
+  done
+  echo "$n"
+}
+IS_A="$(smoke_tmpdir)" || abort_tmp
+IS_B="$(smoke_tmpdir)" || abort_tmp
+IS_C="$(smoke_tmpdir)" || abort_tmp
+bash "$ROOT/scripts/install.sh" "$IS_A" >/dev/null 2>&1
+for rel in $IS_BIZ; do echo "biz" > "$IS_A/$rel"; done
+bash "$IS_A/scripts/install.sh" "$IS_B" >/dev/null 2>&1
+expect_eq "(inst-scr) 01 独自スクリプトを持つ導入先を導入元にして install → 独自スクリプトが1つも無い" "0" "$(is_biz_files "$IS_B")"
+expect_eq "(inst-scr) 02 マニフェストの files に独自スクリプトのキーが無い" "0" "$(is_mf_biz "$IS_B")"
+is_n=0
+for rel in $IS_WORDS; do [ -f "$IS_B/$rel" ] && is_n=$((is_n+1)); done
+is_total="$(echo $IS_WORDS | wc -w | tr -d ' ')"
+# shellcheck disable=SC2086
+expect_eq "(inst-scr) 03 SCRIPTS_FILES の全パスが導入先にあり、マニフェストにも全部載っている" "$is_total $is_total" \
+  "$is_n $(io_mf_has "$IS_B" $IS_WORDS)"
+bash "$IS_A/scripts/install.sh" --update "$IS_B" >/dev/null 2>&1
+expect_eq "(inst-scr) 04 --update の後も独自スクリプトが無く、マニフェストにも載らない" "0 0" "$(is_biz_files "$IS_B") $(is_mf_biz "$IS_B")"
+bash "$ROOT/scripts/install.sh" "$IS_C" >/dev/null 2>&1
+echo "biz" > "$IS_C/scripts/biz_tool.sh"
+python3 -c '
+import hashlib, json, sys
+m = sys.argv[1]
+d = json.load(open(m, encoding="utf-8"))
+d["files"]["scripts/biz_tool.sh"] = hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()
+json.dump(d, open(m, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+' "$IS_C/.claude/harness-manifest.json" "$IS_C/scripts/biz_tool.sh"
+bash "$ROOT/scripts/install.sh" --update "$IS_C" >/dev/null 2>&1
+expect_eq "(inst-scr) 05 旧版が記録した独自スクリプトは --update でも残り、マニフェストからは外れる" "1 0" \
+  "$([ -f "$IS_C/scripts/biz_tool.sh" ] && echo 1 || echo 0) $(is_mf_biz "$IS_C")"
+if [ -f "$ROOT/.claude/harness-manifest.json" ]; then
+  is_missing=0
+else
+  is_missing="$(is_unlisted "$ROOT")"
+fi
+expect_eq "(inst-scr) 06 scripts/ 直下の *.sh・*.py がすべて SCRIPTS_FILES にある（導入先では省略）" "0" "$is_missing"
+expect_eq "(inst-scr) 07 06 の数え方は独自スクリプト2つを置いた A で 2 になる" "2" "$(is_unlisted "$IS_A")"
+rm -rf "$IS_A" "$IS_B" "$IS_C"
 
 echo "== 標準ルール6本を配らない（install / --update / uninstall） =="
 SR_RULES="vault/rules/common/roles.md vault/rules/common/git.md vault/rules/creator/creator.md vault/rules/creator/git-workflow.md vault/rules/verifier/verifier.md vault/rules/planner/planner.md"
@@ -2710,6 +2869,31 @@ tw_rec
 tw_run P-TEST T-01 doing --resume-worktree
 expect_eq "(transition-resume) 07 マージが衝突したら終了コード 5 で計画票が変わらず MERGE_HEAD が残らない" "5 same no" "$TW_RC $TW_PLAN $(tw_mergehead)"
 
+tw_setup todo 0; tw_rec
+tw_run P-TEST T-01 doing --resume-worktree
+TW_PH3="$(sed -n 's/.*plan_head=\([0-9a-f]*\)$/\1/p' "$TW_OUT")"
+tw_run P-TEST T-01 review --worktree "$TWW" --branch "$TWB" --plan-head "$TW_PH3"
+expect_eq "(transition-resume) 08 取り込みのマージコミットだけの worktree は review で新規コミット無しの終了コード 4" "4 1" \
+  "$TW_RC $(tw_row | grep -c '^| T-01 | blocked | 1 |')"
+
+tw_setup todo 0; tw_mod; tw_commit
+echo other > "$TWR/src/other.txt"; git -C "$TWR" add -A; git -C "$TWR" commit -q -m "他タスクの成果物"
+tw_rec
+tw_run P-TEST T-01 doing --resume-worktree
+TW_RC9="$TW_RC"
+TW_P2="$(sed -n 's/.*plan_head=\([0-9a-f]*\)$/\1/p' "$TW_OUT")"
+expect_eq "(transition-resume) 09 待機中に計画ブランチへ入った他タスクのファイルが引き継いだ worktree に入る" "0 yes" \
+  "$TW_RC9 $([ -f "$TWW/src/other.txt" ] && echo yes || echo no)"
+expect_eq "(transition-resume) 10 出力の plan_head から worktree への差分は自タスクのファイルだけ" \
+  "src/ok.txt
+vault/tasks/P-TEST/T-01.md" "$(git -C "$TWR" diff --name-only "$TW_P2" "$TWB")"
+tw_run P-TEST T-01 review --worktree "$TWW" --branch "$TWB" --plan-head "$TW_P2"
+TW_RCR="$TW_RC"
+tw_verdict PASS 1
+tw_run P-TEST T-01 done --worktree "$TWW" --branch "$TWB" --plan-head "$TW_P2"
+expect_eq "(transition-resume) 11 出力の plan_head を使った review と done が終了コード 0 で他タスクのファイルが計画ブランチに残る" "0 0 yes changed" \
+  "$TW_RCR $TW_RC $([ -f "$TWR/src/other.txt" ] && echo yes || echo no) $(cat "$TWR/src/ok.txt" 2>/dev/null)"
+
 # 25 pr_body の件名のパターン
 tw_setup doing 1
 git -C "$TWR" commit -q --allow-empty -m 'P-TEST/T-01,T-02: review→done'
@@ -2761,6 +2945,31 @@ expect_eq "(run-skill-5) run 手順7の本文ファイルの節が D-016 の順�
 
 if ! grep -qF '起点コミット' "$ROOT/.claude/agents/creator.md" "$ROOT/.claude/agents/verifier.md" "$ROOT/.claude/agents/planner.md"; then ag1=ok; else ag1=NG; fi
 expect_eq "(agents-1) creator・verifier・planner の定義に「起点コミット」の語が無い" ok "$ag1"
+
+agtools_check() { # $1=ルート。creator・verifier の定義の frontmatter の tools に Skill が無いファイルの相対パスを1行ずつ出す
+  local rel f line t found
+  for rel in .claude/agents/creator.md .claude/agents/verifier.md; do
+    f="$1/$rel"
+    found=0
+    if [ -f "$f" ]; then
+      line="$(grep -m1 '^tools:' "$f")"
+      line="${line#tools:}"
+      while IFS= read -r t; do
+        t="${t#"${t%%[![:space:]]*}"}"
+        t="${t%"${t##*[![:space:]]}"}"
+        [ "$t" = "Skill" ] && found=1
+      done <<EOF
+$(printf '%s\n' "$line" | tr ',' '\n')
+EOF
+    fi
+    [ "$found" = 1 ] || echo "$rel"
+  done
+}
+expect_eq "(agents-2) creator・verifier の定義の tools に Skill がある" "" "$(agtools_check "$ROOT")"
+mkdir -p "$TMP/agtools/.claude/agents"
+echo 'tools: Read, Grep, Glob, Bash, Write, Edit' > "$TMP/agtools/.claude/agents/creator.md"
+echo 'tools: Read, Grep, Glob, Bash, Write, Skill' > "$TMP/agtools/.claude/agents/verifier.md"
+expect_eq "(agents-3) tools に Skill が無い定義を検査が検出する" ".claude/agents/creator.md" "$(agtools_check "$TMP/agtools")"
 
 # amend_task.py（タスク票の成果物の追加・受け入れ基準の差し替えと log の記録）
 am_run() { # amend_task.py を $TWR で1回実行。AM_RC を設定する

@@ -19,7 +19,7 @@
 「自分のブランチの計画票」は `vault/plans/*.md` を走査し、frontmatter の `status` が `approved` のものを取る。2つ以上 `approved` があるのは異常（1ブランチ1計画の不変条件）。
 実際にこの走査を行うスクリプトが `scripts/current_plan.sh`（`vault/plans/*.md` の frontmatter のみを見て、approved な計画票の計画 ID を1行1件で出力する）。
 
-証跡は3層で残る（計画ブランチの中の証跡。マージ後は PR の本文とコミット履歴から辿る）。`vault/log/<計画ID>.md`（状態遷移）・`vault/verdicts/<計画ID>/T-01.json`（判定の根拠）・git の履歴（タスクごとの状態のコミット（transition.py の `<計画ID>/<id,...>: <旧>→<新>`）・worktree 側の収集コミット（`<計画ID>/<id>: creator 成果物をオーケストレーターが収集`）・計画ブランチへの `--no-ff` のマージコミット（`<計画ID>/<id>: マージ`））と、オーケストレーターが `bash scripts/vcs_finish.sh` で作る PR。どれも計画のブランチ内に閉じるので、セッション間で競合しない。
+証跡は3層で残る（計画ブランチの中の証跡。マージ後は PR の本文とコミット履歴から辿る）。`vault/log/<計画ID>.md`（状態遷移）・`vault/verdicts/<計画ID>/T-01.json`（判定の根拠）・git の履歴（タスクごとの状態のコミット（transition.py の `<計画ID>/<id,...>: <旧>→<新>`）・worktree 側の収集コミット（`<計画ID>/<id>: creator 成果物をオーケストレーターが収集`）・worktree 側の取り込みのマージコミット（`--resume-worktree` が作る `<計画ID>/<id>: 計画ブランチを取り込み`）・計画ブランチへの `--no-ff` のマージコミット（`<計画ID>/<id>: マージ`））と、オーケストレーターが `bash scripts/vcs_finish.sh` で作る PR。どれも計画のブランチ内に閉じるので、セッション間で競合しない。
 
 計画一式4種（`vault/plans/<計画ID>.md`・`vault/tasks/<計画ID>/`・`vault/verdicts/<計画ID>/`・`vault/log/<計画ID>.md`）は、run の手順7で PR を作る直前に除去し、ベースブランチ（既定 `main`）には入れない。除去は `bash scripts/purge_plan.sh [--dry-run] <計画ID>` で行う。条件は、ブランチが `work/<計画IDの英小文字>`・計画票が `status: done`・タスク表が1行以上で全行 `done`・対象パスに未コミットの変更が無いこと。存在しないパスは飛ばす。`--dry-run` は消す予定のパスを1行1件で出し、何も変えない。終了コードは 0（消した／dry-run で出した）・1（条件を満たさない、または `git rm` の失敗）・2（引数の誤り、git リポジトリの外）。スクリプトはコミットしない（オーケストレーターが `<計画ID>: 計画一式を除去` でコミットする）。`vault/harness-improvements/<ファイル名>` は除去の対象外。
 
@@ -33,7 +33,7 @@
 
 環境変数 `HARNESS_BASE_BRANCH` はベースブランチ（計画・設計のブランチを切る元で、PR/MR の取り込み先）の名前。前後の空白を除いて空（未設定を含む）なら `main` とする。値の形式は検査しない。影響する箇所は `scripts/vcs_finish.sh`（GitHub REST の `base`・ホスティング無しのマージ案内の取り込み先）、`/plan` 手順A-2・`/design` 手順1 の開始条件、`agent_write_guard.py` の (b)（ベースブランチと `main` の両方で `git commit` を拒否）、`scripts/purge_plan.sh --merged` のマージ済み判定、run 手順7の MCP 代替時の base。恒久的に変える時は導入先の `.claude/settings.json` の `env` に書く（`docs/install.md`）。
 
-環境変数 `HARNESS_PUSH_BRANCH` は push 先と PR/MR の head（source branch）を上書きするブランチ名。前後の空白を除いて空（未設定を含む）なら未設定で、今の動作（上流が無ければ現在のブランチ名で push、head は現在のブランチ）のまま。設定時は GitHub・GitLab の経路で上流の有無に関係なく毎回 `git push -u origin HEAD:<値>` で push し、GitHub の REST は `head=<値>`、GitLab の引数なしの経路は `glab mr create` に `--source-branch <値>` を足す。引数ありの経路でも push は `HEAD:<値>` で行い、PR/MR 作成の引数は足さない。push が失敗したら（non-fast-forward を含む）その終了コードで終わり、force はしない。ホスティング無し（`none`）の経路は値を見ない。`/plan` 手順A-2・`/design` 手順1 の開始条件には「`HARNESS_PUSH_BRANCH` が設定され、現在のブランチがその値で、`git rev-parse HEAD` がローカルの `<ベースブランチ>` と同じコミットなら、ベース上とみなして現在の HEAD から切る」が加わる（開始条件の確認の前に `git fetch origin <ベースブランチ>:<ベースブランチ>` を best-effort で1回行い、失敗しても止まらない。比較はローカルの `<ベースブランチ>` の ref と行い、`origin/<ベース>` とは比べない。ローカルにベースブランチが無ければ止まる）。`git branch --show-current` の出力が空（detached HEAD）の時は、fetch の後で `git rev-parse HEAD` がローカルの `<ベースブランチ>` と同じコミットなら、`git checkout <ベースブランチ>` してベース上とみなす（違う時・`git checkout <ベースブランチ>` が失敗した時は止まる。`git checkout -f`・`git reset`・`git stash` は使わない）。run 手順7・design 手順8 の MCP 代替時の head もこの値。ローカルのブランチ名（`work/…`・`design/…`）と `transition.py` のブランチ検査は変えない。この値のブランチ上の直接コミットはフックで拒否しない。
+環境変数 `HARNESS_PUSH_BRANCH` は push 先と PR/MR の head（source branch）を上書きするブランチ名。前後の空白を除いて空（未設定を含む）なら未設定で、今の動作（上流が無ければ現在のブランチ名で push、head は現在のブランチ）のまま。設定時は GitHub・GitLab の経路で上流の有無に関係なく毎回 `git push -u origin HEAD:<値>` で push し、GitHub の REST は `head=<値>`、GitLab の引数なしの経路は `glab mr create` に `--source-branch <値>` を足す。引数ありの経路でも push は `HEAD:<値>` で行い、PR/MR 作成の引数は足さない。push が失敗したら（non-fast-forward を含む）その終了コードで終わり、force はしない。ホスティング無し（`none`）の経路は値を見ない。`/plan` 手順A-2・`/design` 手順1 の開始条件には「`HARNESS_PUSH_BRANCH` が設定され、現在のブランチがその値で、`git rev-parse HEAD` がローカルの `<ベースブランチ>` と同じコミットなら、ベース上とみなして現在の HEAD から切る」が加わる（開始条件の確認の前に `git fetch origin <ベースブランチ>:<ベースブランチ>` を best-effort で1回行い、失敗しても止まらない。比較はローカルの `<ベースブランチ>` の ref と行い、`origin/<ベース>` とは比べない。ローカルにベースブランチが無ければ止まる）。`/plan` 手順A-2 では、上のどの条件も満たさない時、fetch の後で、`HARNESS_PUSH_BRANCH` が設定され、現在のブランチが `work/…` か push 先で、未コミットの変更が無く、`HEAD` とローカルの push 先の内容がベースブランチに取り込み済み（`git merge-tree --write-tree <ベースブランチ> <対象>` の結果がベースのツリーと同じ。スカッシュマージでも同じになる）で、リモートの push 先ブランチ（`git ls-remote --heads origin <push先>`）が無いかベースブランチの祖先なら、`git checkout -B <push先> <ベースブランチ>` で push 先ブランチを切り直してから上の条件で判定する（Issue #206）。リモートの push 先ブランチが残っていてベースの祖先でない時（スカッシュマージの後など）は止まる。この切り直しは `/plan` 手順A-2 だけで行い、`/design` 手順1 には加えない。`git branch --show-current` の出力が空（detached HEAD）の時は、fetch の後で `git rev-parse HEAD` がローカルの `<ベースブランチ>` と同じコミットなら、`git checkout <ベースブランチ>` してベース上とみなす（違う時・`git checkout <ベースブランチ>` が失敗した時は止まる。`git checkout -f`・`git reset`・`git stash` は使わない）。run 手順7・design 手順8 の MCP 代替時の head もこの値。ローカルのブランチ名（`work/…`・`design/…`）と `transition.py` のブランチ検査は変えない。この値のブランチ上の直接コミットはフックで拒否しない。
 
 ## 2. 状態（5つで固定、英小文字）
 
@@ -66,12 +66,12 @@
 - 複数の id は、全部の行で同じ遷移が許される時だけ行う（1つでも拒否があれば何も変えない）。コミットは1回
 - worktree 運用（フェーズ4）：creator が作業した worktree を渡すと、review・done・doing・blocked の前後の git 操作まで1コマンドで行う。呼び出しの形：`python3 scripts/transition.py <計画ID> <id> <review|done|doing|blocked> --worktree <パス> --branch <ブランチ> [--plan-head <sha>]`。`--plan-head` は review・done・blocked で必須、doing では使わない。id は1つだけ。`--worktree` と `--branch` はそろって使う。`--worktree` を渡さない呼び出しは今の（フェーズ2の）動きのまま
 - worktree とブランチの検証は `scripts/discard_worktree.sh` と同じ条件：ブランチ名が `worktree-agent-` で始まる、`git worktree list --porcelain` にそのパスが登録済み、登録されたブランチが一致（パスは realpath で比べる）。`--plan-head` は40桁の sha に解決できること。満たさなければ何も変えず終了コード 1
-- review（doing→review）：(1) worktree に未コミット分があれば `git add -A` して `<計画ID>/<id>: creator 成果物をオーケストレーターが収集` でコミットする。(2) 新規コミットの判定：`git rev-list <plan-head>..<branch>` が0件なら doing→blocked にして worktree を残す。(3) 差分ゲート（5節。`diff_gate.check`、base は plan-head）。(4) 違反なしなら、log に再開情報の記録行（7節）と doing→review の行を書いてコミットする。違反ありなら差し戻し：attempt+1 が上限（`HARNESS_MAX_ATTEMPTS`）以内なら、タスク票の「進捗」に `- 差し戻し（attempt=<n>）: 宣言外の変更 <パス>, ...` を足し、doing のまま attempt+1 にして worktree とブランチを破棄する。上限を超えるなら doing→blocked にして worktree を残す
-- done（review→done）：PASS の verdict を確認し（条件は10節の done の行の検査と同じ）、worktree の未コミット・未追跡分は収集しない（マージに入れない）。新規コミットの判定（0件なら review→blocked）→ 差分ゲート（違反なら review→blocked。タスク票の「進捗」には書かない）→ メインの作業ツリーで `git merge --no-ff <branch> -m "<計画ID>/<id>: マージ"` → フェーズ2と同じ review→done（計画票・log・verdict をコミット）→ `git worktree remove --force` と `git branch -d` で後始末（失敗は警告だけで終了コード 0）。マージが衝突したら `git diff --name-only --diff-filter=U` で衝突ファイルを取り、`git merge --abort` で中止して review→blocked にする（question に衝突ファイル。worktree とブランチは残す）
+- review（doing→review）：(1) worktree に未コミット分があれば `git add -A` して `<計画ID>/<id>: creator 成果物をオーケストレーターが収集` でコミットする。(2) 新規コミットの判定：`git rev-list --no-merges <plan-head>..<branch>` が0件なら doing→blocked にして worktree を残す（マージコミットは数えない。`--resume-worktree` の取り込みのマージコミットだけでは新規コミットにならない）。(3) 差分ゲート（5節。`diff_gate.check`、base は plan-head）。(4) 違反なしなら、log に再開情報の記録行（7節）と doing→review の行を書いてコミットする。違反ありなら差し戻し：attempt+1 が上限（`HARNESS_MAX_ATTEMPTS`）以内なら、タスク票の「進捗」に `- 差し戻し（attempt=<n>）: 宣言外の変更 <パス>, ...` を足し、doing のまま attempt+1 にして worktree とブランチを破棄する。上限を超えるなら doing→blocked にして worktree を残す
+- done（review→done）：PASS の verdict を確認し（条件は10節の done の行の検査と同じ）、worktree の未コミット・未追跡分は収集しない（マージに入れない）。新規コミットの判定（review の (2) と同じ式。0件なら review→blocked）→ 差分ゲート（違反なら review→blocked。タスク票の「進捗」には書かない）→ メインの作業ツリーで `git merge --no-ff <branch> -m "<計画ID>/<id>: マージ"` → フェーズ2と同じ review→done（計画票・log・verdict をコミット）→ `git worktree remove --force` と `git branch -d` で後始末（失敗は警告だけで終了コード 0）。マージが衝突したら `git diff --name-only --diff-filter=U` で衝突ファイルを取り、`git merge --abort` で中止して review→blocked にする（question に衝突ファイル。worktree とブランチは残す）
 - doing（review→doing。verifier の FAIL の再試行。review からだけ）：verdict が JSON として読め、task・attempt が一致し、result が FAIL の時だけ行う。attempt+1 が上限以内なら review→doing にして worktree とブランチを破棄する。log の補足は reasons の先頭1件を80文字で切ったもの。上限を超えるなら、reasons を `／` でつないで200文字で切ったものを question にして review→blocked にし、worktree を残す
 - blocked（doing→blocked。creator の blocked の報告。doing からだけ）：`--question` か `--question-file` が必須。再開情報の記録行（7節）と doing→blocked の行を書いてコミットし、worktree は残す。worktree の中身には触れない（収集・差分ゲートはしない）
 - 終了コード：0 遷移した（worktree 運用では review/done にした）／1 前提を満たさず何も変えていない（理由は標準エラー）／2 引数の誤り／3 差し戻した（doing→doing・review→doing。creator を呼び直す）／4 blocked にした／5 `--resume-worktree` で worktree を引き継げなかった（何も変えていない）。終了コード 3・4 の時は、何をしたかを標準出力に1行で出す（run が完了報告に写せるように）
-- 引き継ぎ（`--resume-worktree`。todo→doing。unblock した id の再着手）：`python3 scripts/transition.py <計画ID> <id> doing --resume-worktree [--note <補足>]`。id は1つ、遷移先は doing だけで、`--worktree`・`--branch`・`--plan-head`・`--question`・`--question-file` とは併用できない（終了コード 2）。blocked の時に残した worktree を破棄せず引き継ぐ。引き継ぐ worktree は log のその id の最後の記録行（7節）から取る。引き継げる時の順序：(1) worktree の未コミット分を `<計画ID>/<id>: creator 成果物をオーケストレーターが収集` でコミットする。(2) 計画ブランチの今の HEAD を H とし、H が worktree のブランチの祖先でなければ worktree の中で `git merge --no-ff H` を行う。(3) 計画票の行を doing・attempt=1 にし、log に `todo→doing attempt=1 worktree を引き継ぎ` を書いて、計画票と log だけをコミットする。成功時の標準出力の `plan_head=<H>`（状態のコミットの前の HEAD）を、run はその id の review・blocked・done の `--plan-head` に使う（差分ゲートは base と branch の2点比較なので、base は worktree に取り込み済みの H でなければならず、状態のコミット後の HEAD では他の変更が混ざる）。引き継げない時（記録行が無い・worktree の検証に通らない・マージの衝突）は何も変えず終了コード 5 で、標準出力に `<計画ID>/<id>: 引き継げない（<理由>）` を出す。run はその id を通常の todo→doing に回す
+- 引き継ぎ（`--resume-worktree`。todo→doing。unblock した id の再着手）：`python3 scripts/transition.py <計画ID> <id> doing --resume-worktree [--note <補足>]`。id は1つ、遷移先は doing だけで、`--worktree`・`--branch`・`--plan-head`・`--question`・`--question-file` とは併用できない（終了コード 2）。blocked の時に残した worktree を破棄せず引き継ぐ。引き継ぐ worktree は log のその id の最後の記録行（7節）から取る。引き継げる時の順序：(1) worktree の未コミット分を `<計画ID>/<id>: creator 成果物をオーケストレーターが収集` でコミットする。(2) 計画ブランチの今の HEAD を H とし、H が worktree のブランチの祖先でなければ worktree の中で `git merge --no-ff H -m "<計画ID>/<id>: 計画ブランチを取り込み"` を行う。取り込んだ後の worktree は H の内容を含むので、出力の `plan_head=<H>` からの差分は自タスクの変更だけになる（待機中に計画ブランチへ入った他タスクの変更が宣言外の変更に見えない）。(3) 計画票の行を doing・attempt=1 にし、log に `todo→doing attempt=1 worktree を引き継ぎ` を書いて、計画票と log だけをコミットする。成功時の標準出力の `plan_head=<H>`（状態のコミットの前の HEAD）を、run はその id の review・blocked・done の `--plan-head` に使う（差分ゲートは base と branch の2点比較なので、base は worktree に取り込み済みの H でなければならず、状態のコミット後の HEAD では他の変更が混ざる）。引き継げない時（記録行が無い・worktree の検証に通らない・マージの衝突）は何も変えず終了コード 5 で、標準出力に `<計画ID>/<id>: 引き継げない（<理由>）` を出す。run はその id を通常の todo→doing に回す
 - `scripts/amend_task.py`（unblock での成果物の追加・受け入れ基準の差し替え）：`python3 scripts/amend_task.py <計画ID> <id> [--add-deliverable <パス>]... [--replace-criterion <番号> <文>]... [--note <補足>]`。どちらも1つも無ければ引数の誤り（終了コード 2）。タスク表の status が blocked か todo の行だけ直せる。拒否して何も変えない条件（終了コード 1）：git リポジトリでない／計画票が approved でない／ブランチが `work/<計画IDの英小文字>` でない／id がタスク表に無い／status が blocked・todo 以外／タスク票に「成果物」「受け入れ基準」の見出しが無い／`--replace-criterion` の番号が範囲外／`--add-deliverable` のパスが不正、または宣言しても差分ゲート（5節）が違反にする場所（`vault/plans/`・`vault/log/`・`vault/verdicts/` 配下）。「成果物」への追加は「## 成果物」節の最後の空でない行の直後に `- `<パス>`（amend_task.py で追加）` の行を足す（同じパスがバッククォートで宣言済みなら足さない）。`--replace-criterion` は <番号> 番目の行を `- <文>` の1行に置き換え、<文> の改行は空白にし、`|` はそのまま書く（タスク表のセルではないので `／` に置き換えない）。基準の追加・削除はしない（行数は変わらない）。適用したら log に `- <日時> <id> amend <要約>`（7節）を1行追記し、タスク票と log だけを `git commit -m "<計画ID>/<id>: amend"` する。計画票は読むだけで、status・attempt は変えない。受け入れ基準と食い違う回答は、「決定済み」の読み替えの注記で済ませず、これで基準そのものを差し替える
 - 承認（draft→approved。`/plan` の自動承認）と blocked の解除（`/plan unblock`）は扱わず、`/plan` の Edit のまま
 - 推奨の経路であって強制ではない。Edit による計画票の直接の書き換えはフックで拒否しない。done の行の verdict の検査（9節・10節）で「PASS の無い done」が残らないことを守る
@@ -179,9 +179,11 @@ done にした計画票は除去のコミットで消えるため計画ブラン
   - 書式の例：`実行コマンド: \`<command>\` / 出力: <判定に使った部分の要点>`
   - 確認コマンドが実行できなかった場合（権限拒否・ツール不足など）は、その旨と代替の確認方法、その結果をセットで書く。例：`\`awk ...\` は権限拒否で実行不可。代替として README.md を Read で確認し、使い方節に cron の行が1行あった`
   - 受け入れ基準がルールを根拠にした場合（`vault/rules/` 配下のファイル名や「コーディングルールに従う」等を参照する行）は、参照したルールファイルのパスを `note` に書く
-- `reasons` は FAIL の理由だけでなく、次の2つの記録にも使う（`.claude/agents/verifier.md` を根拠とする）。いずれも `result` を FAIL にはしない。
+- `reasons` は FAIL の理由だけでなく、次の記録にも使う（`.claude/agents/verifier.md` を根拠とする）。いずれも `result` を FAIL にはしない。
   - 基準が曖昧で判定不能だった場合
   - 基準が緩いと判断した場合（確認コマンドは通るが、タスク票の「目的」の達成を保証しない）
+  - コードレビューを参照する基準で、差分の外（既存コード）への指摘を残す場合（要素は `対象外（既存コード）: ` で始める。result を FAIL にしない）
+  - コードレビューを参照する基準で、人の判断が要る場合（要素は `人の判断が必要: ` で始める。result を FAIL にしないが、run は PASS でも done にせず blocked にする）
 
 `reasons` の使われ方：`reasons` は言い換えず、分類しない。`scripts/verdict_notes.py <計画ID> [--dir <ディレクトリ>]` が、計画の verdict のうち `reasons` が空でないものを要素ごとに `<id>: <reason>` の1行で標準出力に出す（`<id>` はファイル名から `.json` を除いたもの、ファイル名順、要素内の改行は空白1つにする）。出す行が無ければ `指摘なし` の1行だけを出す。読み込み先は既定で `vault/verdicts/<計画ID>/` の `*.json` で、`--dir` を渡すとそのディレクトリ（`<id>.json` を直接持つ。archive など）を読み、計画 ID は使わない。JSON として読めない・`reasons` が無い／配列でない verdict は読み飛ばし、標準エラーに出す。ファイルには書き込まない。終了コードは 0（出力した。「指摘なし」を含む）・1（読み込み先のディレクトリが無い）・2（引数の誤り）。run の手順7（全タスクが done になった後）で、この出力を PR 本文の「verifier の指摘」節と完了報告に入れる（本文は `HARNESS_PR_BODY_FILE` で `scripts/vcs_finish.sh` に渡す。1節）。また `model_stats.py` の指摘あり率（7節）の元になる。
 
@@ -198,6 +200,8 @@ blocked の解除（`/plan unblock`）はタスクに紐づくので、タスク
 run の再開情報（creator が作業した worktree のパス・ブランチ名・その時点の計画ブランチの HEAD）は、次の形で1行追記する：`- <日時> <id> worktree path=<パス> branch=<ブランチ名> plan_head=<sha>`（例：`- 2026-09-30 10:15 T-01 worktree path=/path/to/.claude/worktrees/agent-xxxx branch=worktree-agent-xxxx plan_head=<40桁の sha>`）。`plan_head=` の値は `git rev-parse HEAD` の完全な sha とする。この行は状態遷移ではない（`→` を含まない）補足行で、`→` を含む遷移行以外は状態の集計（`model_stats.py` など）に使わない。creator の完了後に run が transition.py の review・blocked（`--worktree` 付き）を呼ぶと、transition.py が1タスク1行ずつ書く。再開時に参照するのは、その id の最後の記録行とする。`doing` の中断時の再開の補足は `中断から再開` とする。
 
 再開・ハング・worktree が無い時の遷移行は、run が transition.py を `--no-model --note "<補足>"` で呼んで書く。補足は `中断から再開`・`中断が上限に達した`・`worktree が無いため作り直し`・`worktree が無いため`・`creator呼び出しハングにより再試行`・`creator呼び出しハング`・`verifier呼び出しハング` のいずれか。
+
+verifier が `reasons` に `人の判断が必要:` で始まる要素を書いた PASS を run が blocked にする時の遷移行は `- <日時> <id> review→blocked attempt=<n> verifier=<モデル> 人の判断が必要` とする（run が transition.py を `--note "人の判断が必要"` で呼んで書く）。
 
 `scripts/transition.py` の worktree 運用（2節）が書く行：再開情報の記録行は、review・blocked の時に transition.py が遷移の行の直前に、同じ日時で書く（run が別に追記する必要は無い）。差し戻しの行は `- <日時> <id> doing→doing attempt=<n+1> 宣言外の変更: <パス>, ...` で、モデル（`creator=`・`verifier=`）を付けない。done の前に blocked にした時の補足は `新規コミット無し`・`宣言外の変更: <パス>, ...`・`マージコンフリクト` のいずれか。
 
@@ -248,6 +252,7 @@ log の全行は `scripts/plan_record.py` が PR 本文に写す。使い方は 
 - 成果物が1つに特定できる（「〜を改善」は不可）
 - 1コンテキストで終わる（目安：人手で1〜2時間相当）
 - run で必ず変わるファイル（計画票のタスク表、`vault/log/<計画ID>.md`、タスク票の「進捗」）を「変更していない」と差分で検査する受け入れ基準は書かない。形式の不変を見たい時は見出し行・列構成に限定した確認コマンドにする（例：`git diff --merge-base work/<計画IDの英小文字> -- vault/plans/<計画ID>.md | grep -E '^[+-](## |\| id )'`）
+- コードを変更するタスクがある計画は、最後に計画単位のレビュータスクを持つ（`.claude/agents/planner.md` の「計画単位のレビュータスク」節。1計画7タスクの上限に含める）
 - `vault/rules/`（common・planner）にルールがある場合は、その具体的な基準を受け入れ基準や決定済みに反映する。ただし受け入れ基準3〜7行の上限は優先し、超えそうな場合は要約に留める
 - 「受け入れ基準が3〜7行」と「1計画は7タスク以下」は、計画が draft の間、plan_guard フックで機械検査される（詳細は10節）。各基準が「真偽で判定できる文か」は機械では検査されず、planner・verifier の運用に残る
 
@@ -275,6 +280,7 @@ log の全行は `scripts/plan_record.py` が PR 本文に写す。使い方は 
 粒度の検査（8節）も plan_guard が行う。契機は、自分のブランチの draft の計画票、またはそのタスク票（`vault/tasks/<計画ID>/<id>.md`）への Write/Edit（`file_path` で判定）のみで、Bash は対象外。
 - タスク票：「## 受け入れ基準」見出しから次の `## ` 見出し（または EOF）までの、行頭が `- ` か `数字. ` の行数を数え、3〜7行の範囲外ならブロックして理由（行数と範囲）を示す
 - タスク票（契機は粒度の検査と同じ draft の計画のタスク票への Write/Edit）：`vault/templates/task.md` の6見出し（`## 目的`・`## 入力`・`## 成果物`・`## 受け入れ基準`・`## 決定済み`・`## 進捗`）を行単位の完全一致で探し、6見出しがそろっていなければブロックして欠けた見出しを示す。順序は検査しない。受け入れ基準の行数の検査より先に行う
+- タスク票（契機は同じ）：受け入れ基準の grep の文字列が、「決定済み」「成果物」の行にはそのまま当たらず、バッククォートを除くと当たる時は、ブロックして該当のパターンを示す（creator が決定済みどおりに書くと当たらないため。Issue #204）。対象は `-F` の固定文字列と、`[ ] * ^ $ \` を含まない基本正規表現（`.` は任意の1文字）で、`-E`・`-P` は対象外。「決定済み」「成果物」のどちらにも無い文字列（残っていないことの確認など）は正しい基準が多いので止めない
 - 計画票：タスク表のデータ行が7行を超えるとブロックする（1計画は7タスク以下）
 - 計画票の status が draft でなくなった後（approved 以降）は、これらの粒度検査は行わない
 - 各基準が「真偽で判定できる文か」は機械では判定できず、planner・verifier の運用に残る
@@ -305,6 +311,16 @@ vault/rules/
 
 ### ルールと受け入れ基準の関係
 ルールは受け入れ基準を増やすものではなく、**基準の判定方法を与えるもの**。受け入れ基準が `vault/rules/` のルールを参照する時（例：「コーディングルールに従っている」）だけ、verifier はルールを根拠に真偽を判定する。受け入れ基準がルールに触れていなければ、ルールを理由に FAIL にしない。作成側だけに渡した `creator/` のルールは verifier から見えないため、それを根拠に落とすこともない。
+
+### コードレビューを参照する受け入れ基準
+正本は `.claude/agents/planner.md`（「計画単位のレビュータスク」節）・`.claude/agents/verifier.md`（「コードレビューを参照する基準の判定」節）・`.claude/agents/creator.md`（「コードレビューを参照する基準がある時」節）・`.claude/skills/run/SKILL.md`（手順6の3と早見表）で、ここは要約。
+
+- (1) 対象の行：受け入れ基準の行が `/code-review`（Claude Code 組み込みの Skill の `code-review`）の結果で真偽を決める行である時。この行を持つのは planner が計画の最後に足す「計画単位のレビュータスク」で、書き方の既定は「`/code-review` で計画の差分に致命的な指摘が残っていない」。コードを変更するタスクが1件以上ある計画にだけ足し、通常のタスクの受け入れ基準には `/code-review` の行を入れない。判定基準の正本は planner 定義。
+- (2) ツール：creator・verifier の tools に `Skill` がある（`.claude/settings.json` の `permissions.allow` の `Skill` は既存）。smoke の `(agents-2)`・`(agents-3)` が tools の欠けを検査する。
+- (3) 範囲と呼び方：計画全体の差分（`git -C <worktree のパス> diff --merge-base <ベースブランチ>`。ベースブランチは `HARNESS_BASE_BRANCH`、既定 `main`。分岐点から。計画一式4種はレビューの対象にしない）で、対象 worktree のパスを引数で明示して呼ぶ（明示しないと呼び出し元の作業ディレクトリをレビューする）。`effort`・`--max-findings` などの引数は、受け入れ基準の行にあればそれを使い、ハーネスは既定値を持たない。
+- (4) verifier の判定：計画の差分で変えた行へのクラッシュ・データ破損・誤った結果の指摘が残れば、その行は `ok: false`。計画の差分の外への指摘と致命的でない指摘は FAIL の根拠にしない。設計・仕様の変更が要る指摘と `/code-review` を実行できなかった時は `ok: true` のまま接頭辞 `人の判断が必要:` で reasons に書く。
+- (5) creator：完了報告の前に同じ範囲で実行し、差分内の致命的な指摘を直して、もう1回だけ実行して確かめる。設計・仕様の変更が要る指摘は「blocked: <質問文>」で返す。
+- (6) run：PASS の verdict の reasons に `人の判断が必要:` で始まる要素があれば done にせず review→blocked にする（question はその要素）。
 
 ## 12. agent_write_guard フックの判定
 

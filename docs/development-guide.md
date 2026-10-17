@@ -81,7 +81,7 @@ flowchart TD
     IMPL["/implementation<br>実装（基盤部品を利用）"]
     UT["/unit-test<br>単体テスト"]
     IT["/integration-test<br>結合テスト"]
-    RC["/review-code<br>コードレビュー"]
+    RC["/review-standards<br>コードレビュー"]
     ST["/system-test<br>システムテスト"]
     PR[PR 作成・マージ]
 
@@ -113,7 +113,7 @@ flowchart TD
 | `implementation` | detail-design/{ジョブID}.md | ジョブ実装コード（基盤部品を利用） |
 | `unit-test` | 実装コード＋詳細設計書 | JUnit 5 単体テスト |
 | `integration-test` | 実装コード＋詳細設計書 | Testcontainers 結合テスト（`*IT.java`） |
-| `review-code` | 実装＋テスト＋`docs/coding-standards.md` | レビュー指摘（コードへ反映）。チェックリストの確認と組み込みの `/code-review` の両方を行う |
+| `review-standards` | 実装＋テスト＋`docs/coding-standards.md` | レビュー指摘（コードへ反映）。チェックリストの確認と組み込みの `/code-review` の両方を行う |
 | `system-test` | basic-design.md・運用設計 | テストシナリオ・データ・実施結果 |
 
 **設計意図: `basic-design.md` は案件単位で1ファイル、`detail-design/` はジョブ単位で複数ファイルにしている理由**
@@ -140,7 +140,7 @@ flowchart TD
 > /implementation SALES-001 を実装して
 > /unit-test SALES-001 の単体テストを作成して
 > /integration-test SALES-001 の結合テストを作成して
-> /review-code job_sales_import 配下をレビューして
+> /review-standards job_sales_import 配下をレビューして
 > /system-test sales 案件のシステムテストのシナリオを設計して実施して
 ```
 
@@ -167,10 +167,12 @@ detail-design・review-design）は従来どおり人と Skills で対話して�
 | 判断が要る時 | 主エージェントへの報告とモデル昇格（§5.3） | creator が `[Ask]` などを blocked にし、人が `/plan unblock` で答える |
 | 検証のしかた | 各工程内の検証ループ（§5） | creator と別の verifier が受け入れ基準（`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と `./mvnw clean verify -DskipITs -pl batch-core`、結合テストを含むタスクは `./mvnw clean verify`）で判定する。`-DskipITs` の基準では batch-sample のカバレッジを判定しない |
 
-ハーネスでは1計画で1ジョブを扱い、implementation・unit-test・integration-test・review-code・
+ハーネスでは1計画で1ジョブを扱い、implementation・unit-test・integration-test・review-standards・
 system-test の5工程のタスクに分ける。分け方と各工程のルールは `vault/rules/`
 （`vault/rules/planner/job-task-split.md`・`vault/rules/creator/skill-workflow.md`・
 `vault/rules/verifier/build-verification.md`）にある。
+
+コードを変更する計画では、最後に「計画の差分が `/code-review` を通過する」タスク（計画単位のレビュータスク）が付く（`.claude/agents/planner.md` の「計画単位のレビュータスク」節。導入先の補足は `vault/rules/planner/code-review-criterion.md`）。通常のタスクの受け入れ基準には `/code-review` の行は入らず、review-standards のタスクも手順4の `/code-review` を行わない。creator は完了報告の前に、verifier は判定の時に、そのタスクで計画全体の差分（ベースブランチとの分岐点から）に組み込みの `/code-review` を実行する。指摘と `/review-standards` の区分（Must/Should/Ask）の対応は `vault/rules/creator/code-review.md`・`vault/rules/verifier/code-review.md` にある。差分の外（既存コード）への指摘は FAIL にせず、PR 本文の「verifier の指摘」に残る。直すのに設計の改訂が要る指摘は blocked になり、人が `/plan unblock` で答える。
 
 ## 3. ブランチ運用・PR
 
@@ -189,13 +191,13 @@ PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装
 | PR の種類 | テンプレート | 確認する観点 |
 |---|---|---|
 | 設計 PR（要件定義書・基本設計書・詳細設計書のみ） | `.github/PULL_REQUEST_TEMPLATE/design.md` | 要件の確定、`/review-design`、architecture.md への準拠、トレーサビリティ、未確定事項、batch-core 拡張の要否 |
-| 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw clean verify`、`/review-code`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
+| 実装 PR（コード・テスト・システムテスト記録） | `.github/PULL_REQUEST_TEMPLATE/implementation.md` | 設計書どおりの実装、`./mvnw clean verify`、`/review-standards`、基盤部品の利用、テスト観点の網羅、リスタート、Flyway、システムテスト |
 | 上記以外（開発プロセス・ドキュメント・設定・依存更新など） | `.github/pull_request_template.md`（既定） | 変更に応じた確認、参照箇所の追従 |
 
 - GitHub の画面で PR を作る時、設計 PR・実装 PR は PR 作成画面の URL に `?template=design.md` または
   `?template=implementation.md` を付ける（例: `.../compare/main...{ブランチ}?template=implementation.md`）。
   付けなければ既定の汎用テンプレートが入る
-- 設計 PR・実装 PR のテンプレートは、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-code`）を
+- 設計 PR・実装 PR のテンプレートは、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-standards`）を
   **[Must]・[Should] の指摘が 0 件になるまで繰り返し実行した**ことを確認し、回ごとの指摘件数をレビュー実施記録に書く
 - `gh api`・GitHub MCP・ハーネス（`scripts/vcs_finish.sh`）で PR を作る時はテンプレートが自動では入らない。
   本文を渡す側が該当テンプレートの見出しに沿って書く

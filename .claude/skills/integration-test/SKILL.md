@@ -15,7 +15,7 @@ description: ジョブ単位の結合テスト（Testcontainers + Spring Batch T
 | 入力 | 実装コード＋詳細設計書（エラー処理設計・リラン設計の節が検証仕様になる） |
 | 参照 | `batch-sample/src/test/java/.../AbstractJobIT.java`（基底クラス）、既存 IT（Sample01〜06） |
 | 出力 | `src/test/java/...{ジョブパッケージ}/{ジョブ名}IT.java`（Failsafe が `*IT` を実行） |
-| 次工程 | `/review-code` |
+| 次工程 | `/review-standards` |
 
 ## 進め方
 

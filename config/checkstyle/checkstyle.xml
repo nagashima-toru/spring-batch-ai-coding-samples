@@ -6,7 +6,7 @@
   コーディング規約チェック定義（docs/coding-standards.md と対で管理する）
 
   方針: 可読性と一貫性を担保する最小限のルールに絞る。
-        プロジェクト固有の判断はレビュー（review-code Skill）で担保する。
+        プロジェクト固有の判断はレビュー（review-standards Skill）で担保する。
 -->
 <module name="Checker">
     <property name="charset" value="UTF-8"/>

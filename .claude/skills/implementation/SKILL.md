@@ -14,7 +14,7 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 | 入力 | `docs/projects/{案件名}/detail-design/{ジョブID}.md`（レビュー済みであること） |
 | 参照 | `docs/coding-standards.md`（規約）、`docs/architecture.md`、類似サンプル（`batch-sample/`） |
 | 出力 | ジョブ実装コード一式（下表）＋ Flyway マイグレーション |
-| 次工程 | `/unit-test` → `/integration-test` → `/review-code` |
+| 次工程 | `/unit-test` → `/integration-test` → `/review-standards` |
 
 ### 出力ファイルの格納先・命名規則
 

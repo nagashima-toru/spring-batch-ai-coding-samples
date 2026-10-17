@@ -4,11 +4,11 @@
 工程タスク（implementation〜system-test）を既存の工程 Skill の手順に沿って進め、ユーザー確認の手順に当たった時は読み替え表に従い、独断できない判断は blocked で返せるようにする。
 
 ## ルール
-- タスクの title・目的に書かれた工程（implementation・unit-test・integration-test・review-code・system-test）の `.claude/skills/<工程>/SKILL.md` を着手前に読み、その「進め方」に従う
+- タスクの title・目的に書かれた工程（implementation・unit-test・integration-test・review-standards・system-test）の `.claude/skills/<工程>/SKILL.md` を着手前に読み、その「進め方」に従う
 - SKILL.md の「ユーザーに確認・合意する」手順に当たったら、`.claude/skills/sdd-pipeline/SKILL.md` の「委譲先Skillの記述を上書きする点」の表にある「パイプライン実行時の扱い」に読み替える（表の中身は書き写さない）
 - 読み替え表で「主エージェントに提示・報告」とある成果（unit-test のテストケース表、system-test のシナリオ一覧）は、タスク票の「進捗」に書く（完了報告には経緯を書かないため）
 - `[Ask]` に当たる指摘や、読み替え表に無い確認が要る時は独断せず、完了報告を `blocked: <質問文>` にして返す。`[Ask]` は blocked にする
-- review-code のタスクは `/review-code` の手順（手順4の組み込み `/code-review` を含む）でレビューし、[Must]/[Should] を自分で修正したうえで、受け入れ基準のビルドコマンドを通す。[Ask] が残ったら blocked にする
+- review-standards のタスクは `/review-standards` の手順1〜3（設計との一致・チェックリスト・ビルド結果の確認）でレビューし、手順4の組み込み `/code-review` は実行しない（計画単位のレビュータスクに任せる。`.claude/skills/review-standards/SKILL.md` の手順4）。[Must]/[Should] を自分で修正したうえで、受け入れ基準のビルドコマンドを通す。[Ask] が残ったら blocked にする
 - system-test のタスクで、外部依存などでローカル実施できないシナリオがある時は blocked にする
 - integration-test のタスクで `docker info` が失敗する（Docker が使えない）時は blocked にする
 - 設計書と異なる実装が必要と分かった時は、設計書を自分で直さず blocked にする（`docs/development-guide.md` §5.5）
