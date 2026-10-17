@@ -1,0 +1,16 @@
+{
+  "task": "P-20261017-missing-core-examples/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 15:07",
+  "criteria": [
+    {"text": "解説に「一時出力→配置」の語がある（`grep -c '一時出力→配置' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: worktree で `grep -c '一時出力→配置' batch-sample/docs/sample03-file-export.md` / 出力: 3。語の存在のみを見る緩い基準だが、本文で節として記述されていることを grep -n で確認した（目的達成を保証する基準ではない点を注記）。"},
+    {"text": "解説に追加 Step の名前がある（`grep -c 'sample03.02FileMoveStep' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c 'sample03.02FileMoveStep' ...` / 出力: 1。31行目の Step 表に FileMoveTasklet で一時ファイルを配置先へ移すと記載。"},
+    {"text": "解説に一時ファイルの場所が書いてある（`grep -c 'の親ディレクトリ./tmp/' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c 'の親ディレクトリ./tmp/' ...` / 出力: 1。34行目に `<outputFile の親ディレクトリ>/tmp/<outputFile のファイル名>` とある。"},
+    {"text": "解説に固定長出力の実行例がある（`grep -c 'format=fixed' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c 'format=fixed' ...` / 出力: 3。76行目に outputFile=batch-sample/data/out/sales.dat format=fixed の実行例。既存 CSV 例(68行目)も残存。"},
+    {"text": "解説に固定長の1行の長さが書いてある（`grep -c '1行42バイト' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c '1行42バイト' ...` / 出力: 2。49行目の見出しと58行目に記載。"},
+    {"text": "解説に使う基盤部品の名前がある（`grep -c 'FixedLengthItemWriterFactory' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c 'FixedLengthItemWriterFactory' ...` / 出力: 2。13行目の「デモする機能」に記載。"},
+    {"text": "解説にファイル移動の基盤部品の名前がある（`grep -c 'FileMoveTasklet' batch-sample/docs/sample03-file-export.md` が1以上）", "ok": true, "note": "実行コマンド: `grep -c 'FileMoveTasklet' ...` / 出力: 3。31行目などに記載。"}
+  ],
+  "reasons": []
+}
