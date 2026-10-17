@@ -19,7 +19,7 @@ AI駆動開発（Claude Code）を前提とした Spring Batch のリファレ�
 
 ## 技術スタック（固定バージョン）
 
-- Java 25 (Temurin) / Spring Boot 4.1.1 / Spring Batch 6.0.4 / Spring Framework 7.x
+- Java 25 (Temurin) / Spring Boot 4.1.1 / Spring Batch 6.0.5（Boot BOM 管理） / Spring Framework 7.x
 - Maven 3.10.0（`./mvnw` を使用）/ MyBatis Starter 4.1.0 / Flyway（Boot BOM）/ PostgreSQL 16
 - Testcontainers 2系（Boot BOM 管理。アーティファクト名は `testcontainers-postgresql`）
 - 実行基盤: ECS Fargate + EventBridge Scheduler（イメージビルドは Jib）

@@ -9,6 +9,7 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.listener.StepExecutionListener;
 import org.springframework.batch.core.step.StepExecution;
 import org.springframework.batch.infrastructure.item.ExecutionContext;
+import org.springframework.batch.infrastructure.item.util.ExecutionContextUserSupport;
 
 /**
  * サンプル05: 取込 Step の取得件数を Job の ExecutionContext に保存するリスナー。
@@ -30,7 +31,8 @@ public class ApiUserReadCountListener implements StepExecutionListener {
     /** Job の ExecutionContext に取得件数を保存するキー。 */
     public static final String READ_COUNT_KEY = "apiUserReadCount";
 
-    private static final String READ_COUNT_SUFFIX = ".read.count";
+    /** Reader（{@code AbstractItemCountingItemStreamItemReader}）が読込位置を保存するキーの、Reader 名より後ろの部分。 */
+    private static final String READER_READ_COUNT = "read.count";
 
     private static final Logger log = LoggerFactory.getLogger(ApiUserReadCountListener.class);
 
@@ -50,7 +52,8 @@ public class ApiUserReadCountListener implements StepExecutionListener {
         ExecutionContext stepContext = stepExecution.getExecutionContext();
         Long position = null;
         for (String readerName : readerNames) {
-            String key = readerName + READ_COUNT_SUFFIX;
+            // Reader と同じ方法でキー（<Reader名>.read.count）を組み立てる
+            String key = new ExecutionContextUserSupport(readerName).getKey(READER_READ_COUNT);
             Object value = stepContext.get(key);
             if (value != null) {
                 position = ((Number) value).longValue();
