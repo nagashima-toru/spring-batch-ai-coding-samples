@@ -1,6 +1,6 @@
 ---
 id: P-20261017-naming-convention-unify
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #60「命名規約（architecture §11）を案件ジョブにも適用できる形に改訂し、Skill・README と統一する」を解消する。
