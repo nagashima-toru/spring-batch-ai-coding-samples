@@ -3,3 +3,5 @@
 - 2026-10-17 20:21 T-01 doing→blocked attempt=1 worktree の分岐元不一致（worktree は自動削除済み）
 - 2026-10-17 20:24 T-01 blocked→todo 人の指示: /plan unblock P-20261017-readcount-restart-fix T-01 --fresh
 - 2026-10-17 20:24 T-01 todo→doing attempt=1
+- 2026-10-17 20:24 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a74cf5874f48af471 branch=worktree-agent-a74cf5874f48af471 plan_head=b4c0b6d3e58945f3cd2d023777c97762e7e196a4
+- 2026-10-17 20:24 T-01 doing→review attempt=1 creator=sonnet
