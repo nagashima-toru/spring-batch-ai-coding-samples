@@ -1,12 +1,10 @@
 package com.example.batch.sample.job03_file_export;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.batch.MyBatisCursorItemReader;
@@ -26,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.example.batch.core.exception.SystemException;
 import com.example.batch.core.execution.DuplicateRunPreventingJobExecutionListener;
 import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.item.CsvItemWriterFactory;
@@ -94,13 +93,21 @@ public class Sample03JobConfig {
      * @return 一時ファイル
      */
     static Path tempFileOf(String outputFile) {
-        Path fileName = Objects.requireNonNull(Path.of(outputFile).getFileName(), "outputFile にファイル名がありません");
-        return outputDirOf(outputFile).resolve("tmp").resolve(fileName);
+        return outputDirOf(outputFile).resolve("tmp").resolve(requirePath(Path.of(outputFile).getFileName(),
+                "outputFile にファイル名がありません: " + outputFile));
     }
 
     private static Path outputDirOf(String outputFile) {
-        return Objects.requireNonNull(Path.of(outputFile).toAbsolutePath().getParent(),
-                "outputFile に親ディレクトリがありません");
+        return requirePath(Path.of(outputFile).toAbsolutePath().getParent(),
+                "outputFile に親ディレクトリがありません: " + outputFile);
+    }
+
+    // outputFile がルートパスの時だけ null になる。例外の3階層に合わせて SystemException にする
+    private static Path requirePath(Path path, String message) {
+        if (path == null) {
+            throw new SystemException(message);
+        }
+        return path;
     }
 
     @Bean
@@ -162,7 +169,7 @@ public class Sample03JobConfig {
         try {
             Files.createDirectories(tempDir);
         } catch (IOException e) {
-            throw new UncheckedIOException("一時ディレクトリを作成できません: " + tempDir, e);
+            throw new SystemException("一時ディレクトリを作成できません: " + tempDir, e);
         }
         if ("fixed".equals(format)) {
             return FixedLengthItemWriterFactory.create("sample03SalesFixedWriter", new FileSystemResource(tempFile),

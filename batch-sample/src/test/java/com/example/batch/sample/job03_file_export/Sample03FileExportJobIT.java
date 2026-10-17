@@ -126,6 +126,41 @@ class Sample03FileExportJobIT extends AbstractJobIT {
     }
 
     @Test
+    void 配置Stepが失敗した場合_リスタートで出力Stepを飛ばし配置だけをやり直す() throws Exception {
+        salesMapper.insertTransaction(
+                new SalesTransaction(null, "C001", new BigDecimal("1000"), LocalDate.of(2026, 7, 1)));
+        Path output = tempDir.resolve("sales_restart.csv");
+        // 配置先に同名の空でないディレクトリを置き、移動（上書き）を失敗させる
+        Files.createDirectories(output);
+        Files.writeString(output.resolve("block.txt"), "x");
+
+        JobExecution failed = jobOperator.start(job, uniqueParameters()
+                .addString("outputFile", output.toString())
+                .toJobParameters());
+
+        assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(stepStatus(failed, "sample03.01ExportStep")).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(stepStatus(failed, "sample03.02FileMoveStep")).isEqualTo(BatchStatus.FAILED);
+        Path tempFile = tempDir.resolve("tmp").resolve("sales_restart.csv");
+        assertThat(tempFile).exists();
+
+        // 原因を取り除いてリスタート（同一パラメータ）
+        Files.delete(output.resolve("block.txt"));
+        Files.delete(output);
+        JobExecution restarted = jobOperator.restart(failed);
+
+        assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(restarted.getStepExecutions())
+                .extracting(StepExecution::getStepName)
+                .containsExactly("sample03.02FileMoveStep");
+        assertThat(tempFile).doesNotExist();
+        List<String> lines = Files.readAllLines(output);
+        assertThat(lines).hasSize(3); // ヘッダ + 明細1 + トレーラ
+        assertThat(lines.getFirst()).isEqualTo("id,customer_code,amount,sold_at");
+        assertThat(lines.getLast()).isEqualTo("T,1,1000");
+    }
+
+    @Test
     void formatに未定義の値を指定した場合_InvalidJobParametersExceptionで起動を拒否する() {
         Path output = tempDir.resolve("sales_invalid.csv");
 
@@ -134,5 +169,13 @@ class Sample03FileExportJobIT extends AbstractJobIT {
                 .addString("format", "xml")
                 .toJobParameters()))
                 .isInstanceOf(InvalidJobParametersException.class);
+    }
+
+    private static BatchStatus stepStatus(JobExecution execution, String stepName) {
+        return execution.getStepExecutions().stream()
+                .filter(s -> stepName.equals(s.getStepName()))
+                .findFirst()
+                .orElseThrow()
+                .getStatus();
     }
 }

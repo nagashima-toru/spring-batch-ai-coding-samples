@@ -8,6 +8,9 @@ import org.springframework.batch.core.job.JobInstance;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 
+/**
+ * {@link InputSourceDecider} の単体テスト。
+ */
 class InputSourceDeciderTest {
 
     private final InputSourceDecider decider = new InputSourceDecider();
@@ -32,6 +35,13 @@ class InputSourceDeciderTest {
 
     @Test
     void inputFileが空文字の場合_APIを返す() {
+        JobParameters parameters = new JobParametersBuilder().addString("inputFile", "").toJobParameters();
+
+        assertThat(decide(parameters)).isEqualTo(InputSourceDecider.API);
+    }
+
+    @Test
+    void inputFileが空白のみの場合_APIを返す() {
         JobParameters parameters = new JobParametersBuilder().addString("inputFile", " ").toJobParameters();
 
         assertThat(decide(parameters)).isEqualTo(InputSourceDecider.API);
