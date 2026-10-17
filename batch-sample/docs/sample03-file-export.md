@@ -1,7 +1,7 @@
 # サンプル03: DB → CSV 抽出（Chunk）
 
 売上明細を全件抽出し、ヘッダ行＋トレーラ行（件数・金額合計）付きCSVを生成する。
-任意パラメータ `format=fixed` を付けると、Shift_JIS の固定長ファイル（明細行のみ）を出力する。
+任意パラメータ `format=fixed` を付けると、Windows-31J（MS932）の固定長ファイル（明細行のみ）を出力する。
 ジョブは「一時出力→配置」の2 Step 構成で、途中で失敗しても配置先に不完全なファイルを出さない。
 
 ## デモする機能
@@ -43,7 +43,7 @@ T,2,3500
 | 値 | 内容 |
 |---|---|
 | `csv`（既定。省略時も csv） | ヘッダ＋トレーラ付きCSV（上の出力例） |
-| `fixed` | `FixedLengthItemWriterFactory` による Shift_JIS の固定長ファイル |
+| `fixed` | `FixedLengthItemWriterFactory` による Windows-31J（MS932）の固定長ファイル |
 
 上記以外の値は、起動時のパラメータ検証で拒否する（`InvalidJobParametersException`）。
 
@@ -59,6 +59,7 @@ T,2,3500
 - 各項目は左詰めで、右側を半角スペースで埋める（`ByteLengthLineAggregator` の既定）。合計1行52バイト
 - 幅はバイト数。全角1文字は2バイトとして数える（例：`顧客A` は5バイト＋空白15バイト）
 - 値が幅を超えると `BusinessException` で失敗する
+- 文字コードは Windows-31J。Java の `Shift_JIS` は `髙`・`①`・`～` などの Windows 拡張文字を表せず、黙って `?` に置き換えるため使わない
 - ヘッダ行・トレーラ行は出さない（明細行のみ）。CSV はこれまでどおりヘッダ＋トレーラ付き
 
 ## 実行方法

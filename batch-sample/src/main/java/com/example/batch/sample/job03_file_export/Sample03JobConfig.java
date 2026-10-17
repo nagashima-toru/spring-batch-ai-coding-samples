@@ -46,7 +46,8 @@ import com.example.batch.sample.common.SampleProperties;
  * 2つ目の Step が {@link FileMoveTasklet} で outputFile へ移動する（途中失敗時に不完全なファイルを配置先に残さない）。</p>
  *
  * <p><b>固定長出力:</b> 任意パラメータ {@code format=fixed} で {@link FixedLengthItemWriterFactory} による
- * Shift_JIS 固定長（ヘッダ・トレーラ無し）を出力する。未指定・空・{@code csv} は CSV、それ以外は起動を拒否する。</p>
+ * Windows-31J 固定長（ヘッダ・トレーラ無し）を出力する（Java の Shift_JIS は Windows 拡張文字を ? に置き換えるため）。
+ * 未指定・空・{@code csv} は CSV、それ以外は起動を拒否する。</p>
  *
  * <p><b>リスタート:</b> トレーラの集計値はメモリ上で保持するため、出力 Step は Reader・Writer とも状態を保存しない
  * （saveState=false）。出力 Step の途中失敗からリスタートしても一時ファイルを最初から出力し直し、
@@ -191,7 +192,7 @@ public class Sample03JobConfig {
         if ("fixed".equals(format)) {
             // customerCode は DB が VARCHAR(10)（文字数）のため、全角10文字＝20バイトまで収まる幅にする
             writer = FixedLengthItemWriterFactory.create("sample03SalesFixedWriter", new FileSystemResource(tempFile),
-                    SalesTransaction.class, Charset.forName("Shift_JIS"), null, null,
+                    SalesTransaction.class, Charset.forName("Windows-31J"), null, null,
                     new String[] {"id", "customerCode", "amount", "soldAt"}, new int[] {10, 20, 12, 10});
         } else {
             writer = CsvItemWriterFactory.create("sample03SalesWriter", new FileSystemResource(tempFile),

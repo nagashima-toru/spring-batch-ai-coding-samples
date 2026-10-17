@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import com.example.batch.core.exception.BusinessException;
 import com.example.batch.core.exception.RetryableSystemException;
 import com.example.batch.sample.AbstractJobIT;
 import com.example.batch.sample.common.ApiUserMapper;
@@ -50,6 +51,9 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
     /** 真の間、スタブは500を返す。 */
     private static volatile boolean serverError;
+
+    /** 件数APIが返す件数（ユーザーAPIが返すのは3件）。 */
+    private static volatile int reportedCount;
 
     @Autowired
     private JobOperator jobOperator;
@@ -75,7 +79,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 send(exchange, 401, "{}");
                 return;
             }
-            send(exchange, 200, "{\"count\":3}");
+            send(exchange, 200, "{\"count\":" + reportedCount + "}");
         });
         apiStub.createContext("/users", exchange -> {
             USERS_REQUESTS.incrementAndGet();
@@ -132,6 +136,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
     void setUp() {
         truncateAppTable("api_user");
         serverError = false;
+        reportedCount = 3;
         COUNT_REQUESTS.set(0);
         USERS_REQUESTS.set(0);
     }
@@ -161,6 +166,24 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(importStep.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(countStep.getExecutionContext().getLong("apiUserCount")).isEqualTo(3L);
         assertThat(countStep.getEndTime().isAfter(importStep.getStartTime())).isFalse();
+        assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+    }
+
+    @Test
+    void 件数APIの件数と取得件数が一致しない場合_件数突き合わせStepで異常終了する() throws Exception {
+        reportedCount = 5; // ユーザーAPIは3件しか返さない（取りこぼし）
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo(ExitStatus.FAILED.getExitCode());
+        assertThat(findStep(execution, "sample05.01ImportStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getAllFailureExceptions()).anyMatch(e -> e instanceof BusinessException);
+        // 取り込んだ分は UPSERT 済み（原因を取り除いて再実行すればよい）
+        assertThat(apiUserMapper.count()).isEqualTo(3);
     }
 
     @Test
@@ -199,6 +222,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(execution.getStepExecutions()).extracting(StepExecution::getStepName)
                 .doesNotContain("sample05.00UserCountStep")
                 .contains("sample05.01ImportStep");
+        // 件数突き合わせ Step は通るが、件数APIを呼んでいないため突き合わせずに正常終了する
+        assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
     }
 
     @Test

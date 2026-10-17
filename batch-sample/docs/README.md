@@ -44,7 +44,7 @@ implementation Skill の「最重要ルール」表にある基盤部品ごと�
 | `FileMoveTasklet` | `job03_file_export` / `Sample03JobConfig`（一時出力→配置） |
 | `CsvHeaderCheckTasklet` | `job_order_daily_sales` / `OrderDailySalesJobConfig` |
 | `AbstractApiCallTasklet` | `job05_api_import` / `ApiUserCountTasklet` |
-| `TableCountCheckTasklet` | `job04_db_aggregate` / `Sample04JobConfig` |
+| `TableCountCheckTasklet` | `job04_db_aggregate` / `Sample04JobConfig`、`job05_api_import` / `Sample05JobConfig`（件数 API との突き合わせ） |
 | `JobParametersValidators` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobParametersValidator`（独自 Validator への拡張例） |
 | `LoggingJobExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
 | `LoggingStepExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |

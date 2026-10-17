@@ -9,17 +9,26 @@
 
 | `inputFile` | 実行する Step |
 |---|---|
-| 未指定（または空文字） | `sample05.00UserCountStep` → `sample05.01ImportStep` |
-| 指定あり | `sample05.01ImportStep` のみ（`sample05.00UserCountStep` は飛ばす） |
+| 未指定（または空文字） | `sample05.00UserCountStep` → `sample05.01ImportStep` → `sample05.02CountCheckStep` |
+| 指定あり | `sample05.01ImportStep` → `sample05.02CountCheckStep`（`sample05.00UserCountStep` は飛ばす。突き合わせは行わない） |
 
 - 既存の `sample05.01ImportStep` は改名できないため、前に入る件数取得 Step を `00` とした
 - `sample05.00UserCountStep`：`AbstractApiCallTasklet` を継承した `ApiUserCountTasklet` で、件数 API
   `GET {base-url}/users/count`（Bearer トークン付き、レスポンス例 `{"count":3}`）を1回呼ぶ。
-  件数をログに出し、Step の ExecutionContext に `apiUserCount` として保存する（取込前の疎通確認を兼ねる）
+  件数をログに出し、Step の ExecutionContext に `apiUserCount` として保存する（取込前の疎通確認を兼ねる）。
+  `ExecutionContextPromotionListener` で Job の ExecutionContext にも載せ、後続の件数突き合わせで使う
 - ページングで大量データを取るのは Chunk＋`RestApiPagingItemReader` の役割で、1回だけの呼出は Tasklet にする
   （architecture.md §3.1）
 - `sample05.01ImportStep`：API 取込（`RestApiPagingItemReader`）または `inputFile` の JSON 読込
-  （`JsonItemReaderFactory`）から取り込む。入力チェックと UPSERT は両方で共通
+  （`JsonItemReaderFactory`）から取り込む。入力チェックと UPSERT は両方で共通。
+  Step の終了時に、取得件数（読込件数＋読込 Skip 件数）を Job の ExecutionContext に `apiUserReadCount` として保存する
+- `sample05.02CountCheckStep`：batch-core の `TableCountCheckTasklet` で、取得件数 `apiUserReadCount` が
+  件数 API の `apiUserCount` と一致することを確かめる（最小件数＝最大件数＝`apiUserCount`）。
+  一致しない時は `BusinessException` で異常終了（終了コード1）する。API がページングの途中でデータを返さなかった等の
+  取りこぼしを、正常終了として見逃さないため。入力チェックで Skip した件も「取得した件」として数える
+  （Skip は終了コード2で別途知らせる）。取り込んだデータは UPSERT なので、原因を取り除いて再実行すればよい
+- `inputFile` 指定時は件数 API を呼ばないため、件数の突き合わせは行わない（取込 Step は両方の分岐で同じ Step なので
+  `sample05.02CountCheckStep` は通るが、件数 `apiUserCount` が無い時はログを出すだけで正常に終わる）
 
 ## デモする機能
 
@@ -31,6 +40,7 @@
 - `AbstractApiCallTasklet`：件数取得 Step（`sample05.00UserCountStep`）で単発の API コールを行う
 - `JsonItemReaderFactory`：`inputFile` 指定時に保存済み JSON から取り込む（リプレイ）
 - `RetryableSystemException`：リトライを使い切った 5xx・接続エラーで異常終了する
+- `TableCountCheckTasklet`：件数 API の件数と取得件数の突き合わせ（`sample05.02CountCheckStep`）
 
 ## 設定（application.yml）
 

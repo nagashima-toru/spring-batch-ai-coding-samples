@@ -102,7 +102,7 @@ class Sample03FileExportJobIT extends AbstractJobIT {
     }
 
     @Test
-    void formatにfixedを指定した場合_Shift_JISの固定長ファイルを配置先へ出力する() throws Exception {
+    void formatにfixedを指定した場合_Windows31Jの固定長ファイルを配置先へ出力する() throws Exception {
         salesMapper.insertTransaction(
                 new SalesTransaction(null, "C001", new BigDecimal("1000"), LocalDate.of(2026, 7, 1)));
         salesMapper.insertTransaction(
@@ -110,8 +110,11 @@ class Sample03FileExportJobIT extends AbstractJobIT {
         // DB の上限（VARCHAR(10)）いっぱいの全角10文字＝20バイトも幅に収まる
         salesMapper.insertTransaction(
                 new SalesTransaction(null, "顧客顧客顧客顧客顧客", new BigDecimal("300"), LocalDate.of(2026, 7, 3)));
+        // Shift_JIS では表せず ? になる Windows 拡張文字も、そのまま出力される
+        salesMapper.insertTransaction(
+                new SalesTransaction(null, "髙橋①", new BigDecimal("400"), LocalDate.of(2026, 7, 4)));
         Path output = tempDir.resolve("sales_fixed.dat");
-        Charset sjis = Charset.forName("Shift_JIS");
+        Charset ms932 = Charset.forName("Windows-31J");
 
         JobExecution execution = jobOperator.start(job, uniqueParameters()
                 .addString("outputFile", output.toString())
@@ -119,17 +122,22 @@ class Sample03FileExportJobIT extends AbstractJobIT {
                 .toJobParameters());
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        List<String> lines = Files.readAllLines(output, sjis);
-        assertThat(lines).hasSize(3); // ヘッダ・トレーラ無し
-        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(sjis)).hasSize(52));
+        List<String> lines = Files.readAllLines(output, ms932);
+        assertThat(lines).hasSize(4); // ヘッダ・トレーラ無し
+        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(ms932)).hasSize(52));
         byte[] customerLine = lines.stream()
                 .filter(line -> line.contains("顧客A"))
-                .findFirst().orElseThrow().getBytes(sjis);
-        assertThat(new String(customerLine, 10, 20, sjis)).isEqualTo("顧客A" + " ".repeat(15));
+                .findFirst().orElseThrow().getBytes(ms932);
+        assertThat(new String(customerLine, 10, 20, ms932)).isEqualTo("顧客A" + " ".repeat(15));
         byte[] longCustomerLine = lines.stream()
                 .filter(line -> line.contains("顧客顧客顧客顧客顧客"))
-                .findFirst().orElseThrow().getBytes(sjis);
-        assertThat(new String(longCustomerLine, 10, 20, sjis)).isEqualTo("顧客顧客顧客顧客顧客");
+                .findFirst().orElseThrow().getBytes(ms932);
+        assertThat(new String(longCustomerLine, 10, 20, ms932)).isEqualTo("顧客顧客顧客顧客顧客");
+        byte[] extendedLine = lines.stream()
+                .filter(line -> line.contains("髙橋①"))
+                .findFirst().orElseThrow().getBytes(ms932);
+        assertThat(new String(extendedLine, 10, 20, ms932)).isEqualTo("髙橋①" + " ".repeat(14));
+        assertThat(lines).noneMatch(line -> line.contains("?"));
     }
 
     @Test
