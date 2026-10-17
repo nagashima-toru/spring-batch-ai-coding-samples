@@ -35,6 +35,11 @@ import jakarta.validation.Validator;
  * API 呼出、ページング取得（全件メモリロードなし）、認証ヘッダの外部設定、
  * レスポンスの入力チェック。</p>
  *
+ * <p><b>Step 構成:</b> 件数取得 Step（{@code sample05.00UserCountStep}、
+ * {@code AbstractApiCallTasklet} 継承の {@link ApiUserCountTasklet}）の後に、
+ * 取込 Step（{@code sample05.01ImportStep}）を実行する。HTTP のリトライは {@code BatchHttpClient} が行い、
+ * Batch の Retry は使わない（方式設計 §5.2）。</p>
+ *
  * <p>API の接続先・ページサイズ・トークンは {@code application.yml} の
  * {@code sample.job05.api.*} で設定する（トークンは環境変数 {@code SAMPLE05_API_TOKEN} から注入）。</p>
  *
@@ -50,15 +55,34 @@ public class Sample05JobConfig {
     public static final String JOB_NAME = "sample05ApiImportJob";
 
     @Bean
-    public Job sample05ApiImportJob(JobRepository jobRepository, Step sample05ImportStep,
+    public Job sample05ApiImportJob(JobRepository jobRepository, Step sample05UserCountStep,
+            Step sample05ImportStep,
             LoggingJobExecutionListener loggingJobExecutionListener,
             DuplicateRunPreventingJobExecutionListener duplicateRunPreventingJobExecutionListener) {
         return new JobBuilder(JOB_NAME, jobRepository)
                 .validator(JobParametersValidators.required("syncDate"))
                 .listener(duplicateRunPreventingJobExecutionListener)
                 .listener(loggingJobExecutionListener)
-                .start(sample05ImportStep)
+                .start(sample05UserCountStep)
+                .next(sample05ImportStep)
                 .build();
+    }
+
+    @Bean
+    public Step sample05UserCountStep(JobRepository jobRepository, PlatformTransactionManager transactionManager,
+            ApiUserCountTasklet sample05UserCountTasklet,
+            LoggingStepExecutionListener loggingStepExecutionListener) {
+        return new StepBuilder("sample05.00UserCountStep", jobRepository)
+                .tasklet(sample05UserCountTasklet, transactionManager)
+                .listener(loggingStepExecutionListener)
+                .build();
+    }
+
+    @Bean
+    public ApiUserCountTasklet sample05UserCountTasklet(BatchHttpClient batchHttpClient,
+            SampleProperties properties) {
+        SampleProperties.Job05.Api api = properties.job05().api();
+        return new ApiUserCountTasklet(batchHttpClient, api.baseUrl(), api.token());
     }
 
     @Bean
