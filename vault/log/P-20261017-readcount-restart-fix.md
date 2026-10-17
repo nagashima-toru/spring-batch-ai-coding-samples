@@ -2,3 +2,4 @@
 - 2026-10-17 20:20 T-01 todo→doing attempt=1
 - 2026-10-17 20:21 T-01 doing→blocked attempt=1 worktree の分岐元不一致（worktree は自動削除済み）
 - 2026-10-17 20:24 T-01 blocked→todo 人の指示: /plan unblock P-20261017-readcount-restart-fix T-01 --fresh
+- 2026-10-17 20:24 T-01 todo→doing attempt=1
