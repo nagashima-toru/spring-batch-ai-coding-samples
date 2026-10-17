@@ -23,7 +23,7 @@ GitHub Issue #78「レビュー工程の再設計：verifier・creator でのレ
 | T-01 | done | 1 | - | 規約レビューのスキルを review-standards に改名し参照を追従させる | |
 | T-02 | done | 1 | T-01 | review-standards の手順4をハーネスの差分の扱いと整合させる | |
 | T-03 | review | 1 | T-02 | verifier ルールに /code-review の指摘の区分の対応を書く | |
-| T-04 | doing | 1 | T-02 | creator ルールに /code-review の指摘の区分の対応を書く | |
+| T-04 | review | 1 | T-02 | creator ルールに /code-review の指摘の区分の対応を書く | |
 | T-05 | todo | 0 | T-03 | planner ルールにコードを変えるタスクの /code-review の行を書く | |
 | T-06 | todo | 0 | T-04,T-05 | 開発ガイドにレビューの流れと新しいルールを案内する | |
 
