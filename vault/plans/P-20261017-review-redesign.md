@@ -25,7 +25,7 @@ GitHub Issue #78「レビュー工程の再設計：verifier・creator でのレ
 | T-03 | done | 1 | T-02 | verifier ルールに /code-review の指摘の区分の対応を書く | |
 | T-04 | done | 1 | T-02 | creator ルールに /code-review の指摘の区分の対応を書く | |
 | T-05 | done | 1 | T-03 | planner ルールにコードを変えるタスクの /code-review の行を書く | |
-| T-06 | todo | 0 | T-04,T-05 | 開発ガイドにレビューの流れと新しいルールを案内する | |
+| T-06 | doing | 1 | T-04,T-05 | 開発ガイドにレビューの流れと新しいルールを案内する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
