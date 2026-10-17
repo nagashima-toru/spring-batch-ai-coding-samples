@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-naming-convention-unify/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 13:31",
+  "criteria": [
+    {"text": "差分が改名に関わる5ファイルだけである（`git diff --merge-base work/p-20261017-naming-convention-unify --name-only --no-renames -- batch-sample/src/` の出力が、成果物に列挙した5つのパスちょうど）", "ok": true, "note": "実行コマンド: `git -C <worktree> diff --merge-base work/p-20261017-naming-convention-unify --name-only --no-renames -- batch-sample/src/` / 出力: AnnouncementNotifyJobConfig.java, NotifyCandidateItemProcessor.java, NotifyCandidateProcessor.java, NotifyCandidateItemProcessorTest.java, NotifyCandidateProcessorTest.java の5つ（成果物の列挙と一致）"},
+    {"text": "旧クラス名がリポジトリに残っていない（`git grep -n NotifyCandidateProcessor -- . ':!vault'` の出力が空）", "ok": true, "note": "実行コマンド: `git grep -n NotifyCandidateProcessor -- . ':!vault'`（worktree内） / 出力: 空"},
+    {"text": "新しいクラスとテストクラスが宣言されている（`grep -c 'public class NotifyCandidateItemProcessor extends ValidatingItemProcessorBase' batch-sample/src/main/java/com/example/batch/sample/job_announcement_notify/NotifyCandidateItemProcessor.java` の出力が `1`、かつ `grep -c 'class NotifyCandidateItemProcessorTest' batch-sample/src/test/java/com/example/batch/sample/job_announcement_notify/NotifyCandidateItemProcessorTest.java` の出力が `1`）", "ok": true, "note": "実行コマンド: 上記2つの grep -c（worktree内） / 出力: 1 と 1"},
+    {"text": "ジョブ名・Step 名・Reader の名前に触れていない（`git diff --merge-base work/p-20261017-naming-convention-unify -- batch-sample/src/main/java/com/example/batch/sample/job_announcement_notify/AnnouncementNotifyJobConfig.java | grep -c -e 'Builder(' -e 'setName'` の出力が `0`）", "ok": true, "note": "実行コマンド: 基準記載の git diff | grep -c（worktree内） / 出力: 0"},
+    {"text": "ビルド（全モジュールの Checkstyle・SpotBugs・単体テスト）が成功する（`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'BUILD SUCCESS'` の出力が `1`）", "ok": true, "note": "参照ルール: vault/rules/verifier/build-verification.md。実行コマンド: worktreeで `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 終了コード0、BUILD SUCCESS が1件。追加で `./mvnw clean verify -DskipITs -pl batch-core` も終了コード0、BUILD SUCCESS"},
+    {"text": "改名後の単体テストが実行されている（上のビルドの後に `ls batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job_announcement_notify.NotifyCandidateItemProcessorTest.xml` が終了コード0）", "ok": true, "note": "実行コマンド: ビルド直後に worktree で上記 ls / 出力: ファイルのパスが表示され終了コード0（batch-core のビルドを実行する前に確認）"}
+  ],
+  "reasons": []
+}
