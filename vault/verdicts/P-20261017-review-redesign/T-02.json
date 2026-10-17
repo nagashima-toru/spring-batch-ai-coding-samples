@@ -1,0 +1,16 @@
+{
+  "task": "P-20261017-review-redesign/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 04:35",
+  "criteria": [
+    {"text": "手順4の1行目が残っている：`grep -c '^4. 同じ差分に対して、Claude Code 組み込みの' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep（worktree内） / 出力: 1"},
+    {"text": "レビューの範囲がベースブランチとの分岐点からの差分として書かれている：`grep -c 'diff --merge-base main' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。手順4の27行目に記載（git diff で確認）"},
+    {"text": "受け入れ基準の `/code-review` の行の範囲（タスクの差分）が区別して書かれている：`grep -c 'diff --merge-base work/' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。手順4の28行目に記載"},
+    {"text": "差分内の致命的な指摘を [Must] にすると書かれている：`grep -c 'クラッシュ・データ破損・誤った結果の指摘は .Must. にする' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "設計・仕様の改訂が要る指摘を [Ask] にすると書かれている：`grep -c '設計・仕様の改訂が要る指摘は .Ask. にする' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "差分の外の指摘を直さず対象外として残すと書かれている：`grep -c '一覧の最後に .対象外（既存コード）: ' .claude/skills/review-standards/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "smoke が通り `(ref-1)` も ok：`bash scripts/smoke.sh 2>&1 | grep -c -e '^  ok   (ref-1) ' -e '^smoke: pass=[0-9]* fail=0'` の出力が `2`", "ok": true, "note": "実行コマンド: 同コマンド（worktree内） / 出力: 2。なお git diff --merge-base work/p-20261017-review-redesign で SKILL.md の変更は手順4内のみ、決定済みの文言どおりで、ルール参照の基準は無い"}
+  ],
+  "reasons": []
+}
