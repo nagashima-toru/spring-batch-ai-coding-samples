@@ -19,7 +19,7 @@ GitHub Issue #79「sample05: チャンクの途中で失敗した後のリスタ
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | sample05 解説の取得件数の数え方を Reader の読込位置基準に改訂する | |
-| T-02 | review | 1 | T-01 | ApiUserReadCountListener を Reader の読込位置から取得件数を求める実装に直し単体テストを書き直す | |
+| T-02 | done | 1 | T-01 | ApiUserReadCountListener を Reader の読込位置から取得件数を求める実装に直し単体テストを書き直す | |
 | T-03 | todo | 0 | T-02 | Sample05ApiImportJobIT にチャンク途中失敗のリスタートテストを追加しスタブのページ判定を正確にする | |
 
 ## 計画の受け入れ基準
