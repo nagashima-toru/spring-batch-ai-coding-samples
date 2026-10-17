@@ -190,10 +190,11 @@ public class Sample03JobConfig {
         }
         FlatFileItemWriter<SalesTransaction> writer;
         if ("fixed".equals(format)) {
-            // customerCode は DB が VARCHAR(10)（文字数）のため、全角10文字＝20バイトまで収まる幅にする
+            // 幅は DB の型が取りうる値がすべて収まるようにする（id: BIGINT の符号付き19桁、customerCode: VARCHAR(10) の
+            // 全角10文字、amount: NUMERIC(12) の符号付き12桁）。1件の値で出力全体が失敗しないため
             writer = FixedLengthItemWriterFactory.create("sample03SalesFixedWriter", new FileSystemResource(tempFile),
                     SalesTransaction.class, Charset.forName("Windows-31J"), null, null,
-                    new String[] {"id", "customerCode", "amount", "soldAt"}, new int[] {10, 20, 12, 10});
+                    new String[] {"id", "customerCode", "amount", "soldAt"}, new int[] {20, 20, 13, 10});
         } else {
             writer = CsvItemWriterFactory.create("sample03SalesWriter", new FileSystemResource(tempFile),
                     SalesTransaction.class, StandardCharsets.UTF_8,

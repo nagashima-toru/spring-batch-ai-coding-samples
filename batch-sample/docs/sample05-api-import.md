@@ -21,12 +21,17 @@
   （architecture.md §3.1）
 - `sample05.01ImportStep`：API 取込（`RestApiPagingItemReader`）または `inputFile` の JSON 読込
   （`JsonItemReaderFactory`）から取り込む。入力チェックと UPSERT は両方で共通。
-  Step の終了時に、取得件数（読込件数＋読込 Skip 件数）を Job の ExecutionContext に `apiUserReadCount` として保存する
+  Step の終了時に、取得件数（読込件数＋読込 Skip 件数）を Job の ExecutionContext の `apiUserReadCount` に足し込む。
+  取込 Step の途中失敗からリスタートすると Reader は続きから読むため、前回の実行で取得した件数に今回の件数を足して全体の取得件数にする
 - `sample05.02CountCheckStep`：batch-core の `TableCountCheckTasklet` で、取得件数 `apiUserReadCount` が
   件数 API の `apiUserCount` と一致することを確かめる（最小件数＝最大件数＝`apiUserCount`）。
   一致しない時は `BusinessException` で異常終了（終了コード1）する。API がページングの途中でデータを返さなかった等の
   取りこぼしを、正常終了として見逃さないため。入力チェックで Skip した件も「取得した件」として数える
-  （Skip は終了コード2で別途知らせる）。取り込んだデータは UPSERT なので、原因を取り除いて再実行すればよい
+  （Skip は終了コード2で別途知らせる）。
+- 件数が一致せずに異常終了したジョブは、同じパラメータでリスタートしても回復しない。リスタートでは件数取得 Step と
+  取込 Step が COMPLETED として飛ばされ、突き合わせ Step が同じ2つの件数を比べ直すだけだからである。
+  原因（API 側の取りこぼし、ページング中の件数の変化など）を確かめたうえで、新しいジョブインスタンスとして再実行する
+  （識別用のパラメータを変えて起動する。取り込んだデータは UPSERT なので、再実行しても重複しない）
 - `inputFile` 指定時は件数 API を呼ばないため、件数の突き合わせは行わない（取込 Step は両方の分岐で同じ Step なので
   `sample05.02CountCheckStep` は通るが、件数 `apiUserCount` が無い時はログを出すだけで正常に終わる）
 

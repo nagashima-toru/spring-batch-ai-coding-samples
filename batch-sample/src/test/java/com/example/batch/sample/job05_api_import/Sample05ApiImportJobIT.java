@@ -55,6 +55,9 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
     /** 件数APIが返す件数（ユーザーAPIが返すのは3件）。 */
     private static volatile int reportedCount;
 
+    /** 真の間、ユーザーAPIの2ページ目（page=1）だけが500を返す。 */
+    private static volatile boolean secondPageError;
+
     @Autowired
     private JobOperator jobOperator;
 
@@ -88,6 +91,10 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 return;
             }
             String query = exchange.getRequestURI().getQuery();
+            if (secondPageError && query.contains("page=1")) {
+                send(exchange, 500, "[]");
+                return;
+            }
             String auth = exchange.getRequestHeaders().getFirst("Authorization");
             String body;
             if (!"Bearer local-dummy-token".equals(auth)) {
@@ -130,6 +137,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         registry.add("sample.job05.api.base-url",
                 () -> "http://localhost:" + apiStub.getAddress().getPort());
         registry.add("sample.job05.api.page-size", () -> 2);
+        // 1ページ目（2件）をコミットしてから2ページ目を読むよう、チャンクサイズをページサイズと揃える
+        registry.add("sample.chunk-size", () -> 2);
     }
 
     @BeforeEach
@@ -137,6 +146,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         truncateAppTable("api_user");
         serverError = false;
         reportedCount = 3;
+        secondPageError = false;
         COUNT_REQUESTS.set(0);
         USERS_REQUESTS.set(0);
     }
@@ -167,6 +177,28 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(countStep.getExecutionContext().getLong("apiUserCount")).isEqualTo(3L);
         assertThat(countStep.getEndTime().isAfter(importStep.getStartTime())).isFalse();
         assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+    }
+
+    @Test
+    void 取込Stepが途中で失敗した場合_リスタートで続きを取り込み件数の突き合わせも通る() throws Exception {
+        secondPageError = true; // 1ページ目（2件）はコミット済み、2ページ目でリトライを使い切って失敗する
+
+        JobExecution failed = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(findStep(failed, "sample05.01ImportStep").getWriteCount()).isEqualTo(2);
+
+        secondPageError = false;
+        JobExecution restarted = jobOperator.restart(failed);
+
+        assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        // リスタートでは続きの1件だけを読む。取得件数は前回の2件と足して3件になり、件数APIの3件と一致する
+        assertThat(findStep(restarted, "sample05.01ImportStep").getReadCount()).isEqualTo(1);
+        assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(3L);
+        assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(3);
     }
 
     @Test

@@ -124,19 +124,19 @@ class Sample03FileExportJobIT extends AbstractJobIT {
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         List<String> lines = Files.readAllLines(output, ms932);
         assertThat(lines).hasSize(4); // ヘッダ・トレーラ無し
-        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(ms932)).hasSize(52));
+        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(ms932)).hasSize(63));
         byte[] customerLine = lines.stream()
                 .filter(line -> line.contains("顧客A"))
                 .findFirst().orElseThrow().getBytes(ms932);
-        assertThat(new String(customerLine, 10, 20, ms932)).isEqualTo("顧客A" + " ".repeat(15));
+        assertThat(new String(customerLine, 20, 20, ms932)).isEqualTo("顧客A" + " ".repeat(15));
         byte[] longCustomerLine = lines.stream()
                 .filter(line -> line.contains("顧客顧客顧客顧客顧客"))
                 .findFirst().orElseThrow().getBytes(ms932);
-        assertThat(new String(longCustomerLine, 10, 20, ms932)).isEqualTo("顧客顧客顧客顧客顧客");
+        assertThat(new String(longCustomerLine, 20, 20, ms932)).isEqualTo("顧客顧客顧客顧客顧客");
         byte[] extendedLine = lines.stream()
                 .filter(line -> line.contains("髙橋①"))
                 .findFirst().orElseThrow().getBytes(ms932);
-        assertThat(new String(extendedLine, 10, 20, ms932)).isEqualTo("髙橋①" + " ".repeat(14));
+        assertThat(new String(extendedLine, 20, 20, ms932)).isEqualTo("髙橋①" + " ".repeat(14));
         assertThat(lines).noneMatch(line -> line.contains("?"));
     }
 
