@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.job.Job;
@@ -41,6 +44,9 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
     /** 件数APIへのリクエスト数。 */
     private static final AtomicInteger COUNT_REQUESTS = new AtomicInteger();
+
+    /** ユーザーAPIへのリクエスト数。 */
+    private static final AtomicInteger USERS_REQUESTS = new AtomicInteger();
 
     /** 真の間、スタブは500を返す。 */
     private static volatile boolean serverError;
@@ -72,6 +78,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
             send(exchange, 200, "{\"count\":3}");
         });
         apiStub.createContext("/users", exchange -> {
+            USERS_REQUESTS.incrementAndGet();
             if (serverError) {
                 send(exchange, 500, "[]");
                 return;
@@ -126,6 +133,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         truncateAppTable("api_user");
         serverError = false;
         COUNT_REQUESTS.set(0);
+        USERS_REQUESTS.set(0);
     }
 
     @Test
@@ -169,6 +177,39 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(execution.getAllFailureExceptions()).anyMatch(Sample05ApiImportJobIT::hasRetryableCause);
         assertThat(COUNT_REQUESTS.get()).isEqualTo(3);
         assertThat(apiUserMapper.count()).isZero();
+    }
+
+    @Test
+    void inputFileを指定した場合_APIを呼ばずJSONファイルから取り込む(@TempDir Path tempDir) throws Exception {
+        Path file = tempDir.resolve("users.json");
+        Files.writeString(file, """
+                [{"userId":"R001","userName":"再生一","email":"r001@example.com"},
+                 {"userId":"R002","userName":"再生二","email":"r002@example.com"}]""",
+                StandardCharsets.UTF_8);
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .addString("inputFile", file.toString())
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(2);
+        assertThat(USERS_REQUESTS.get()).isZero();
+        assertThat(COUNT_REQUESTS.get()).isZero();
+        assertThat(execution.getStepExecutions()).extracting(StepExecution::getStepName)
+                .doesNotContain("sample05.00UserCountStep")
+                .contains("sample05.01ImportStep");
+    }
+
+    @Test
+    void inputFileに存在しないファイルを指定した場合_異常終了する(@TempDir Path tempDir) throws Exception {
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .addString("inputFile", tempDir.resolve("missing.json").toString())
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo(ExitStatus.FAILED.getExitCode());
     }
 
     private static StepExecution findStep(JobExecution execution, String name) {
