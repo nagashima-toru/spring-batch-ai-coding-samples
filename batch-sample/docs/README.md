@@ -23,6 +23,37 @@
 | 08 | [sample08-s3-io.md](sample08-s3-io.md) | S3入出力のプロファイル切替（AWS非依存開発） |
 | 09 | [sample09-notification.md](sample09-notification.md) | 異常終了時の Slack/SNS 通知 |
 
+## 基盤部品別の実例ジョブ索引
+
+implementation Skill の「最重要ルール」表にある基盤部品ごとに、batch-sample のどのジョブが実例かを引ける索引。
+部品の使い方に迷ったら、該当行のジョブを参照すること。
+
+| 部品 | 実例（ジョブのパッケージ / クラス） |
+|---|---|
+| `BatchHttpClient` | `job05_api_import` / `Sample05JobConfig`、`job09_notification` / `SlackWebhookNotificationSender` |
+| `CsvItemReaderFactory` | `job01_csv_import` / `Sample01JobConfig`、`job06_flow_job` / `Sample06JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobConfig` |
+| `FixedLengthItemReaderFactory` | `job02_fixedlength_import` / `Sample02JobConfig` |
+| `JsonItemReaderFactory` | 実例なし（#61 で追加予定） |
+| `CsvItemWriterFactory` | `job03_file_export` / `Sample03JobConfig` |
+| `FixedLengthItemWriterFactory` | 実例なし（#61 で追加予定） |
+| `RestApiPagingItemReader` | `job05_api_import` / `Sample05JobConfig` |
+| `ValidatingItemProcessorBase` | `job01_csv_import` / `CustomerItemProcessor`、`job02_fixedlength_import` / `ProductItemProcessor`、`job_order_daily_sales` / `OrderItemProcessor` |
+| `BusinessSkipPolicy` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
+| `ErrorRecordSkipListener` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
+| `FileExistenceCheckTasklet` | `job06_flow_job` / `Sample06JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobConfig` |
+| `FileMoveTasklet` | 実例なし（#61 で追加予定） |
+| `CsvHeaderCheckTasklet` | `job_order_daily_sales` / `OrderDailySalesJobConfig` |
+| `AbstractApiCallTasklet` | 実例なし（#61 で追加予定） |
+| `TableCountCheckTasklet` | `job04_db_aggregate` / `Sample04JobConfig` |
+| `JobParametersValidators` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobParametersValidator`（独自 Validator への拡張例） |
+| `LoggingJobExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
+| `LoggingStepExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
+| `DuplicateRunPreventingJobExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
+| `BusinessException` | `job01_csv_import` / `CustomerItemProcessor`、`job_order_daily_sales` / `OrderItemProcessor` |
+| `SystemException` | `job06_flow_job` / `WorkItemProcessor` |
+| `RetryableSystemException` | 実例なし（#61 で追加予定） |
+| `SummaryFooterCallback` | `job03_file_export` / `Sample03JobConfig` |
+
 ## 案件ジョブについて
 
 `batch-sample` モジュールには、上記のリファレンスサンプル（`job01_`〜`job09_`）とは別に、
