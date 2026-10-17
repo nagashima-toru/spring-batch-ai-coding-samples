@@ -26,3 +26,4 @@
 - 2026-10-17 08:48 T-07 doing→review attempt=1 creator=sonnet
 - 2026-10-17 13:31 T-05 review→done attempt=1 verifier=sonnet
 - 2026-10-17 13:31 T-07 review→done attempt=1 verifier=sonnet
+- 2026-10-17 13:34 T-03 amend 基準差し替え=2
