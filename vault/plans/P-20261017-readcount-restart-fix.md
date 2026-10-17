@@ -18,7 +18,7 @@ GitHub Issue #79「sample05: チャンクの途中で失敗した後のリスタ
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | sample05 解説の取得件数の数え方を Reader の読込位置基準に改訂する | |
+| T-01 | blocked | 1 | - | sample05 解説の取得件数の数え方を Reader の読込位置基準に改訂する | worktree の分岐元が計画ブランチと一致しない。creator の worktree（.claude/worktrees/agent-a0fd7bf5588dd2c04）に計画票・タスク票が無く（vault/plans・vault/tasks が空）、計画ブランチの HEAD fa36ee2 を含まない main から切られていた。worktree は変更が無いため自動で削除済み。セッションの途中で作業ディレクトリを別リポジトリ（ai-harness）に移した後の Agent の isolation: worktree で起きた（nagashima-toru/ai-harness#209 と同じ現象）。成果物は未作成 |
 | T-02 | todo | 0 | T-01 | ApiUserReadCountListener を Reader の読込位置から取得件数を求める実装に直し単体テストを書き直す | |
 | T-03 | todo | 0 | T-02 | Sample05ApiImportJobIT にチャンク途中失敗のリスタートテストを追加しスタブのページ判定を正確にする | |
 

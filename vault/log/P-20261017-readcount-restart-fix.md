@@ -1,2 +1,3 @@
 - 2026-10-17 20:20 - draft→approved /plan による自動承認
 - 2026-10-17 20:20 T-01 todo→doing attempt=1
+- 2026-10-17 20:21 T-01 doing→blocked attempt=1 worktree の分岐元不一致（worktree は自動削除済み）
