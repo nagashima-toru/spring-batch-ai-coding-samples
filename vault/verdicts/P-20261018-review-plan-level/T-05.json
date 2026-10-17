@@ -1,0 +1,14 @@
+{
+  "task": "P-20261018-review-plan-level/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 05:00",
+  "criteria": [
+    {"text": "review-standards のタスクが手順1〜3でレビューすると書かれている：`grep -c '.review-standards. の手順1〜3（' vault/rules/creator/skill-workflow.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c '.review-standards. の手順1〜3（' vault/rules/creator/skill-workflow.md`（worktree 内）/ 出力: 1。11行目に該当文言あり"},
+    {"text": "手順4を実行しないことが書かれている：`grep -c '手順4の組み込み ..code-review. は実行しない（計画単位のレビュータスクに任せる' vault/rules/creator/skill-workflow.md` の出力が `1`", "ok": true, "note": "実行コマンド: 該当 grep -c / 出力: 1"},
+    {"text": "手順4を含めると読める旧記述が残っていない：`grep -c '手順4の組み込み ..code-review. を含む' vault/rules/creator/skill-workflow.md` の出力が `0`", "ok": true, "note": "実行コマンド: 該当 grep -c / 出力: 0"},
+    {"text": "変えたのは review-standards のタスクの1行だけ：`git diff --merge-base work/p-20261018-review-plan-level --numstat -- vault/rules/creator/skill-workflow.md` の出力が1行で、追加 `1`・削除 `1`・パス `vault/rules/creator/skill-workflow.md` である", "ok": true, "note": "実行コマンド: 該当 git diff --numstat / 出力: 1 1 vault/rules/creator/skill-workflow.md（1行のみ）。差分の -/+ 行も review-standards の箇条1行の置換で、決定済みの文面と一致、「タスクの差分」は0件"},
+    {"text": "creator のルールとして列挙され続ける：`bash scripts/rules.sh creator | grep -c 'creator/skill-workflow.md'` の出力が `1`", "ok": true, "note": "実行コマンド: `bash scripts/rules.sh creator | grep -c 'creator/skill-workflow.md'` / 出力: 1"}
+  ],
+  "reasons": []
+}
