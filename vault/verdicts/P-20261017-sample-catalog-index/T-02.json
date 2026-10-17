@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-sample-catalog-index/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 13:54",
+  "criteria": [
+    {"text": "「カタログには含めない」の記述がリポジトリの文書に残っていない：`grep -rlF 'カタログには含めない' batch-sample docs .claude README.md CLAUDE.md` の出力が空", "ok": true, "note": "実行コマンド: 同grep（worktree ルートで実行） / 出力: 空。参照ルール: vault/rules/common/project-docs.md（本行は判定に使わず）"},
+    {"text": "案件ジョブをリファレンスサンプルとは別表で載せる旨がある：`grep -c 'リファレンスサンプルとは別表で載せる' batch-sample/docs/README.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1"},
+    {"text": "案件ジョブを SDD パイプラインの出力例として位置付けている：`grep -c 'SDD パイプライン（requirements→system-test）の出力例' batch-sample/docs/README.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1"},
+    {"text": "案件ジョブ3本の表があり、各行が4列で、設計書と近いリファレンスサンプルへのリンクが実在するファイルを指し、違いの要点のクラス名を含む：python3 -c（README の案件ジョブ節を解析）の出力が期待のリストと一致", "ok": true, "note": "実行コマンド: タスク票記載の python3 -c を worktree ルートで実行 / 出力: [('job_announcement_notify', ['ANNOUNCE-001.md','sample01-csv-import.md','sample03-file-export.md'], 0, 4, True), ('job_order_daily_sales', ['ORDER-001.md','sample06-flow-job.md'], 0, 4, True), ('job_point_expiry', ['POINT-001.md','sample04-db-aggregate.md'], 0, 4, True)] で期待どおり"},
+    {"text": "命名の architecture §11 への参照が残っている：`grep -c 'architecture.md#11-命名規約' batch-sample/docs/README.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep -c / 出力: 1"},
+    {"text": "節の並びが変わっていない：`grep '^## ' batch-sample/docs/README.md` の出力が順に4行", "ok": true, "note": "実行コマンド: 同grep / 出力: コアサンプル、拡張サンプル、基盤部品別の実例ジョブ索引、案件ジョブについて の4行が順に出た"}
+  ],
+  "reasons": []
+}
