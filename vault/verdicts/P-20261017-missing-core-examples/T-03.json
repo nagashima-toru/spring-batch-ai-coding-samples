@@ -1,0 +1,44 @@
+{
+  "task": "P-20261017-missing-core-examples/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 15:06",
+  "criteria": [
+    {
+      "text": "解説に件数取得 Step の名前がある（`grep -c 'sample05.00UserCountStep' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'sample05.00UserCountStep' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 4。12-17行目に処理の流れ表と Step 説明。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に単発 API コールの Tasklet の名前がある（`grep -c 'ApiUserCountTasklet' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'ApiUserCountTasklet' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 1。16行目で AbstractApiCallTasklet 継承として説明。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に件数 API のパスがある（`grep -c '/users/count' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c '/users/count' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 1。17行目に GET {base-url}/users/count。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に JSON ファイル取込の実行例がある（`grep -c 'inputFile=batch-sample/data/in/api-users.json' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'inputFile=batch-sample/data/in/api-users.json' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 1。60行目の実行例。既存の syncDate=2026-07-14 の例（51・59行目）も残っている。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に JSON 読込の基盤部品の名前がある（`grep -c 'JsonItemReaderFactory' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'JsonItemReaderFactory' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 2。22行目と32行目に inputFile リプレイ用として記載。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に 5xx が続いた時の結果が書いてある（`grep -c 'RetryableSystemException. で異常終了（終了コード1）' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'RetryableSystemException. で異常終了（終了コード1）' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 1。88行目に5xx・接続エラーが続くと異常終了と記載。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    },
+    {
+      "text": "解説に Batch のリトライを設定しない方針が書いてある（`grep -c 'retry(). は設定しない' batch-sample/docs/sample05-api-import.md` が1以上）",
+      "ok": true,
+      "note": "実行コマンド: `grep -c 'retry(). は設定しない' batch-sample/docs/sample05-api-import.md`（worktree 内）/ 出力: 1。87行目に architecture §5.2 準拠の方針と理由を記載。周辺行を grep -n で確認し目的（解説への記述）に合致。差分は解説1ファイル＋タスク票進捗のみ"
+    }
+  ],
+  "reasons": []
+}

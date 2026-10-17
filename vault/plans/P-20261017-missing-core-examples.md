@@ -20,7 +20,7 @@ GitHub Issue #61「サンプルで使われていない基盤部品の実例を�
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | sample03 解説に一時出力→配置と固定長出力（format）を書く | |
 | T-02 | todo | 0 | T-01 | sample03 に一時出力→配置の Step と format=fixed の固定長出力を実装する | |
-| T-03 | review | 1 | - | sample05 解説に件数取得 Step・inputFile リプレイ・リトライ方針を書く | |
+| T-03 | done | 1 | - | sample05 解説に件数取得 Step・inputFile リプレイ・リトライ方針を書く | |
 | T-04 | todo | 0 | T-03 | sample05 に AbstractApiCallTasklet の件数取得 Step と 5xx 異常終了の結合テストを追加する | |
 | T-05 | todo | 0 | T-04 | sample05 に inputFile 指定時の JSON ファイル取込（リプレイ）を実装する | |
 | T-06 | todo | 0 | T-02,T-05 | 基盤部品別の実例ジョブ索引の「実例なし」5行を実例に置き換える | |
