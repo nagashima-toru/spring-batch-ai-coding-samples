@@ -1,0 +1,16 @@
+{
+  "task": "P-20261017-review-redesign/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 04:36",
+  "criteria": [
+    {"text": "ルールの雛形の3見出しがそろっている：`grep -cx -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/verifier/code-review.md` の出力が `3`", "ok": true, "note": "実行コマンド: worktree で `grep -cx -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/verifier/code-review.md` / 出力: 3"},
+    {"text": "受け入れ基準が参照した時だけ効くと書かれている：`grep -c 'を参照している時だけ判定に使う' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c 'を参照している時だけ判定に使う' vault/rules/verifier/code-review.md` / 出力: 1。ファイルを Read（cat）して該当箇条が意図どおりであることも確認した"},
+    {"text": "判定の本体をハーネス本体の節に任せると書かれている：`grep -c 'コードレビューを参照する基準の判定」節に従い' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c 'コードレビューを参照する基準の判定」節に従い' vault/rules/verifier/code-review.md` / 出力: 1"},
+    {"text": "区分ごとの扱いが書かれている：`grep -c -e '.Must. 相当の指摘' -e '.Ask. 相当の指摘' -e '.Should. 相当の指摘' vault/rules/verifier/code-review.md` の出力が `3`", "ok": true, "note": "実行コマンド: 同grep / 出力: 3。Must は ok:false、Ask は 人の判断が必要: 接頭辞、Should は FAIL 根拠にしない、と箇条の内容も確認"},
+    {"text": "差分の外の指摘を FAIL の根拠にしないと書かれている：`grep -c '差分の外（既存コード）への指摘は、.Must. 相当でも FAIL の根拠にせず' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "規約チェックリストの指摘を `/code-review` の行に混ぜないと書かれている：`grep -c '.code-review. の行の判定には混ぜない' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "review-standards のタスクでも判定の範囲を広げないと書かれている：`grep -c 'review-standards のタスクでも' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。追加確認: `wc -l` は18行（100行以内）、`git diff --merge-base work/p-20261017-review-redesign --stat` の差分は code-review.md の新規1ファイルとタスク票の進捗のみで、ハーネス本体は未変更"}
+  ],
+  "reasons": []
+}
