@@ -21,7 +21,7 @@ GitHub Issue #60「命名規約（architecture §11）を案件ジョブにも�
 | T-04 | done | 1 | T-01 | 設計書 ANNOUNCE-001.md の Processor クラス名を NotifyCandidateItemProcessor に改訂する | |
 | T-05 | done | 1 | T-04 | NotifyCandidateProcessor を NotifyCandidateItemProcessor に改名する（コード・テスト） | |
 | T-06 | done | 1 | - | README.md・CLAUDE.md・batch-sample/pom.xml の本数表記を実態に合わせる | |
-| T-07 | review | 1 | T-01 | batch-sample/docs/README.md の案件ジョブの命名の記述を §11 参照に直す | |
+| T-07 | done | 1 | T-01 | batch-sample/docs/README.md の案件ジョブの命名の記述を §11 参照に直す | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
