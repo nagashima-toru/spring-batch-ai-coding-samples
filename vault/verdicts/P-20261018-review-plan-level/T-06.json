@@ -1,0 +1,15 @@
+{
+  "task": "P-20261018-review-plan-level/T-06",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 05:01",
+  "criteria": [
+    {"text": "`/code-review` の行を持つのが計画単位のレビュータスクであることが書かれている：`grep -c '..code-review. の行を持つのは計画単位のレビュータスクで' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `grep -c '..code-review. の行を持つのは計画単位のレビュータスクで' vault/rules/verifier/code-review.md` / 出力: 1。3つ目の箇条に決定済みの文面どおり記載を Read で確認"},
+    {"text": "タスクの差分を前提にした記述が残っていない：`grep -c -e 'タスクの差分' -e 'review-standards のタスクでも' vault/rules/verifier/code-review.md` の出力が `0`", "ok": true, "note": "実行コマンド: `grep -c -e 'タスクの差分' -e 'review-standards のタスクでも' vault/rules/verifier/code-review.md` / 出力: 0"},
+    {"text": "参照時だけ使う条件が残っている：`grep -c 'このルールは、受け入れ基準の行がこのファイル' vault/rules/verifier/code-review.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c 'このルールは、受け入れ基準の行がこのファイル' vault/rules/verifier/code-review.md` / 出力: 1"},
+    {"text": "Must/Should/Ask の対応と差分の外の扱いが残っている：`grep -c -e '^- .Must. 相当の指摘' -e '^- .Ask. 相当の指摘' -e '^- .Should. 相当の指摘' -e '^- 差分の外（既存コード）への指摘は' vault/rules/verifier/code-review.md` の出力が `4`", "ok": true, "note": "実行コマンド: 上記 grep -c / 出力: 4"},
+    {"text": "見出しが3つそろっている：`grep -c -x -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/verifier/code-review.md` の出力が `3`", "ok": true, "note": "実行コマンド: `grep -c -x -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/verifier/code-review.md` / 出力: 3"},
+    {"text": "verifier のルールとして列挙され続ける：`bash scripts/rules.sh verifier | grep -c 'verifier/code-review.md'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `bash scripts/rules.sh verifier | grep -c 'verifier/code-review.md'` / 出力: 1"}
+  ],
+  "reasons": []
+}
