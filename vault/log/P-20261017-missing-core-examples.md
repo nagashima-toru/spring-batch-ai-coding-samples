@@ -7,3 +7,5 @@
 - 2026-10-17 14:44 T-03 doing→blocked attempt=1 creator=sonnet
 - 2026-10-17 15:04 T-01 blocked→todo 人の指示: /plan unblock P-20261017-missing-core-examples T-01 --fresh
 - 2026-10-17 15:05 T-03 blocked→todo 人の指示: /plan unblock P-20261017-missing-core-examples T-03 --fresh
+- 2026-10-17 15:05 T-01 todo→doing attempt=1
+- 2026-10-17 15:05 T-03 todo→doing attempt=1
