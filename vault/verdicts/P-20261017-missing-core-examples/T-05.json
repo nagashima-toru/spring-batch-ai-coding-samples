@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-missing-core-examples/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 15:15",
+  "criteria": [
+    {"text": "全体ビルド（単体＋結合＋静的解析＋カバレッジ）が成功する（`./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`）", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify`（docker info 成功） / 出力: 終了コード0、BUILD SUCCESS の grep -c が 1。参照ルール: vault/rules/verifier/build-verification.md（IT を含むため clean verify を実行）"},
+    {"text": "JSON 取込の結合テストが実行されている（上のビルドの後、`grep -c 'testcase name=.inputFileを指定した場合_APIを呼ばずJSONファイルから取り込む.' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job05_api_import.Sample05ApiImportJobIT.xml` が `1`）", "ok": true, "note": "実行コマンド: 記載の grep -c / 出力: 1。同 XML の <skipped は0件"},
+    {"text": "入力ファイルが無い時の結合テストが実行されている（`grep -c 'testcase name=.inputFileに存在しないファイルを指定した場合_異常終了する.' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job05_api_import.Sample05ApiImportJobIT.xml` が `1`）", "ok": true, "note": "実行コマンド: 記載の grep -c / 出力: 1"},
+    {"text": "Decider の単体テストが実行されている（`grep -c 'testcase name=.inputFileが指定された場合_FILEを返す.' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job05_api_import.InputSourceDeciderTest.xml` が `1`）", "ok": true, "note": "実行コマンド: 記載の grep -c / 出力: 1"},
+    {"text": "JSON の Reader を基盤部品で生成している（`grep -c 'JsonItemReaderFactory.create' batch-sample/src/main/java/com/example/batch/sample/job05_api_import/Sample05JobConfig.java` が1以上）", "ok": true, "note": "実行コマンド: 記載の grep -c / 出力: 1。InputSourceDecider.java も Read で確認し、FILE/API 判定が実装されていた"},
+    {"text": "サンプル入力が JSON として読め、3件ある（`python3 -m json.tool batch-sample/data/in/api-users.json | grep -c 'userId'` が `3`）", "ok": true, "note": "実行コマンド: 記載のコマンド / 出力: 3"}
+  ],
+  "reasons": []
+}
