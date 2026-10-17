@@ -3,3 +3,5 @@
 - 2026-10-17 13:51 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a687a7b2909d8121e branch=worktree-agent-a687a7b2909d8121e plan_head=ad1853cb161bf7637550fef6ca73f3f25a878fba
 - 2026-10-17 13:51 T-01 doing→review attempt=1 creator=sonnet
 - 2026-10-17 13:52 T-01 review→done attempt=1 verifier=sonnet
+- 2026-10-17 13:52 T-02 todo→doing attempt=1
+- 2026-10-17 13:52 T-03 todo→doing attempt=1
