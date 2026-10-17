@@ -1,6 +1,6 @@
 ---
 id: P-20261017-readcount-restart-fix
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #79「sample05: チャンクの途中で失敗した後のリスタートで、取得件数が水増しされ件数の突き合わせが失敗するおそれ」を解決する。
