@@ -52,11 +52,11 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
     /** 真の間、スタブは500を返す。 */
     private static volatile boolean serverError;
 
-    /** 件数APIが返す件数（ユーザーAPIが返すのは3件）。 */
+    /** 件数APIが返す件数（ユーザーAPIが返すのは5件）。 */
     private static volatile int reportedCount;
 
-    /** 真の間、ユーザーAPIの2ページ目（page=1）だけが500を返す。 */
-    private static volatile boolean secondPageError;
+    /** このページ番号の時だけ、ユーザーAPIが500を返す（-1なら失敗させない）。 */
+    private static volatile int errorPage;
 
     @Autowired
     private JobOperator jobOperator;
@@ -91,7 +91,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 return;
             }
             String query = exchange.getRequestURI().getQuery();
-            if (secondPageError && query.contains("page=1")) {
+            int page = pageParam(query);
+            if (page == errorPage) {
                 send(exchange, 500, "[]");
                 return;
             }
@@ -102,19 +103,37 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 send(exchange, 401, body);
                 return;
             }
-            // page=0: 2件（ページサイズと同数） / page=1: 1件（最終ページ）
-            if (query.contains("page=0")) {
+            // page=0: 2件 / page=1: 2件（ページサイズと同数） / page=2: 1件（最終ページ）
+            if (page == 0) {
                 body = """
                         [{"userId":"U001","userName":"山田","email":"u001@example.com"},
                          {"userId":"U002","userName":"鈴木","email":"u002@example.com"}]""";
-            } else if (query.contains("page=1")) {
-                body = "[{\"userId\":\"U003\",\"userName\":\"佐藤\",\"email\":\"u003@example.com\"}]";
+            } else if (page == 1) {
+                body = """
+                        [{"userId":"U003","userName":"佐藤","email":"u003@example.com"},
+                         {"userId":"U004","userName":"高橋","email":"u004@example.com"}]""";
+            } else if (page == 2) {
+                body = "[{\"userId\":\"U005\",\"userName\":\"田中\",\"email\":\"u005@example.com\"}]";
             } else {
                 body = "[]";
             }
             send(exchange, 200, body);
         });
         apiStub.start();
+    }
+
+    /** クエリ文字列から page パラメータの値を得る。無ければ -1。 */
+    private static int pageParam(String query) {
+        if (query == null) {
+            return -1;
+        }
+        for (String pair : query.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0 && "page".equals(pair.substring(0, eq))) {
+                return Integer.parseInt(pair.substring(eq + 1));
+            }
+        }
+        return -1;
     }
 
     private static void send(com.sun.net.httpserver.HttpExchange exchange, int status, String body)
@@ -137,16 +156,16 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         registry.add("sample.job05.api.base-url",
                 () -> "http://localhost:" + apiStub.getAddress().getPort());
         registry.add("sample.job05.api.page-size", () -> 2);
-        // 1ページ目（2件）をコミットしてから2ページ目を読むよう、チャンクサイズをページサイズと揃える
-        registry.add("sample.chunk-size", () -> 2);
+        // チャンクの途中でページの取得が起きるよう、チャンクサイズ（3）をページサイズ（2）と異なる値にする
+        registry.add("sample.chunk-size", () -> 3);
     }
 
     @BeforeEach
     void setUp() {
         truncateAppTable("api_user");
         serverError = false;
-        reportedCount = 3;
-        secondPageError = false;
+        reportedCount = 5;
+        errorPage = -1;
         COUNT_REQUESTS.set(0);
         USERS_REQUESTS.set(0);
     }
@@ -158,7 +177,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 .toJobParameters());
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(apiUserMapper.count()).isEqualTo(3);
+        assertThat(apiUserMapper.count()).isEqualTo(5);
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT user_name FROM app.api_user WHERE user_id = 'U003'", String.class)).isEqualTo("佐藤");
     }
@@ -174,36 +193,63 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         StepExecution importStep = findStep(execution, "sample05.01ImportStep");
         assertThat(countStep.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(importStep.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(countStep.getExecutionContext().getLong("apiUserCount")).isEqualTo(3L);
+        assertThat(countStep.getExecutionContext().getLong("apiUserCount")).isEqualTo(5L);
         assertThat(countStep.getEndTime().isAfter(importStep.getStartTime())).isFalse();
         assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
     }
 
     @Test
     void 取込Stepが途中で失敗した場合_リスタートで続きを取り込み件数の突き合わせも通る() throws Exception {
-        secondPageError = true; // 1ページ目（2件）はコミット済み、2ページ目でリトライを使い切って失敗する
+        // 1チャンク目（U001〜U003）をコミットした後、2チャンク目でU004を読んだ後のpage=2の取得で失敗する
+        errorPage = 2;
 
         JobExecution failed = jobOperator.start(job, uniqueParameters()
                 .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
                 .toJobParameters());
 
         assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
-        assertThat(findStep(failed, "sample05.01ImportStep").getWriteCount()).isEqualTo(2);
+        assertThat(findStep(failed, "sample05.01ImportStep").getWriteCount()).isEqualTo(3);
 
-        secondPageError = false;
+        errorPage = -1;
         JobExecution restarted = jobOperator.restart(failed);
 
         assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        // リスタートでは続きの1件だけを読む。取得件数は前回の2件と足して3件になり、件数APIの3件と一致する
-        assertThat(findStep(restarted, "sample05.01ImportStep").getReadCount()).isEqualTo(1);
-        assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(3L);
+        // リスタートでは続きの2件（U004・U005）だけを読む。取得件数は前回のコミット分3件と足して5件になり、件数APIの5件と一致する
+        assertThat(findStep(restarted, "sample05.01ImportStep").getReadCount()).isEqualTo(2);
+        assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
         assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(apiUserMapper.count()).isEqualTo(3);
+        assertThat(apiUserMapper.count()).isEqualTo(5);
+    }
+
+    @Test
+    void チャンクの途中で失敗した場合_リスタート後の取得件数が水増しされず件数の突き合わせが通る() throws Exception {
+        // 1チャンク目（U001〜U003）の読込中、page=1の取得で失敗する。コミット済みの件数は0
+        errorPage = 1;
+
+        JobExecution failed = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
+        StepExecution failedImport = findStep(failed, "sample05.01ImportStep");
+        assertThat(failedImport.getWriteCount()).isZero();
+        assertThat(failed.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isZero();
+        // Spring Batch 6 では失敗した実行の readCount にロールバックしたチャンクの読込件数も入る（Issue #79 の再現）
+        assertThat(failedImport.getReadCount()).isEqualTo(2);
+
+        errorPage = -1;
+        JobExecution restarted = jobOperator.restart(failed);
+
+        assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(findStep(restarted, "sample05.01ImportStep").getReadCount()).isEqualTo(5);
+        assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
+        assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(5);
     }
 
     @Test
     void 件数APIの件数と取得件数が一致しない場合_件数突き合わせStepで異常終了する() throws Exception {
-        reportedCount = 5; // ユーザーAPIは3件しか返さない（取りこぼし）
+        reportedCount = 6; // ユーザーAPIは5件しか返さない（取りこぼし）
 
         JobExecution execution = jobOperator.start(job, uniqueParameters()
                 .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
@@ -215,7 +261,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.FAILED);
         assertThat(execution.getAllFailureExceptions()).anyMatch(e -> e instanceof BusinessException);
         // 取り込んだ分は UPSERT 済み（原因を取り除いて再実行すればよい）
-        assertThat(apiUserMapper.count()).isEqualTo(3);
+        assertThat(apiUserMapper.count()).isEqualTo(5);
     }
 
     @Test
@@ -249,6 +295,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(apiUserMapper.count()).isEqualTo(2);
+        // JSON用Reader（sample05UserJsonReader）の読込位置から取得件数を求めている
+        assertThat(execution.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(2L);
         assertThat(USERS_REQUESTS.get()).isZero();
         assertThat(COUNT_REQUESTS.get()).isZero();
         assertThat(execution.getStepExecutions()).extracting(StepExecution::getStepName)
