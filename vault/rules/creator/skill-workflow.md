@@ -8,7 +8,7 @@
 - SKILL.md の「ユーザーに確認・合意する」手順に当たったら、`.claude/skills/sdd-pipeline/SKILL.md` の「委譲先Skillの記述を上書きする点」の表にある「パイプライン実行時の扱い」に読み替える（表の中身は書き写さない）
 - 読み替え表で「主エージェントに提示・報告」とある成果（unit-test のテストケース表、system-test のシナリオ一覧）は、タスク票の「進捗」に書く（完了報告には経緯を書かないため）
 - `[Ask]` に当たる指摘や、読み替え表に無い確認が要る時は独断せず、完了報告を `blocked: <質問文>` にして返す。`[Ask]` は blocked にする
-- review-code のタスクは `/review-code` の手順でレビューし、[Must]/[Should] を自分で修正したうえで、受け入れ基準のビルドコマンドを通す。[Ask] が残ったら blocked にする
+- review-code のタスクは `/review-code` の手順（手順4の組み込み `/code-review` を含む）でレビューし、[Must]/[Should] を自分で修正したうえで、受け入れ基準のビルドコマンドを通す。[Ask] が残ったら blocked にする
 - system-test のタスクで、外部依存などでローカル実施できないシナリオがある時は blocked にする
 - integration-test のタスクで `docker info` が失敗する（Docker が使えない）時は blocked にする
 - 設計書と異なる実装が必要と分かった時は、設計書を自分で直さず blocked にする（`docs/development-guide.md` §5.5）

@@ -113,7 +113,7 @@ flowchart TD
 | `implementation` | detail-design/{ジョブID}.md | ジョブ実装コード（基盤部品を利用） |
 | `unit-test` | 実装コード＋詳細設計書 | JUnit 5 単体テスト |
 | `integration-test` | 実装コード＋詳細設計書 | Testcontainers 結合テスト（`*IT.java`） |
-| `review-code` | 実装＋テスト＋`docs/coding-standards.md` | レビュー指摘（コードへ反映） |
+| `review-code` | 実装＋テスト＋`docs/coding-standards.md` | レビュー指摘（コードへ反映）。チェックリストの確認と組み込みの `/code-review` の両方を行う |
 | `system-test` | basic-design.md・運用設計 | テストシナリオ・データ・実施結果 |
 
 **設計意図: `basic-design.md` は案件単位で1ファイル、`detail-design/` はジョブ単位で複数ファイルにしている理由**

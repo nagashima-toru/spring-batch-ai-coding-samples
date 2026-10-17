@@ -51,7 +51,7 @@ java -jar batch-sample/target/batch-sample-*.jar \
 | `/implementation` | 実装 | ジョブコード＋Flyway（基盤部品を必ず利用） |
 | `/unit-test` | 単体テスト | `*Test.java`（観点表準拠） |
 | `/integration-test` | 結合テスト | `*IT.java`（Testcontainers） |
-| `/review-code` | コードレビュー | 指摘一覧（チェックリスト準拠） |
+| `/review-code` | コードレビュー | 指摘一覧（チェックリスト準拠＋組み込み `/code-review` の両方） |
 | `/system-test` | システムテスト | STシナリオ・実施記録 |
 
 `/sdd-pipeline` は上記 `basic-design`〜`system-test` とPR作成までを一気通貫で自動実行するオーケストレーションSkill。
