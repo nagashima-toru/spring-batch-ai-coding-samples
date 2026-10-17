@@ -12,12 +12,12 @@ import jakarta.validation.Validator;
  * （詳細設計書 §2 Step3・§3）。メールアドレス未設定のユーザーは Reader の SQL で抽出時に
  * 除外済みのため、本クラスでは null チェックを行わない。</p>
  */
-public class NotifyCandidateProcessor extends ValidatingItemProcessorBase<NotifyCandidate, MailSend> {
+public class NotifyCandidateItemProcessor extends ValidatingItemProcessorBase<NotifyCandidate, MailSend> {
 
     /** メール送信ステータス: 未送信（本バッチはこの状態で登録するのみ。以降は送信基盤が更新する）。 */
     private static final String SEND_STATUS_UNSENT = "0";
 
-    public NotifyCandidateProcessor(Validator validator) {
+    public NotifyCandidateItemProcessor(Validator validator) {
         super(validator);
     }
 
