@@ -79,6 +79,30 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
+    void 取込Stepが停止した場合_終端の読込を引かずに読込位置をそのまま保存する() {
+        JobExecution jobExecution = newJobExecution(1L);
+        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
+        stepExecution.setStatus(BatchStatus.STOPPED);
+        stepExecution.getExecutionContext().putInt(API_KEY, 3);
+
+        listener.afterStep(stepExecution);
+
+        assertThat(savedCount(jobExecution)).isEqualTo(3L);
+    }
+
+    @Test
+    void 取込Stepが完了したのに読込位置が無い場合_0件を保存する() {
+        JobExecution jobExecution = newJobExecution(1L);
+        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
+        stepExecution.setStatus(BatchStatus.COMPLETED);
+        stepExecution.getExecutionContext().putInt("otherReader.read.count", 4);
+
+        listener.afterStep(stepExecution);
+
+        assertThat(savedCount(jobExecution)).isZero();
+    }
+
+    @Test
     void リスタートで取込Stepが完了した場合_前回の件数に足し込まず読込位置から求めた件数で上書きする() {
         JobExecution jobExecution = newJobExecution(2L);
         jobExecution.getExecutionContext().putLong(ApiUserReadCountListener.READ_COUNT_KEY, 2L);

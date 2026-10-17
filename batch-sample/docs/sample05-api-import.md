@@ -25,6 +25,7 @@
   - 取得件数は、取込 Step の Reader が確定させた読込位置（Step の ExecutionContext の `sample05UserReader.read.count`。`inputFile` 指定時は `sample05UserJsonReader.read.count`）から求める。
   - 読込位置はチャンクのコミット時に保存されるため、途中で失敗した実行ではコミット済みの件数と一致する（最初のチャンクで失敗した時は読込位置が無く、0件とする）。リスタートでは前回の読込位置が引き継がれて続きから数えるため、前回の件数に足し込まない。
   - Step が COMPLETED の時は、データの終端を確かめる最後の読込（null が返る読込）も読込位置に1件として数えられるため、1を引く。
+    COMPLETED なのに読込位置が無い時（Reader 名の不一致など設定の誤り）は0件とし、原因が分かるよう警告ログを出す。
   - 読込位置は、入力チェックで Skip した件と読込時の例外で Skip した件も含む（どちらも Reader から読んだ件として数えられる）。
   - StepExecution の読込件数（readCount）は使わない。Spring Batch 6 では、失敗した実行の readCount にロールバックしたチャンクの読込件数も入ることがあり、リスタート後の合計が水増しされて件数の突き合わせが失敗するため（Issue #79）。
 - `sample05.02CountCheckStep`：batch-core の `TableCountCheckTasklet` で、取得件数 `apiUserReadCount` が

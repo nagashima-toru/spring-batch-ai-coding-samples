@@ -214,7 +214,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         JobExecution restarted = jobOperator.restart(failed);
 
         assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        // リスタートでは続きの2件（U004・U005）だけを読む。取得件数は前回のコミット分3件と足して5件になり、件数APIの5件と一致する
+        // リスタートでは続きの2件（U004・U005）だけを読む。取得件数は前回から引き継いだ読込位置（累計）から求めて上書きし、
+        // 5件になって件数APIの5件と一致する
         assertThat(findStep(restarted, "sample05.01ImportStep").getReadCount()).isEqualTo(2);
         assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
         assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
@@ -234,8 +235,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         StepExecution failedImport = findStep(failed, "sample05.01ImportStep");
         assertThat(failedImport.getWriteCount()).isZero();
         assertThat(failed.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isZero();
-        // Spring Batch 6 では失敗した実行の readCount にロールバックしたチャンクの読込件数も入る（Issue #79 の再現）
-        assertThat(failedImport.getReadCount()).isEqualTo(2);
+        // Spring Batch 6.0.5 では、失敗した実行の readCount にロールバックしたチャンクの読込件数も入る（Issue #79 の再現。
+        // 観測値は2）。Spring Batch の内部の挙動なので assert はしない。取得件数が readCount に依存しないことは上の0件で確かめる
 
         errorPage = -1;
         JobExecution restarted = jobOperator.restart(failed);

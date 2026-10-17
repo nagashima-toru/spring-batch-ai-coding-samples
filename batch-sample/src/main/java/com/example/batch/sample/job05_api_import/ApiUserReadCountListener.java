@@ -1,5 +1,9 @@
 package com.example.batch.sample.job05_api_import;
 
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.listener.StepExecutionListener;
@@ -28,6 +32,8 @@ public class ApiUserReadCountListener implements StepExecutionListener {
 
     private static final String READ_COUNT_SUFFIX = ".read.count";
 
+    private static final Logger log = LoggerFactory.getLogger(ApiUserReadCountListener.class);
+
     private final String[] readerNames;
 
     /**
@@ -42,7 +48,7 @@ public class ApiUserReadCountListener implements StepExecutionListener {
     @Override
     public ExitStatus afterStep(StepExecution stepExecution) {
         ExecutionContext stepContext = stepExecution.getExecutionContext();
-        long position = 0L;
+        Long position = null;
         for (String readerName : readerNames) {
             String key = readerName + READ_COUNT_SUFFIX;
             Object value = stepContext.get(key);
@@ -51,7 +57,17 @@ public class ApiUserReadCountListener implements StepExecutionListener {
                 break;
             }
         }
-        long count = stepExecution.getStatus() == BatchStatus.COMPLETED ? position - 1 : position;
+        boolean completed = stepExecution.getStatus() == BatchStatus.COMPLETED;
+        if (position == null) {
+            if (completed) {
+                // 正常終了なら読込位置は必ず保存される。無いのは Reader 名の不一致などの設定の誤りで、
+                // 件数突き合わせの不一致だけでは原因が分からないため知らせる（afterStep の例外は Spring Batch がログに留める）
+                log.warn("取込Stepの読込位置が見つかりません。取得件数を0件とします: readerNames={}",
+                        Arrays.toString(readerNames));
+            }
+            position = 0L;
+        }
+        long count = completed ? position - 1 : position;
         stepExecution.getJobExecution().getExecutionContext().putLong(READ_COUNT_KEY, Math.max(0L, count));
         return null;
     }
