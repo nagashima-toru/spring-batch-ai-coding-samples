@@ -1,6 +1,6 @@
 ---
 id: P-20261017-review-redesign
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #78「レビュー工程の再設計：verifier・creator でのレビュー、規約レビューの改名、差分の外の指摘の扱い」を解消する。
