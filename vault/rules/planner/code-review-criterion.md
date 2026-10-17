@@ -1,15 +1,15 @@
-# planner ルール：コードを変えるタスクに /code-review の行を入れる
+# planner ルール：計画単位のレビュータスクへの導入先の補足
 
 ## 目的
-コードを変えるタスクで、規約の確認だけでは拾えない不具合（PR #70 の例）が残ったまま done にならないようにする。
+計画単位のレビュータスクを、verifier ルール（`vault/rules/verifier/code-review.md`）の区分（Must/Should/Ask）で判定させるための、この導入先固有の補足を書く。
 
 ## ルール
-- 「成果物」が `docs/` 配下のパスと `.md` のファイルだけのタスクは対象外とし、それ以外のパス（Java・SQL・XML・YAML・properties・CSV などのファイルや、`docs/` 以外のディレクトリの宣言）を1つでも持つタスクを「コードを変えるタスク」とする
-- コードを変えるタスクの受け入れ基準には、次の1行を必ず入れる：「`/code-review` で差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）」
-- この行には確認コマンドを併記しない（verifier が Skill ツールで組み込みの `/code-review` を呼んで判定するため）。`effort`・`--max-findings` などの引数も付けない
-- この行を入れると受け入れ基準が7行を超える時は、ほかの行をまとめて7行以内に収め、この行は削らない
-- ジョブ1本の工程タスク（`vault/rules/planner/job-task-split.md`）では、implementation・unit-test・integration-test・review-standards の各タスクが通常これに当たる。system-test のタスクは成果物で決める
+- 計画単位のレビュータスクを足す条件・コードを変更するタスクの判定・title・成果物・決定済みは、`.claude/agents/planner.md` の「計画単位のレビュータスク」節に従い、ここには写さない
+- 計画単位のレビュータスクの受け入れ基準の1行目は「`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）」にする（verifier ルールは、受け入れ基準の行がそのファイルを参照している時だけ判定に使うため）
+- この行には確認コマンドを併記せず、`/code-review` の引数（`effort`・`--max-findings` など）も付けない
+- ジョブ1本の計画のタスク数は `vault/rules/planner/job-task-split.md` に従う
 - 差分の外（既存コード）への指摘を直すタスクは起こさない（verifier が対象外として reasons に残し、PR 作成時の取り出しで扱う）
 
 ## 確認方法
-- コードを変えるタスクの受け入れ基準に上の1行がある。docs だけのタスクには無い
+- 計画単位のレビュータスクの受け入れ基準の1行目が、上の1行目の文言である
+- 通常のタスクの受け入れ基準には `/code-review` の行が無い
