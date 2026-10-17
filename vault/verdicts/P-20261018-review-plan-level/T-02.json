@@ -1,0 +1,15 @@
+{
+  "task": "P-20261018-review-plan-level/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 04:58",
+  "criteria": [
+    {"text": "工程5タスクの後に計画単位のレビュータスクを足す箇条がある：`grep -c '工程5タスクの後に、..claude/agents/planner.md. の「計画単位のレビュータスク」節に従って計画単位のレビュータスクを1件足す' vault/rules/planner/job-task-split.md` の出力が `1`", "ok": true, "note": "worktree で実行 / 出力: 1（vault/rules/planner/job-task-split.md の該当箇条を Read 相当の cat でも確認）"},
+    {"text": "タスク数の記述が6タスクになっている：`grep -c '計画単位のレビュータスク1件の6タスクで、1計画7タスク以下の上限に収まる' vault/rules/planner/job-task-split.md` の出力が `1`", "ok": true, "note": "worktree で実行 / 出力: 1"},
+    {"text": "確認方法がタスク表6行の前提になっている：`grep -c 'タスク表が6行で' vault/rules/planner/job-task-split.md` の出力が `1`", "ok": true, "note": "worktree で実行 / 出力: 1"},
+    {"text": "5タスク前提の記述が残っていない：`grep -c -e 'タスク表が5行' -e '（5タスクで、' vault/rules/planner/job-task-split.md` の出力が `0`", "ok": true, "note": "worktree で実行 / 出力: 0。決定済みの「書かない語」（タスクの差分・コードを変えるタスク）も grep -c で 0"},
+    {"text": "見出しが3つそろっている：`grep -c -x -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/planner/job-task-split.md` の出力が `3`", "ok": true, "note": "worktree で実行 / 出力: 3"},
+    {"text": "planner のルールとして列挙され続ける：`bash scripts/rules.sh planner | grep -c 'job-task-split.md'` の出力が `1`", "ok": true, "note": "worktree で cd してから実行 / 出力: 1"}
+  ],
+  "reasons": []
+}
