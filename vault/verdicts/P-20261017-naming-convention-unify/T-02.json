@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-naming-convention-unify/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 08:46",
+  "criteria": [
+    {"text": "命名の正本が §11 と書かれている（`grep -c '命名の正本は .docs/architecture.md. §11' .claude/skills/implementation/SKILL.md` の出力が `1`）", "ok": true, "note": "実行コマンド: `grep -c '命名の正本は .docs/architecture.md. §11' .claude/skills/implementation/SKILL.md`（worktree内） / 出力: 1"},
+    {"text": "番号付きの命名を新規ジョブに使わないと書かれている（`grep -c '新規の業務ジョブに使わない' .claude/skills/implementation/SKILL.md` の出力が `1`）", "ok": true, "note": "実行コマンド: `grep -c '新規の業務ジョブに使わない' .claude/skills/implementation/SKILL.md` / 出力: 1"},
+    {"text": "格納先の表が §11 の業務ジョブの命名と一致している（SKILL.md に3文字列、architecture.md §11 にも3文字列が現れる）", "ok": true, "note": "実行コマンド: 指定の `grep -o -F` を SKILL.md と `awk '/^## 11/,/^## 12/' docs/architecture.md | grep -o -F ...` で実行 / 出力: SKILL.md は job_{内容}/{Xxx}JobConfig.java・{Xxx}Record.java・{Xxx}ItemProcessor.java の3つ、§11 は {Xxx}JobConfig・{Xxx}Record・{Xxx}ItemProcessor の3つ。なお git diff でも表の命名書式は変更されていない"},
+    {"text": "見出し構成が変わっていない（`grep -c '^#' .claude/skills/implementation/SKILL.md` の出力が `7`）", "ok": true, "note": "実行コマンド: `grep -c '^#' .claude/skills/implementation/SKILL.md` / 出力: 7。git diff でも見出し行の追加・削除なし"},
+    {"text": "smoke の参照検査が通る（`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` の出力が `1`）", "ok": true, "note": "実行コマンド: `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"},
+    {"text": "成果物が差分に含まれる（`git diff --merge-base work/p-20261017-naming-convention-unify --name-only | grep -c '^.claude/skills/implementation/SKILL.md'` の出力が `1`）", "ok": true, "note": "実行コマンド: 上記 git diff（worktree内）を grep -c / 出力: 1。name-only の一覧は SKILL.md と vault/tasks/.../T-02.md の2件"}
+  ],
+  "reasons": []
+}

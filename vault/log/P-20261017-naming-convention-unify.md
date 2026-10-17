@@ -10,3 +10,21 @@
 - 2026-10-17 08:42 T-02 todo→doing attempt=1
 - 2026-10-17 08:42 T-03 todo→doing attempt=1
 - 2026-10-17 08:42 T-04 todo→doing attempt=1
+- 2026-10-17 08:44 T-03 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-ab8bef31e7f0a4dd4 branch=worktree-agent-ab8bef31e7f0a4dd4 plan_head=18b74bd615ccaf325ba114a6f8d5eb7d6a8a6dea
+- 2026-10-17 08:44 T-03 doing→blocked attempt=1 creator=sonnet
+- 2026-10-17 08:44 T-04 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-abad126419b0ce02d branch=worktree-agent-abad126419b0ce02d plan_head=18b74bd615ccaf325ba114a6f8d5eb7d6a8a6dea
+- 2026-10-17 08:44 T-04 doing→review attempt=1 creator=sonnet
+- 2026-10-17 08:44 T-02 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a12ea949f59c8e549 branch=worktree-agent-a12ea949f59c8e549 plan_head=18b74bd615ccaf325ba114a6f8d5eb7d6a8a6dea
+- 2026-10-17 08:44 T-02 doing→review attempt=1 creator=sonnet
+- 2026-10-17 08:46 T-02 review→done attempt=1 verifier=sonnet
+- 2026-10-17 08:46 T-04 review→done attempt=1 verifier=sonnet
+- 2026-10-17 08:46 T-05 todo→doing attempt=1
+- 2026-10-17 08:46 T-07 todo→doing attempt=1
+- 2026-10-17 08:48 T-05 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a1ba81ffbd78169f4 branch=worktree-agent-a1ba81ffbd78169f4 plan_head=a81ad41edfe97c4444a364856f69845125c54597
+- 2026-10-17 08:48 T-05 doing→review attempt=1 creator=sonnet
+- 2026-10-17 08:48 T-07 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a84263ae818bf1c95 branch=worktree-agent-a84263ae818bf1c95 plan_head=a81ad41edfe97c4444a364856f69845125c54597
+- 2026-10-17 08:48 T-07 doing→review attempt=1 creator=sonnet
+- 2026-10-17 13:31 T-05 review→done attempt=1 verifier=sonnet
+- 2026-10-17 13:31 T-07 review→done attempt=1 verifier=sonnet
+- 2026-10-17 13:34 T-03 amend 基準差し替え=2
+- 2026-10-17 13:34 T-03 blocked→todo 人の指示: /plan unblock P-20261017-naming-convention-unify T-03
