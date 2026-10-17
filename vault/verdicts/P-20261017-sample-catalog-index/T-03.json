@@ -1,0 +1,13 @@
+{
+  "task": "P-20261017-sample-catalog-index/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 13:56",
+  "criteria": [
+    {"text": "手順2が索引節を参照している：`grep -c '^2\\. 設計書のStep構成表から使用する基盤部品を確認し、.batch-sample/docs/README.md. の「基盤部品別の実例ジョブ索引」' .claude/skills/implementation/SKILL.md` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で上記 grep -c / 出力: 1（SKILL.md 36行目が決定済みの文言と一致）"},
+    {"text": "参照先の節が実在する：`grep -cx '## 基盤部品別の実例ジョブ索引' batch-sample/docs/README.md` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で上記 grep -cx / 出力: 1"},
+    {"text": "変更は手順2の1行の置き換えだけで、最重要ルール表など他の行は変えていない：`git diff --merge-base work/p-20261017-sample-catalog-index --numstat -- .claude/skills/implementation/SKILL.md` の出力が1行で、1列目と2列目がともに `1`、3列目が `.claude/skills/implementation/SKILL.md`", "ok": true, "note": "実行コマンド: `git -C <worktree> diff --merge-base work/p-20261017-sample-catalog-index --numstat -- .claude/skills/implementation/SKILL.md` / 出力: 1 1 .claude/skills/implementation/SKILL.md"},
+    {"text": "主な文書のバッククォート内のパスがすべて存在する：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"}
+  ],
+  "reasons": []
+}
