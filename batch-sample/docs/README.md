@@ -33,17 +33,17 @@ implementation Skill の「最重要ルール」表にある基盤部品ごと�
 | `BatchHttpClient` | `job05_api_import` / `Sample05JobConfig`、`job09_notification` / `SlackWebhookNotificationSender` |
 | `CsvItemReaderFactory` | `job01_csv_import` / `Sample01JobConfig`、`job06_flow_job` / `Sample06JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobConfig` |
 | `FixedLengthItemReaderFactory` | `job02_fixedlength_import` / `Sample02JobConfig` |
-| `JsonItemReaderFactory` | 実例なし（#61 で追加予定） |
+| `JsonItemReaderFactory` | `job05_api_import` / `Sample05JobConfig`（`inputFile` 指定時のリプレイ取込） |
 | `CsvItemWriterFactory` | `job03_file_export` / `Sample03JobConfig` |
-| `FixedLengthItemWriterFactory` | 実例なし（#61 で追加予定） |
+| `FixedLengthItemWriterFactory` | `job03_file_export` / `Sample03JobConfig`（`format=fixed` の固定長出力） |
 | `RestApiPagingItemReader` | `job05_api_import` / `Sample05JobConfig` |
 | `ValidatingItemProcessorBase` | `job01_csv_import` / `CustomerItemProcessor`、`job02_fixedlength_import` / `ProductItemProcessor`、`job_order_daily_sales` / `OrderItemProcessor` |
 | `BusinessSkipPolicy` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
 | `ErrorRecordSkipListener` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
 | `FileExistenceCheckTasklet` | `job06_flow_job` / `Sample06JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobConfig` |
-| `FileMoveTasklet` | 実例なし（#61 で追加予定） |
+| `FileMoveTasklet` | `job03_file_export` / `Sample03JobConfig`（一時出力→配置） |
 | `CsvHeaderCheckTasklet` | `job_order_daily_sales` / `OrderDailySalesJobConfig` |
-| `AbstractApiCallTasklet` | 実例なし（#61 で追加予定） |
+| `AbstractApiCallTasklet` | `job05_api_import` / `ApiUserCountTasklet` |
 | `TableCountCheckTasklet` | `job04_db_aggregate` / `Sample04JobConfig` |
 | `JobParametersValidators` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_order_daily_sales` / `OrderDailySalesJobParametersValidator`（独自 Validator への拡張例） |
 | `LoggingJobExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
@@ -51,7 +51,7 @@ implementation Skill の「最重要ルール」表にある基盤部品ごと�
 | `DuplicateRunPreventingJobExecutionListener` | `job01_csv_import` / `Sample01JobConfig`、`job04_db_aggregate` / `Sample04JobConfig`、`job_point_expiry` / `PointExpiryJobConfig` |
 | `BusinessException` | `job01_csv_import` / `CustomerItemProcessor`、`job_order_daily_sales` / `OrderItemProcessor` |
 | `SystemException` | `job06_flow_job` / `WorkItemProcessor` |
-| `RetryableSystemException` | 実例なし（#61 で追加予定） |
+| `RetryableSystemException` | `job05_api_import` / `Sample05ApiImportJobIT`（`BatchHttpClient` が 5xx・接続エラーで送出。Batch の `retry()` は設定しない） |
 | `SummaryFooterCallback` | `job03_file_export` / `Sample03JobConfig` |
 
 ## 案件ジョブについて
