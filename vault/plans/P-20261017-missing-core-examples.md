@@ -1,6 +1,6 @@
 ---
 id: P-20261017-missing-core-examples
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #61「サンプルで使われていない基盤部品の実例を追加する（Retry・JSON読込・固定長出力・ファイル退避・単発API）」を、既存のリファレンスサンプル（sample03・sample05）への組み込みで解消する。サンプルの本数は増やさない。
