@@ -73,6 +73,12 @@ public class Sample05JobConfig {
     /** ジョブ名。 */
     public static final String JOB_NAME = "sample05ApiImportJob";
 
+    /** API 取得用 Reader の名前。ExecutionContext の読込位置のキー（{@code <名前>.read.count}）に使われる。 */
+    public static final String USER_READER_NAME = "sample05UserReader";
+
+    /** inputFile 指定時に使う JSON 用 Reader の名前。ExecutionContext の読込位置のキーに使われる。 */
+    public static final String USER_JSON_READER_NAME = "sample05UserJsonReader";
+
     private static final Logger log = LoggerFactory.getLogger(Sample05JobConfig.class);
 
     @Bean
@@ -158,7 +164,7 @@ public class Sample05JobConfig {
                 .transactionManager(transactionManager)
                 .faultTolerant()
                 .skipPolicy(new BusinessSkipPolicy(properties.skipLimit()))
-                .listener(new ApiUserReadCountListener())
+                .listener(new ApiUserReadCountListener(USER_READER_NAME, USER_JSON_READER_NAME))
                 .listener(loggingStepExecutionListener)
                 .build();
     }
@@ -168,12 +174,12 @@ public class Sample05JobConfig {
     public ItemStreamReader<ApiUserResponse> sample05UserReader(BatchHttpClient batchHttpClient,
             SampleProperties properties, @Value("#{jobParameters['inputFile']}") String inputFile) {
         if (InputSourceDecider.isFileInput(inputFile)) {
-            return JsonItemReaderFactory.create("sample05UserJsonReader", new FileSystemResource(inputFile),
+            return JsonItemReaderFactory.create(USER_JSON_READER_NAME, new FileSystemResource(inputFile),
                     ApiUserResponse.class);
         }
         SampleProperties.Job05.Api api = properties.job05().api();
         Map<String, String> authHeader = Map.of("Authorization", "Bearer " + api.token());
-        return new RestApiPagingItemReader<>("sample05UserReader",
+        return new RestApiPagingItemReader<>(USER_READER_NAME,
                 page -> batchHttpClient.get(api.baseUrl() + "/users?page={page}&size={size}",
                         new ParameterizedTypeReference<List<ApiUserResponse>>() {
                         }, authHeader, page, api.pageSize()),
