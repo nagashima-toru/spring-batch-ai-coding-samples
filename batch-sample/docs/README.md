@@ -57,7 +57,14 @@ implementation Skill の「最重要ルール」表にある基盤部品ごと�
 ## 案件ジョブについて
 
 `batch-sample` モジュールには、上記のリファレンスサンプル（`job01_`〜`job09_`）とは別に、
-実際の案件で作成したジョブ（例: `job_announcement_notify`）も同梱される。
-案件ジョブはサンプルのカタログには含めない。パッケージ名・ジョブ名・Step 名・設定クラス名などの命名は、方式設計書の業務ジョブの規約（[docs/architecture.md §11](../../docs/architecture.md#11-命名規約)）に従う。
+実際の案件で作成したジョブも同梱される。
+案件ジョブは SDD パイプライン（requirements→system-test）の出力例として位置付け、リファレンスサンプルとは別表で載せる。
+パッケージ名・ジョブ名・Step 名・設定クラス名などの命名は、方式設計書の業務ジョブの規約（[docs/architecture.md §11](../../docs/architecture.md#11-命名規約)）に従う。
 サンプル番号付きの命名（`jobNN_` など）はリファレンスサンプルだけが使う例外である。設計書は `docs/projects/{案件名}/` 配下に格納する
 （`docs/development-guide.md` §2 参照）。
+
+| ジョブ | 設計書 | 近いリファレンスサンプル | 違い |
+|---|---|---|---|
+| `job_order_daily_sales`（ORDER-001） | [ORDER-001.md](../../docs/projects/order-daily-sales/detail-design/ORDER-001.md) | [sample06](sample06-flow-job.md)（ファイルチェック→取込→集計） | ヘッダチェック（`CsvHeaderCheckTasklet`）とワークテーブル経由の取込を加え、集計を対象日分の洗い替え（`OrderDailySalesReplaceTasklet`）にする。パラメータ検証を `OrderDailySalesJobParametersValidator` で拡張する |
+| `job_point_expiry`（POINT-001） | [POINT-001.md](../../docs/projects/member-point-expiry/detail-design/POINT-001.md) | [sample04](sample04-db-aggregate.md)（Tasklet＋SQL） | 単一 Step・単一 SQL で失効更新と履歴登録を1トランザクションで行う。失効対象0件が正常のため `TableCountCheckTasklet` を使わない |
+| `job_announcement_notify`（ANNOUNCE-001） | [ANNOUNCE-001.md](../../docs/projects/announcement-notification/detail-design/ANNOUNCE-001.md) | [sample03](sample03-file-export.md)（カーソル読み）・[sample01](sample01-csv-import.md)（Skip・エラー退避） | ステータス更新の Tasklet で対象を確定してから Chunk で DB → DB 登録する4 Step の線形フロー。区域展開不能の件数で警告終了にする `RegionErrorWarningJobExecutionListener` を持つ |
