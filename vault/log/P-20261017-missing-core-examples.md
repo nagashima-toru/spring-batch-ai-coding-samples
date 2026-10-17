@@ -1,3 +1,5 @@
 - 2026-10-17 14:42 - draft→approved /plan による自動承認
 - 2026-10-17 14:42 T-01 todo→doing attempt=1
 - 2026-10-17 14:42 T-03 todo→doing attempt=1
+- 2026-10-17 14:43 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a5dddde01efc118ac branch=worktree-agent-a5dddde01efc118ac plan_head=67ae453598d580d6d7ba0033e5a9e2ebecb21857
+- 2026-10-17 14:43 T-01 doing→blocked attempt=1 creator=sonnet
