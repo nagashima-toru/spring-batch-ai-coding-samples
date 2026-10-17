@@ -1,0 +1,14 @@
+{
+  "task": "P-20261017-readcount-restart-fix/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 20:24",
+  "criteria": [
+    {"text": "新方式の説明がある：`grep -c 'Reader が確定させた読込位置（Step の ExecutionContext の .sample05UserReader.read.count.。.inputFile. 指定時は .sample05UserJsonReader.read.count.）' batch-sample/docs/sample05-api-import.md` が `1`", "ok": true, "note": "worktree で同 grep -c を実行 / 出力: 1。batch-sample/docs/sample05-api-import.md の sample05.01ImportStep 箇条に該当文あり"},
+    {"text": "COMPLETED 時に終端の読込1件を引くことの説明がある：`grep -c 'null が返る読込）も読込位置に1件として数えられるため、1を引く' batch-sample/docs/sample05-api-import.md` が `1`", "ok": true, "note": "同 grep -c を実行 / 出力: 1"},
+    {"text": "readCount を使わない理由の説明がある：`grep -c 'StepExecution の読込件数（readCount）は使わない' batch-sample/docs/sample05-api-import.md` が `1`", "ok": true, "note": "同 grep -c を実行 / 出力: 1。理由（ロールバックしたチャンクの読込件数が入り水増し、Issue #79）も同じ箇条に記載"},
+    {"text": "Skip した件を取得件数に含める仕様が維持されている：`grep -c '読込位置は、入力チェックで Skip した件と読込時の例外で Skip した件も含む' batch-sample/docs/sample05-api-import.md` が `1`、かつ `grep -c '入力チェックで Skip した件も「取得した件」として数える' batch-sample/docs/sample05-api-import.md` が `1`", "ok": true, "note": "2本の grep -c を実行 / 出力: 1 と 1。02CountCheckStep の既存文は git diff b4c0b6d 8b81b1d で変更されていないことも確認"},
+    {"text": "旧方式の記述が残っていない：`grep -c '読込件数＋読込 Skip 件数' batch-sample/docs/sample05-api-import.md` が `0`、かつ `grep -c '今回の件数を足して全体の取得件数にする' batch-sample/docs/sample05-api-import.md` が `0`", "ok": true, "note": "2本の grep -c を実行 / 出力: 0 と 0。差分は sample05.01ImportStep の旧2行削除と新6箇条追加のみ（8行追加・2行削除、他節は無変更）。ルール参照のない基準のため vault/rules は根拠にしていない"}
+  ],
+  "reasons": []
+}
