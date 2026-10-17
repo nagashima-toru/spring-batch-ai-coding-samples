@@ -6,9 +6,10 @@
 ## ルール
 - 計画の前提は、詳細設計書がレビュー済みであること。`/review-design` を通った `docs/projects/{案件}/detail-design/{ジョブID}.md` を指す
 - ゴール文や設計書からレビュー済みと確かめられない時は、タスクを起こさず計画票末尾の `## 人への質問` に書く
-- 1計画で扱うジョブは1本にする。複数ジョブは計画を分ける（5タスクで、1計画7タスク以下の上限に収まる）
+- 1計画で扱うジョブは1本にする。複数ジョブは計画を分ける（工程5タスクと計画単位のレビュータスク1件の6タスクで、1計画7タスク以下の上限に収まる）
 - ジョブ1本は implementation → unit-test → integration-test → review-standards → system-test の順の5タスクに分ける
 - 各タスクは `after` に直前の工程のタスク ID を書く。直列につなぎ、並行させない（先頭の implementation だけ `after` は空）
+- 工程5タスクの後に、`.claude/agents/planner.md` の「計画単位のレビュータスク」節に従って計画単位のレビュータスクを1件足す（implementation などの工程タスクの成果物にコードが入るため。導入先の補足は `vault/rules/planner/code-review-criterion.md`）
 - 各タスクの「成果物」のパスは、対応する工程の `.claude/skills/{工程}/SKILL.md` の「入力と出力」節と `docs/architecture.md` §2.1 に従って宣言する。パスの一覧はここに書き写さない
 - 全タスクの受け入れ基準に、`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（全モジュールの Checkstyle・SpotBugs・単体テスト。カバレッジ不足ではビルドを止めない）と `./mvnw clean verify -DskipITs -pl batch-core`（batch-core のカバレッジ80%）の成功を入れる。`-DskipITs` の基準では batch-sample のカバレッジを判定しない
 - 成果物に `*IT.java` を含むタスクだけ `./mvnw clean verify` の成功も入れる（結合テストは Docker が要るため。batch-sample のカバレッジ80%はここで判定する）
@@ -17,7 +18,7 @@
 - 設計書と異なる実装が必要になりそうな点はタスクにせず `## 人への質問` に書く（`docs/development-guide.md` §5.5）
 
 ## 確認方法
-- 計画票のタスク表が5行で、`after` が上記の順に1本の鎖になっている（先頭以外の `after` が直前の ID だけ）
+- 計画票のタスク表が6行で、工程5タスクの `after` が上記の順に1本の鎖になっている（先頭以外の `after` が直前の ID だけ）。6行目の計画単位のレビュータスクが工程5タスクすべてを `after` に持つ
 - 各タスク票の受け入れ基準に `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` と `./mvnw clean verify -DskipITs -pl batch-core` があり、`*IT.java` を成果物に持つタスクにだけ `./mvnw clean verify` もある
 - レビュー済みと確かめられない場合、タスクが無く `## 人への質問` に質問がある
 - 参照した節番号が `grep -n '^#' docs/development-guide.md docs/architecture.md` に見出しとして実在する
