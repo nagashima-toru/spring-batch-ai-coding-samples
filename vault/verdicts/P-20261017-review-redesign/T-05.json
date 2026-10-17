@@ -1,0 +1,39 @@
+{
+  "task": "P-20261017-review-redesign/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 04:37",
+  "criteria": [
+    {
+      "text": "ルールの雛形の3見出しがそろっている：`grep -cx -e '## 目的' -e '## ルール' -e '## 確認方法' vault/rules/planner/code-review-criterion.md` の出力が `3`",
+      "ok": true,
+      "note": "worktree で実行 `grep -cx ...` / 出力: 3。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    },
+    {
+      "text": "コードを変えるタスクの定義が書かれている：`grep -c 'コードを変えるタスク」とする' vault/rules/planner/code-review-criterion.md` の出力が `1`",
+      "ok": true,
+      "note": "worktree で実行 `grep -c 'コードを変えるタスク」とする' ...` / 出力: 1（7行目に定義）。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    },
+    {
+      "text": "受け入れ基準に入れる行の文言が verifier ルールを参照する形で書かれている：`grep -c '/code-review. で差分に致命的な指摘が残っていない（.vault/rules/verifier/code-review.md. に従って判定する）' vault/rules/planner/code-review-criterion.md` の出力が `1`",
+      "ok": true,
+      "note": "worktree で実行 同パターンの grep -c / 出力: 1（8行目）。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    },
+    {
+      "text": "その行に確認コマンドを付けないと書かれている：`grep -c '確認コマンドを併記しない' vault/rules/planner/code-review-criterion.md` の出力が `1`",
+      "ok": true,
+      "note": "worktree で実行 grep -c / 出力: 1（9行目）。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    },
+    {
+      "text": "行数の上限との関係が書かれている：`grep -c 'この行は削らない' vault/rules/planner/code-review-criterion.md` の出力が `1`",
+      "ok": true,
+      "note": "worktree で実行 grep -c / 出力: 1（10行目）。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    },
+    {
+      "text": "工程タスクとの対応が書かれている：`grep -c 'review-standards の各タスクが通常これに当たる' vault/rules/planner/code-review-criterion.md` の出力が `1`",
+      "ok": true,
+      "note": "worktree で実行 grep -c / 出力: 1（11行目）。ファイルは15行で、目的と確認方法も決定済みの内容どおり"
+    }
+  ],
+  "reasons": []
+}
