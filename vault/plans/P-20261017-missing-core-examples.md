@@ -20,7 +20,7 @@ GitHub Issue #61「サンプルで使われていない基盤部品の実例を�
 |---|---|---|---|---|---|
 | T-01 | todo | 0 | - | sample03 解説に一時出力→配置と固定長出力（format）を書く | |
 | T-02 | todo | 0 | T-01 | sample03 に一時出力→配置の Step と format=fixed の固定長出力を実装する | |
-| T-03 | blocked | 1 | - | sample05 解説に件数取得 Step・inputFile リプレイ・リトライ方針を書く | worktree の分岐元が計画ブランチと一致しない。`git -C <worktree> merge-base --is-ancestor 67ae453598d580d6d7ba0033e5a9e2ebecb21857 HEAD` の終了コードが 1。worktree の HEAD は fe856b6（main。計画票・タスク票のコミットを含まない）。.claude/settings.json の worktree.baseRef は "head" のまま。成果物（解説の改訂）は作成済みだが、タスク票の「進捗」は worktree に無いため未記入 |
+| T-03 | todo | 0 | - | sample05 解説に件数取得 Step・inputFile リプレイ・リトライ方針を書く | |
 | T-04 | todo | 0 | T-03 | sample05 に AbstractApiCallTasklet の件数取得 Step と 5xx 異常終了の結合テストを追加する | |
 | T-05 | todo | 0 | T-04 | sample05 に inputFile 指定時の JSON ファイル取込（リプレイ）を実装する | |
 | T-06 | todo | 0 | T-02,T-05 | 基盤部品別の実例ジョブ索引の「実例なし」5行を実例に置き換える | |

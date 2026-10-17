@@ -6,3 +6,4 @@
 - 2026-10-17 14:44 T-03 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-ac2ae27a93548ac3e branch=worktree-agent-ac2ae27a93548ac3e plan_head=67ae453598d580d6d7ba0033e5a9e2ebecb21857
 - 2026-10-17 14:44 T-03 doing→blocked attempt=1 creator=sonnet
 - 2026-10-17 15:04 T-01 blocked→todo 人の指示: /plan unblock P-20261017-missing-core-examples T-01 --fresh
+- 2026-10-17 15:05 T-03 blocked→todo 人の指示: /plan unblock P-20261017-missing-core-examples T-03 --fresh
