@@ -1,6 +1,6 @@
 ---
 id: P-20261018-review-plan-level
-status: approved
+status: done
 ---
 # ゴール
 ai-harness#218（`/code-review` をタスク単位から計画単位に移す）に、このリポジトリの導入先側の文書・ルールを追従させる（GitHub Issue #78 の続き）。ハーネス本体（`.claude/agents/`・`.claude/skills/plan/`・`.claude/skills/run/`・`.claude/skills/design/`・`.claude/hooks/`・`scripts/`・`docs/vault-spec.md`）は変えない。
