@@ -32,7 +32,7 @@
 
 - **Spring Batch 6 の API で実装する。5系以前のサンプルコード（Web記事等）の流用禁止**（方式設計 §13）
 - `@EnableBatchProcessing` を付けない（Boot の自動構成を使う）
-- Job/Step/Reader/Processor/Writer は `@Configuration` クラス（`SampleNNJobConfig`）に Bean 定義でまとめる
+- Job/Step/Reader/Processor/Writer は `@Configuration` クラス（`{Xxx}JobConfig`。命名は方式設計 §11）に Bean 定義でまとめる
 - Step スコープ Bean（`@StepScope`）でジョブパラメータを受け取る場合は SpEL `#{jobParameters['xxx']}` を使用する
 - ジョブには必ず `JobParametersValidator` を設定する（基盤部品の Validator を利用）
 - Chunk/Tasklet の選択・Step 分割・トランザクション設計は方式設計 §3〜4 に従う
