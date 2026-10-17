@@ -108,7 +108,7 @@ public class AnnouncementNotifyJobConfig {
     public Step announcementNotifyRegisterMailStep(JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
             MyBatisCursorItemReader<NotifyCandidate> notifyTargetReader,
-            NotifyCandidateProcessor notifyCandidateProcessor,
+            NotifyCandidateItemProcessor notifyCandidateProcessor,
             MyBatisBatchItemWriter<MailSend> announcementNotifyMailWriter,
             ErrorRecordSkipListener<NotifyCandidate, MailSend> announcementNotifyErrorRecordSkipListener,
             LoggingStepExecutionListener loggingStepExecutionListener,
@@ -138,8 +138,8 @@ public class AnnouncementNotifyJobConfig {
     }
 
     @Bean
-    public NotifyCandidateProcessor notifyCandidateProcessor(Validator validator) {
-        return new NotifyCandidateProcessor(validator);
+    public NotifyCandidateItemProcessor notifyCandidateProcessor(Validator validator) {
+        return new NotifyCandidateItemProcessor(validator);
     }
 
     @Bean

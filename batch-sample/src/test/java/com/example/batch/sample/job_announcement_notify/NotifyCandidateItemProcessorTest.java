@@ -11,11 +11,12 @@ import com.example.batch.core.exception.BusinessException;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
 
-class NotifyCandidateProcessorTest {
+class NotifyCandidateItemProcessorTest {
 
     private static final ValidatorFactory VALIDATOR_FACTORY = Validation.buildDefaultValidatorFactory();
 
-    private final NotifyCandidateProcessor processor = new NotifyCandidateProcessor(VALIDATOR_FACTORY.getValidator());
+    private final NotifyCandidateItemProcessor processor =
+            new NotifyCandidateItemProcessor(VALIDATOR_FACTORY.getValidator());
 
     @AfterAll
     static void closeFactory() {

@@ -37,14 +37,14 @@ echo $?   # 0=正常 / 2=警告(Skipあり) / 1=異常
 | [docs/architecture.md](docs/architecture.md) | 方式設計書（SSoT）: 方式選定基準・エラー処理・リラン設計・命名規約 |
 | [docs/development-guide.md](docs/development-guide.md) | 開発手順: 環境構築〜Skills を使った工程フロー〜PR |
 | [docs/coding-standards.md](docs/coding-standards.md) | コーディング規約 |
-| [batch-sample/docs/](batch-sample/docs/README.md) | サンプル9本の解説（パターン別の選定基準つき） |
+| [batch-sample/docs/](batch-sample/docs/README.md) | リファレンスサンプル9本の解説（パターン別の選定基準つき） |
 | [CLAUDE.md](CLAUDE.md) | Claude Code 向けプロジェクトガイド（規約・禁止事項・ハマりどころ） |
 
 ## 構成
 
 ```
 ├── batch-core/        # 基盤部品（HTTP基盤・共通Tasklet・Reader/Writer・例外・リスナー）
-├── batch-sample/      # サンプルジョブ9本＋結合テスト（Testcontainers）
+├── batch-sample/      # リファレンスサンプル9本＋案件ジョブ3本＋結合テスト（Testcontainers）
 ├── docs/              # 方式設計・開発ガイド（SSoT）
 ├── .claude/skills/    # 工程別Skills（要件定義→設計→実装→テスト→レビュー）
 ├── .github/workflows/ # CI（PR時の品質ゲート）/ CD（タグpush→ECR→ECSタスク定義更新）
