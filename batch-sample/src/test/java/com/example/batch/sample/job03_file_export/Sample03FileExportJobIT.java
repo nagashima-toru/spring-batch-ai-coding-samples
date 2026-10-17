@@ -107,6 +107,9 @@ class Sample03FileExportJobIT extends AbstractJobIT {
                 new SalesTransaction(null, "C001", new BigDecimal("1000"), LocalDate.of(2026, 7, 1)));
         salesMapper.insertTransaction(
                 new SalesTransaction(null, "顧客A", new BigDecimal("2500"), LocalDate.of(2026, 7, 2)));
+        // DB の上限（VARCHAR(10)）いっぱいの全角10文字＝20バイトも幅に収まる
+        salesMapper.insertTransaction(
+                new SalesTransaction(null, "顧客顧客顧客顧客顧客", new BigDecimal("300"), LocalDate.of(2026, 7, 3)));
         Path output = tempDir.resolve("sales_fixed.dat");
         Charset sjis = Charset.forName("Shift_JIS");
 
@@ -117,12 +120,16 @@ class Sample03FileExportJobIT extends AbstractJobIT {
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         List<String> lines = Files.readAllLines(output, sjis);
-        assertThat(lines).hasSize(2); // ヘッダ・トレーラ無し
-        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(sjis)).hasSize(42));
+        assertThat(lines).hasSize(3); // ヘッダ・トレーラ無し
+        assertThat(lines).allSatisfy(line -> assertThat(line.getBytes(sjis)).hasSize(52));
         byte[] customerLine = lines.stream()
                 .filter(line -> line.contains("顧客A"))
                 .findFirst().orElseThrow().getBytes(sjis);
-        assertThat(new String(customerLine, 10, 10, sjis)).isEqualTo("顧客A" + " ".repeat(5));
+        assertThat(new String(customerLine, 10, 20, sjis)).isEqualTo("顧客A" + " ".repeat(15));
+        byte[] longCustomerLine = lines.stream()
+                .filter(line -> line.contains("顧客顧客顧客顧客顧客"))
+                .findFirst().orElseThrow().getBytes(sjis);
+        assertThat(new String(longCustomerLine, 10, 20, sjis)).isEqualTo("顧客顧客顧客顧客顧客");
     }
 
     @Test
@@ -167,6 +174,16 @@ class Sample03FileExportJobIT extends AbstractJobIT {
         assertThatThrownBy(() -> jobOperator.start(job, uniqueParameters()
                 .addString("outputFile", output.toString())
                 .addString("format", "xml")
+                .toJobParameters()))
+                .isInstanceOf(InvalidJobParametersException.class);
+    }
+
+    @Test
+    void outputFileのファイル名がtmpの場合_InvalidJobParametersExceptionで起動を拒否する() {
+        Path output = tempDir.resolve("tmp");
+
+        assertThatThrownBy(() -> jobOperator.start(job, uniqueParameters()
+                .addString("outputFile", output.toString())
                 .toJobParameters()))
                 .isInstanceOf(InvalidJobParametersException.class);
     }

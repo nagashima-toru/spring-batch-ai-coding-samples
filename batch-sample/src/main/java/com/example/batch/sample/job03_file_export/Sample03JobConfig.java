@@ -48,8 +48,9 @@ import com.example.batch.sample.common.SampleProperties;
  * <p><b>固定長出力:</b> 任意パラメータ {@code format=fixed} で {@link FixedLengthItemWriterFactory} による
  * Shift_JIS 固定長（ヘッダ・トレーラ無し）を出力する。未指定・空・{@code csv} は CSV、それ以外は起動を拒否する。</p>
  *
- * <p><b>注意:</b> トレーラの集計値はメモリ上で保持するため、本ジョブは途中失敗時に
- * リスタートせず最初から再実行する運用とする（出力は上書きされるため安全）。</p>
+ * <p><b>リスタート:</b> トレーラの集計値はメモリ上で保持するため、出力 Step は Reader・Writer とも状態を保存しない
+ * （saveState=false）。出力 Step の途中失敗からリスタートしても一時ファイルを最初から出力し直し、
+ * トレーラと明細が食い違ったファイルを配置しない。配置 Step だけが失敗した場合は配置だけをやり直す。</p>
  *
  * <p><b>実行方法:</b></p>
  * <pre>{@code
@@ -63,6 +64,9 @@ public class Sample03JobConfig {
     /** ジョブ名。 */
     public static final String JOB_NAME = "sample03FileExportJob";
 
+    /** 一時ディレクトリ名（配置先の親ディレクトリ配下に作る）。 */
+    private static final String TEMP_DIR_NAME = "tmp";
+
     @Bean
     public Job sample03FileExportJob(JobRepository jobRepository, Step sample03ExportStep, Step sample03FileMoveStep,
             LoggingJobExecutionListener loggingJobExecutionListener,
@@ -72,6 +76,7 @@ public class Sample03JobConfig {
                     JobParametersValidators.requiredAndOptional(new String[] {"outputFile"}, new String[] {"format"})
                             .validate(parameters);
                     validateFormat(parameters.getString("format"));
+                    validateOutputFileName(parameters.getString("outputFile"));
                 })
                 .listener(duplicateRunPreventingJobExecutionListener)
                 .listener(loggingJobExecutionListener)
@@ -86,6 +91,15 @@ public class Sample03JobConfig {
         }
     }
 
+    // ファイル名が一時ディレクトリ名と同じだと、一時ディレクトリと配置先が同じパスになり移動できない
+    private static void validateOutputFileName(String outputFile) throws InvalidJobParametersException {
+        Path fileName = outputFile == null ? null : Path.of(outputFile).getFileName();
+        if (fileName != null && TEMP_DIR_NAME.equals(fileName.toString())) {
+            throw new InvalidJobParametersException(
+                    "outputFile のファイル名に " + TEMP_DIR_NAME + " は使えません: " + outputFile);
+        }
+    }
+
     /**
      * 一時ファイルのパスを返す（配置先の親ディレクトリ配下の tmp/ に同名で置く）。
      *
@@ -93,7 +107,7 @@ public class Sample03JobConfig {
      * @return 一時ファイル
      */
     static Path tempFileOf(String outputFile) {
-        return outputDirOf(outputFile).resolve("tmp").resolve(requirePath(Path.of(outputFile).getFileName(),
+        return outputDirOf(outputFile).resolve(TEMP_DIR_NAME).resolve(requirePath(Path.of(outputFile).getFileName(),
                 "outputFile にファイル名がありません: " + outputFile));
     }
 
@@ -148,6 +162,8 @@ public class Sample03JobConfig {
         return new MyBatisCursorItemReaderBuilder<SalesTransaction>()
                 .sqlSessionFactory(sqlSessionFactory)
                 .queryId("com.example.batch.sample.common.SalesMapper.selectAllTransactions")
+                // トレーラ集計がメモリ保持のため、リスタート時も先頭から読み直す（Writer も saveState=false）
+                .saveState(false)
                 .build();
     }
 
@@ -165,20 +181,26 @@ public class Sample03JobConfig {
             @Value("#{jobParameters['format']}") String format,
             SummaryFooterCallback<SalesTransaction> sample03FooterCallback) {
         Path tempFile = tempFileOf(outputFile);
-        Path tempDir = outputDirOf(outputFile).resolve("tmp");
+        Path tempDir = outputDirOf(outputFile).resolve(TEMP_DIR_NAME);
         try {
             Files.createDirectories(tempDir);
         } catch (IOException e) {
             throw new SystemException("一時ディレクトリを作成できません: " + tempDir, e);
         }
+        FlatFileItemWriter<SalesTransaction> writer;
         if ("fixed".equals(format)) {
-            return FixedLengthItemWriterFactory.create("sample03SalesFixedWriter", new FileSystemResource(tempFile),
+            // customerCode は DB が VARCHAR(10)（文字数）のため、全角10文字＝20バイトまで収まる幅にする
+            writer = FixedLengthItemWriterFactory.create("sample03SalesFixedWriter", new FileSystemResource(tempFile),
                     SalesTransaction.class, Charset.forName("Shift_JIS"), null, null,
-                    new String[] {"id", "customerCode", "amount", "soldAt"}, new int[] {10, 10, 12, 10});
+                    new String[] {"id", "customerCode", "amount", "soldAt"}, new int[] {10, 20, 12, 10});
+        } else {
+            writer = CsvItemWriterFactory.create("sample03SalesWriter", new FileSystemResource(tempFile),
+                    SalesTransaction.class, StandardCharsets.UTF_8,
+                    "id,customer_code,amount,sold_at", sample03FooterCallback,
+                    "id", "customerCode", "amount", "soldAt");
         }
-        return CsvItemWriterFactory.create("sample03SalesWriter", new FileSystemResource(tempFile),
-                SalesTransaction.class, StandardCharsets.UTF_8,
-                "id,customer_code,amount,sold_at", sample03FooterCallback,
-                "id", "customerCode", "amount", "soldAt");
+        // リスタート時に途中から追記せず、一時ファイルを最初から書き直す（Reader も saveState=false）
+        writer.setSaveState(false);
+        return writer;
     }
 }

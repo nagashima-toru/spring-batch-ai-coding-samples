@@ -124,7 +124,7 @@ public class Sample05JobConfig {
     @StepScope
     public ItemStreamReader<ApiUserResponse> sample05UserReader(BatchHttpClient batchHttpClient,
             SampleProperties properties, @Value("#{jobParameters['inputFile']}") String inputFile) {
-        if (inputFile != null && !inputFile.isBlank()) {
+        if (InputSourceDecider.isFileInput(inputFile)) {
             return JsonItemReaderFactory.create("sample05UserJsonReader", new FileSystemResource(inputFile),
                     ApiUserResponse.class);
         }

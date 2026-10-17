@@ -25,9 +25,20 @@ public class InputSourceDecider implements JobExecutionDecider {
 
     @Override
     public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
-        String inputFile = jobExecution.getJobParameters().getString("inputFile");
-        String status = inputFile != null && !inputFile.isBlank() ? FILE : API;
+        String status = isFileInput(jobExecution.getJobParameters().getString("inputFile")) ? FILE : API;
         log.info("条件分岐: 入力元 → {}", status);
         return new FlowExecutionStatus(status);
+    }
+
+    /**
+     * {@code inputFile} の値が JSON ファイルからの取込を指すかを返す。
+     *
+     * <p>Flow の分岐（本 Decider）と Reader の切り替えで同じ判定を使い、両者が食い違わないようにする。</p>
+     *
+     * @param inputFile ジョブパラメータ {@code inputFile} の値（null 可）
+     * @return 未指定・空白のみでなければ true
+     */
+    public static boolean isFileInput(String inputFile) {
+        return inputFile != null && !inputFile.isBlank();
     }
 }
