@@ -295,7 +295,7 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
   - **リスタートまでの間に別の JobInstance が実行された場合**（別の対象日の定時実行、同じ対象日の訂正ファイルでの
     再実行）: その実行がワークを入れ替えていても、リスタートは自分の入力ファイルからワークを作り直すため、
     別の実行回の行は混ざらない（Issue #74）。同じ対象日の訂正実行の後に古い JobInstance をリスタートすると、
-    対象日の明細はリスタートした側の入力ファイルの内容で洗い替えられる（運用者の判断で行う操作）
+    対象日の明細はリスタートした側の入力ファイルの内容で洗い替えられる（基本設計書 §5 の運用で、この操作はしない）
   - 本テーブルはリスタートまで変わらない（Step 1〜4 で失敗した場合は Step 5 に達していないため、Step 5 で
     失敗した場合はロールバック済みのため）
 - **冪等性**: Step 5 が対象日の受注明細・集計を削除してから入れ直す（洗い替え）。同じ入力で何度実行しても結果は同じ
@@ -364,6 +364,12 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 **システムテスト**
 - 10万件のファイルで所要時間（基本設計書 §2 の見込み: 全体で十数分以内）と Step 5 の所要時間（数十秒以内）
 - EventBridge 想定の起動（`scheduledTime` に UTC を渡し、targetDate 等を省略）で前日分が既定パスから取り込まれること
+- 1.4 版の改訂に伴い、`system-test/scenarios.md` を次のとおり改訂する
+  - シナリオ3（Step 4 の途中で失敗→リスタート）の期待結果を「Step 1〜4 も再実行され、Step 4 はファイルの先頭から取り込み直す。
+    エラーファイルに同じ行が重複しない。最終結果が1回で成功した場合と同じ」に直す（「Step 1〜3 は再実行しない」「続きから」
+    「既出キー復元」の記述を削除する）
+  - 別の実行回をまたぐリスタートのシナリオを追加する（実行 A を Step 4・Step 5 で失敗させ、別の対象日の実行 B を完了させてから
+    A をリスタート→A・B の対象日の明細・集計がそれぞれの入力どおり）
 
 ## 8. 変更履歴
 
@@ -373,4 +379,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-11 | 1.1 | 設計レビュー指摘の反映: `OrderDailySalesRunParameters` を `@JobScope` Bean にせず各 `@StepScope` Bean で resolve を呼ぶ方式に変更（record はスコーププロキシ不可）／`@StepScope` のクラスを final にしない制約を明記／`beforeStep` を冪等にする（対応を空にしてから読み込む）と明記 |
 | 2026-10-12 | 1.2 | 結合テスト工程の指摘反映: §1 の `@StepScope` 注記を「継承元の public メソッドも final にしない」に直す（`ValidatingItemProcessorBase#process` から final を外した） |
 | 2026-10-12 | 1.3 | 基盤部品の挙動の訂正（Issue #42）: §1.1 の Validator の説明を「未知のキーは基盤部品ではなくこのクラスで拒否する」に直す（実装は変えない） |
-| 2026-10-18 | 1.4 | 基本設計書 1.4 版への追従（Issue #74）: リスタートは Step 1〜4 を最初からやり直す（Step 1〜4 に `allowStartIfComplete(true)`、Reader は `saveState=false`）／Step 3 でエラーファイルも削除し、Tasklet を `@StepScope` に変更／`OrderItemProcessor` の `beforeStep`（ワークからの既出キーの復元）と `StepExecutionListener` の登録を廃止し、`selectKeys`・`OrderKey` を削除／リラン設計とテスト観点を更新 |
+| 2026-10-18 | 1.4 | 基本設計書 1.4 版への追従（Issue #74）: リスタートは Step 1〜4 を最初からやり直す（Step 1〜4 に `allowStartIfComplete(true)`、Reader は `saveState=false`）／Step 3 でエラーファイルも削除し、Tasklet を `@StepScope` に変更／`OrderItemProcessor` の `beforeStep`（ワークからの既出キーの復元）と `StepExecutionListener` の登録を廃止し、`selectKeys`・`OrderKey` を削除／リラン設計とテスト観点を更新（設計レビューの指摘で、システムテストのシナリオの改訂の引き継ぎを追加） |
