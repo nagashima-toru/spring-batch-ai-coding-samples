@@ -22,8 +22,8 @@ ai-harness#218（`/code-review` をタスク単位から計画単位に移す）
 | T-01 | done | 1 | - | planner ルール code-review-criterion.md を計画単位のレビュータスクへの導入先の補足にする | |
 | T-02 | done | 1 | - | planner ルール job-task-split.md に計画単位のレビュータスクを足す | |
 | T-03 | doing | 1 | - | review-standards SKILL.md の手順4をハーネスでは計画単位のレビュータスクに任せる形にする | |
-| T-04 | todo | 0 | - | creator ルール code-review.md を計画単位のレビュータスクの前提に直す | |
-| T-05 | todo | 0 | - | creator ルール skill-workflow.md の review-standards タスクから手順4を外す | |
+| T-04 | doing | 1 | - | creator ルール code-review.md を計画単位のレビュータスクの前提に直す | |
+| T-05 | doing | 1 | - | creator ルール skill-workflow.md の review-standards タスクから手順4を外す | |
 | T-06 | todo | 0 | - | verifier ルール code-review.md を計画単位のレビュータスクの前提に直す | |
 | T-07 | todo | 0 | T-01,T-02,T-03,T-04,T-05,T-06 | development-guide.md 2.4 末尾の段落を計画単位のレビュータスク前提に書き直す | |
 
