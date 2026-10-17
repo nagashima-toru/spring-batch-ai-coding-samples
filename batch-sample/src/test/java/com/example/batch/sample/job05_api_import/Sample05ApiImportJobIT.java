@@ -7,20 +7,24 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.step.StepExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import com.example.batch.core.exception.RetryableSystemException;
 import com.example.batch.sample.AbstractJobIT;
 import com.example.batch.sample.common.ApiUserMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -35,6 +39,12 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
     private static HttpServer apiStub;
 
+    /** 件数APIへのリクエスト数。 */
+    private static final AtomicInteger COUNT_REQUESTS = new AtomicInteger();
+
+    /** 真の間、スタブは500を返す。 */
+    private static volatile boolean serverError;
+
     @Autowired
     private JobOperator jobOperator;
 
@@ -48,7 +58,24 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
     @BeforeAll
     static void startApiStub() throws IOException {
         apiStub = HttpServer.create(new InetSocketAddress(0), 0);
+        apiStub.createContext("/users/count", exchange -> {
+            COUNT_REQUESTS.incrementAndGet();
+            if (serverError) {
+                send(exchange, 500, "{}");
+                return;
+            }
+            String auth = exchange.getRequestHeaders().getFirst("Authorization");
+            if (!"Bearer local-dummy-token".equals(auth)) {
+                send(exchange, 401, "{}");
+                return;
+            }
+            send(exchange, 200, "{\"count\":3}");
+        });
         apiStub.createContext("/users", exchange -> {
+            if (serverError) {
+                send(exchange, 500, "[]");
+                return;
+            }
             String query = exchange.getRequestURI().getQuery();
             String auth = exchange.getRequestHeaders().getFirst("Authorization");
             String body;
@@ -97,6 +124,8 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
     @BeforeEach
     void setUp() {
         truncateAppTable("api_user");
+        serverError = false;
+        COUNT_REQUESTS.set(0);
     }
 
     @Test
@@ -109,5 +138,52 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         assertThat(apiUserMapper.count()).isEqualTo(3);
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT user_name FROM app.api_user WHERE user_id = 'U003'", String.class)).isEqualTo("佐藤");
+    }
+
+    @Test
+    void 件数取得Stepが成功した場合_取込Stepより先に実行され件数をExecutionContextに保存する() throws Exception {
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        StepExecution countStep = findStep(execution, "sample05.00UserCountStep");
+        StepExecution importStep = findStep(execution, "sample05.01ImportStep");
+        assertThat(countStep.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(importStep.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(countStep.getExecutionContext().getLong("apiUserCount")).isEqualTo(3L);
+        assertThat(countStep.getEndTime().isAfter(importStep.getStartTime())).isFalse();
+    }
+
+    @Test
+    void APIが5xxを返し続ける場合_BatchHttpClientのリトライ後にRetryableSystemExceptionで異常終了する()
+            throws Exception {
+        serverError = true;
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo(ExitStatus.FAILED.getExitCode());
+        assertThat(execution.getAllFailureExceptions()).anyMatch(Sample05ApiImportJobIT::hasRetryableCause);
+        assertThat(COUNT_REQUESTS.get()).isEqualTo(3);
+        assertThat(apiUserMapper.count()).isZero();
+    }
+
+    private static StepExecution findStep(JobExecution execution, String name) {
+        return execution.getStepExecutions().stream()
+                .filter(s -> name.equals(s.getStepName()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static boolean hasRetryableCause(Throwable t) {
+        for (Throwable c = t; c != null; c = c.getCause()) {
+            if (c instanceof RetryableSystemException) {
+                return true;
+            }
+        }
+        return false;
     }
 }
