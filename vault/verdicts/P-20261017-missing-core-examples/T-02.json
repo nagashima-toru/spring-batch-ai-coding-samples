@@ -1,0 +1,15 @@
+{
+  "task": "P-20261017-missing-core-examples/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-17 15:12",
+  "criteria": [
+    {"text": "全体ビルド（単体＋結合＋静的解析＋カバレッジ）が成功する（`./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`）", "ok": true, "note": "docker info 成功(終了コード0)。worktree で `./mvnw clean verify` を実行 / 終了コード0、BUILD SUCCESS の行数 1。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "一時出力→配置の結合テストが実行されている（上のビルドの後、`grep -c 'testcase name=.CSV出力の場合_一時ファイルを配置先へ移動し一時ディレクトリに残さない.' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job03_file_export.Sample03FileExportJobIT.xml` が `1`）", "ok": true, "note": "実行コマンド: 同 grep -c を worktree で実行 / 出力: 1（testsuite は tests=5 failures=0 skipped=0）"},
+    {"text": "固定長出力の結合テストが実行されている（`grep -c 'testcase name=.formatにfixedを指定した場合_Shift_JISの固定長ファイルを配置先へ出力する.' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job03_file_export.Sample03FileExportJobIT.xml` が `1`）", "ok": true, "note": "実行コマンド: 同 grep -c を worktree で実行 / 出力: 1"},
+    {"text": "format の値の検証の結合テストが実行されている（`grep -c 'testcase name=.formatに未定義の値を指定した場合_InvalidJobParametersExceptionで起動を拒否する.' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job03_file_export.Sample03FileExportJobIT.xml` が `1`）", "ok": true, "note": "実行コマンド: 同 grep -c を worktree で実行 / 出力: 1"},
+    {"text": "固定長の Writer を基盤部品で生成している（`grep -c 'FixedLengthItemWriterFactory.create' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` が1以上）", "ok": true, "note": "実行コマンド: 同 grep -c を worktree で実行 / 出力: 1"},
+    {"text": "配置の Step を基盤部品で実装している（`grep -c 'new FileMoveTasklet' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` が1以上）", "ok": true, "note": "実行コマンド: 同 grep -c を worktree で実行 / 出力: 1"}
+  ],
+  "reasons": []
+}
