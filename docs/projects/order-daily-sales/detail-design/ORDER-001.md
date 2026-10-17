@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | ジョブID / ジョブ名（Bean名） | ORDER-001 / `orderDailySalesJob` |
-| 入力（基本設計書） | docs/projects/order-daily-sales/basic-design.md（1.3 版・承認済み） |
+| 入力（基本設計書） | docs/projects/order-daily-sales/basic-design.md（1.4 版・承認済み） |
 | ステータス | レビュー済み |
 
 ## 1. ジョブ構成
@@ -71,12 +71,14 @@
 |---|---|---|---|---|---|
 | 1 | `orderDailySales.01FileCheckStep` | `orderDailySalesFileCheckStep` | Tasklet | 入力ファイルの存在・読取可能性の確認 | 異常終了（1）。本テーブル不変 |
 | 2 | `orderDailySales.02HeaderCheckStep` | `orderDailySalesHeaderCheckStep` | Tasklet | ヘッダ行の照合 | 異常終了（1）。本テーブル不変 |
-| 3 | `orderDailySales.03ClearWorkStep` | `orderDailySalesClearWorkStep` | Tasklet | ワークテーブルを空にする | 異常終了（1）。本テーブル不変 |
-| 4 | `orderDailySales.04ImportStep` | `orderDailySalesImportStep` | Chunk | CSV → ワークテーブル（不正行は Skip） | 異常終了（1）。ワークにコミット済みチャンクが残る。リスタートで続きから |
+| 3 | `orderDailySales.03ClearWorkStep` | `orderDailySalesClearWorkStep` | Tasklet | エラーファイルを削除し、ワークテーブルを空にする | 異常終了（1）。本テーブル不変 |
+| 4 | `orderDailySales.04ImportStep` | `orderDailySalesImportStep` | Chunk | CSV → ワークテーブル（不正行は Skip） | 異常終了（1）。ワークにコミット済みチャンクが残る（調査用）。リスタートでは Step 3 から作り直す |
 | 5 | `orderDailySales.05ReplaceStep` | `orderDailySalesReplaceStep` | Tasklet | 本テーブルの対象日分を1Txで入れ替え＋集計 | 異常終了（1）。Tx 全体ロールバックで本テーブル不変 |
 
-- 分岐なしの直列フロー（`start(01).next(02).next(03).next(04).next(05)`）。`allowStartIfComplete` は設定しない
-  （リスタート時、完了済み Step は再実行しない。基本設計書 §2 リラン設計）
+- 分岐なしの直列フロー（`start(01).next(02).next(03).next(04).next(05)`）
+- **Step 1〜4 に `allowStartIfComplete(true)` を設定する**。リスタート時、完了済みの Step 1〜4 も再実行し、取込を最初から
+  やり直す（基本設計書 §2 リラン設計。ワークは全 JobInstance で共有のため、リスタート前のワークを使わない）。
+  Step 5 には設定しない（Step 5 が完了していればジョブは COMPLETED で、同一パラメータのリスタートはできない）
 - 全 Step に `LoggingStepExecutionListener`（共通 Bean）を登録する
 
 ### Bean 一覧（実装工程への確定指示）
@@ -86,16 +88,16 @@
 | `orderDailySalesJob` | `Job` | singleton | Validator・2リスナー・5 Step |
 | `orderDailySalesFileCheckTasklet` | `FileExistenceCheckTasklet` | `@StepScope` | RunParameters の `inputFile()` |
 | `orderDailySalesHeaderCheckTasklet` | `CsvHeaderCheckTasklet` | `@StepScope` | RunParameters の `inputFile()`・UTF-8・`OrderCsvRecord.COLUMN_NAMES` |
-| `orderDailySalesClearWorkTasklet` | `OrderDetailWorkClearTasklet` | singleton | `OrderDetailWorkMapper` |
-| `orderDailySalesReader` | `FlatFileItemReader<OrderCsvRecord>` | `@StepScope` | §2 Step 4。RunParameters の `inputFile()` |
-| `orderDailySalesProcessor` | `OrderItemProcessor` | `@StepScope` | §2 Step 4。ジョブ実行ごとに既出キーの状態を新しく持つため Step スコープ。RunParameters の `targetDate()` |
+| `orderDailySalesClearWorkTasklet` | `OrderDetailWorkClearTasklet` | `@StepScope` | §2 Step 3。RunParameters の `errorFile()`・`OrderDetailWorkMapper` |
+| `orderDailySalesReader` | `FlatFileItemReader<OrderCsvRecord>` | `@StepScope` | §2 Step 4。RunParameters の `inputFile()`。読取位置を保存しない（`saveState=false`） |
+| `orderDailySalesProcessor` | `OrderItemProcessor` | `@StepScope` | §2 Step 4。Step 実行ごとに既出キーの状態を新しく（空から）持つため Step スコープ。RunParameters の `targetDate()` |
 | `orderDailySalesWriter` | `MyBatisBatchItemWriter<OrderDetailWork>` | singleton | statementId `...OrderDetailWorkMapper.insert` |
 | `orderDailySalesErrorRecordSkipListener` | `ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork>` | `@StepScope` | RunParameters の `errorFile()` |
 | `orderDailySalesReplaceTasklet` | `OrderDailySalesReplaceTasklet` | `@StepScope` | RunParameters の `targetDate()`・`OrderDetailMapper`・`DailyStoreSalesMapper` |
 
 - Mapper は `@Mapper` インタフェースとし MyBatis Starter の自動登録に任せる（Config で `@Bean` 定義しない）
 - **`@StepScope` で生成するクラスは final にしない**（record も不可）。スコーププロキシがクラスを継承して作られるため。
-  本案件で新規作成する対象は `CsvHeaderCheckTasklet`（batch-core）・`OrderItemProcessor`・`OrderDailySalesReplaceTasklet`。
+  本案件で新規作成する対象は `CsvHeaderCheckTasklet`（batch-core）・`OrderDetailWorkClearTasklet`・`OrderItemProcessor`・`OrderDailySalesReplaceTasklet`。
   Bean メソッドの戻り値の型は具象クラスにする（プロキシが `StepExecutionListener` 等のインタフェースも実装するように）
   継承元の public メソッド（`ValidatingItemProcessorBase#process` など）も final にしない（final だとプロキシが上書きできず、
   プロキシ経由の呼び出しで target の状態が使われない）
@@ -130,22 +132,28 @@
 
 | 構成要素 | 実装 | 使用する基盤部品 |
 |---|---|---|
-| Tasklet | `OrderDetailWorkClearTasklet`（新規。`Tasklet` を直接実装し `OrderDetailWorkMapper#truncate` を1回呼ぶ） | なし（基盤部品に任意 SQL を実行する汎用 Tasklet は無い。POINT-001 と同じ判断） |
+| Tasklet | `OrderDetailWorkClearTasklet`（新規。`Tasklet` を直接実装。コンストラクタで `errorFile`（`Path`）と `OrderDetailWorkMapper` を受け取る） | なし（基盤部品に任意 SQL を実行する汎用 Tasklet・ファイルを削除する Tasklet は無い。POINT-001 と同じ判断） |
 
 #### 処理フロー
 
-1. `TRUNCATE TABLE app.order_detail_work` を実行する（Tasklet の Tx 内。PostgreSQL の TRUNCATE はトランザクショナル）
-2. INFO ログ「受注明細ワークを初期化しました」を出力する
+1. エラーファイル（`runParameters.errorFile()`）があれば削除する（`Files.deleteIfExists`）。リスタートで取込を
+   やり直す時に、前の実行回の Skip 行が残って重複しないようにするため（基盤部品 `ErrorRecordSkipListener` は追記で書く）。
+   削除に失敗した場合（`IOException`）は `SystemException`（メッセージにパスを含める）に包んで送出し、Step は失敗する
+2. `TRUNCATE TABLE app.order_detail_work` を実行する（Tasklet の Tx 内。PostgreSQL の TRUNCATE はトランザクショナル）
+3. INFO ログ「受注明細ワークを初期化しました: errorFile={} 削除={}」を出力する（削除＝ファイルがあって削除したか）
+
+- 1 はトランザクションの外の操作のため、2 が失敗してロールバックされてもエラーファイルの削除は戻らない。
+  リスタートで Step 3 から取込をやり直し、エラーファイルも作り直されるため問題ない
 
 ### Step 4: orderDailySales.04ImportStep
 
 | 構成要素 | 実装 | 使用する基盤部品 |
 |---|---|---|
-| Reader | `CsvItemReaderFactory.createWithLineNumber("orderDailySalesReader", new FileSystemResource(inputFile), UTF_8, 1, OrderCsvRecord.COLUMN_NAMES, OrderCsvRecord::of)` | `CsvItemReaderFactory`（拡張。§6.2）・`LineNumberedFieldSetMapper` |
-| Processor | `OrderItemProcessor`（新規。`ValidatingItemProcessorBase<OrderCsvRecord, OrderDetailWork>` を継承し、`StepExecutionListener` を実装） | `ValidatingItemProcessorBase` |
+| Reader | `CsvItemReaderFactory.createWithLineNumber("orderDailySalesReader", new FileSystemResource(inputFile), UTF_8, 1, OrderCsvRecord.COLUMN_NAMES, OrderCsvRecord::of)` で生成し、`setSaveState(false)` で読取位置の保存を無効にする（リスタートでもファイルの先頭から読む。`Sample03JobConfig` の Reader・Writer と同じ扱い） | `CsvItemReaderFactory`（拡張。§6.2）・`LineNumberedFieldSetMapper` |
+| Processor | `OrderItemProcessor`（新規。`ValidatingItemProcessorBase<OrderCsvRecord, OrderDetailWork>` を継承する。`StepExecutionListener` は実装しない） | `ValidatingItemProcessorBase` |
 | Writer | `MyBatisBatchItemWriter<OrderDetailWork>`（statementId `com.example.batch.sample.job_order_daily_sales.OrderDetailWorkMapper.insert`。`assertUpdates` は既定（true）） | なし（MyBatis 標準） |
 | Skip/Retry | `.faultTolerant().skipPolicy(new BusinessSkipPolicy(properties.skipLimit())).skipListener(orderDailySalesErrorRecordSkipListener)`。Retry は設定しない | `BusinessSkipPolicy`・`ErrorRecordSkipListener` |
-| リスナー | `loggingStepExecutionListener`、`orderDailySalesProcessor`（`StepExecutionListener` として。**`(Object)` キャストで登録しない**。CLAUDE.md ハマりどころ3） | `LoggingStepExecutionListener` |
+| リスナー | `loggingStepExecutionListener` | `LoggingStepExecutionListener` |
 | チャンクサイズ | `properties.chunkSize()`（既定100） | `SampleProperties` |
 
 **入力レコード `OrderCsvRecord`**（record。全項目を String で受け、形式は Bean Validation で検証する。
@@ -164,13 +172,9 @@
 
 #### 処理フロー
 
-1. **Step 開始時（`beforeStep`）**: まず既出キーの対応を**空にしてから**、`OrderDetailWorkMapper#selectKeys` で、ワークテーブルの全行の
-   `(order_no, line_no, line_seq)` を `ResultHandler` で1行ずつ受け取り、既出キーの対応
-   （`Map<String, Integer>`。キーは `order_no + "\t" + line_no`、値は `line_seq`）へ登録する。
-   初回実行では Step 3 で空にした直後のため0件、リスタート時はリスタート前にコミット済みの行が入る。
-   読み込んだ件数を INFO ログに出す。
-   `beforeStep` は何度呼ばれても結果が同じになるようにする（Processor は明示的にリスナー登録するが、
-   Spring Batch が processor に渡した Bean を自動でもリスナー登録する場合があり、2回呼ばれうるため）
+1. **既出キーの対応**: Processor は既出キーの対応（`Map<String, Integer>`。キーは `order_no + "\t" + line_no`、
+   値は `line_seq`）をフィールドに持ち、空の状態で生成される（`@StepScope` のため Step 実行ごとに新しいインスタンス）。
+   Step 4 は常に Step 3 で空にしたワークへ最初から取り込むため、ワークから復元しない（基本設計書 §2）
 2. **読取**: Reader が1行を読み、`OrderCsvRecord` に行番号を付けて返す。列数不一致などのパース不能行は
    `FlatFileParseException` となり、`BusinessSkipPolicy` により Skip される（エラーファイルには元の行文字列）
 3. **形式チェック**: `ValidatingItemProcessorBase` が Bean Validation（下表の「Bean Validation」）を実行する。
@@ -232,6 +236,8 @@
 - ワークが0件（ヘッダ行のみのファイル、または全行 Skip）の場合も正常とする。対象日の旧データは削除され、
   受注明細・集計とも0件になる（受注0件の日を正しく表す）。ただし全行 Skip は Step 4 の `skipLimit` 超過で
   通常は先に異常終了する
+- 3 はワークの行を対象日で絞らない。ワークにはこの実行回の Step 3〜4 で取り込んだ行（Step 4 で受注日＝対象日を
+  検証済み）だけがあるため（§5）。条件を足すと、想定外の行を黙って捨てることになる
 - 3 の一意制約違反（別の日に同じ受注番号＋明細番号が登録済み）は `DuplicateKeyException` として送出され、
   Tx 全体がロールバックされて異常終了する（握りつぶさない）
 
@@ -244,6 +250,7 @@
 | 3 | 二重起動 | システム | `SystemException`（`DuplicateRunPreventingJobExecutionListener`） | 異常終了（1） | ログ |
 | 4 | 入力ファイルなし・読取不可 | 前処理 | `BusinessException`（`FileExistenceCheckTasklet`） | Step 1 失敗→異常終了（1） | ログ |
 | 5 | ヘッダ行不一致（空ファイル・BOM 付き含む） | 前処理 | `BusinessException`（`CsvHeaderCheckTasklet`） | Step 2 失敗→異常終了（1） | ログ |
+| 5a | エラーファイルを削除できない（権限不足等） | システム | `SystemException`（`OrderDetailWorkClearTasklet`） | Step 3 失敗→異常終了（1）→原因除去後リスタート | ログ |
 | 6 | パース不能行（列数不一致等） | 業務 | `FlatFileParseException` | Skip（上限 `skipLimit`） | エラーファイル（元の行） |
 | 7 | 形式不正（必須・桁・文字種・値域） | 業務 | `BusinessException`（`ValidatingItemProcessorBase`） | Skip | エラーファイル |
 | 8 | 実在しない日付・対象日と不一致 | 業務 | `BusinessException`（`OrderItemProcessor`） | Skip | エラーファイル |
@@ -264,13 +271,12 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 |---|---|---|
 | `OrderDetailWorkMapper#truncate()` | UPDATE（`<update>`） | `TRUNCATE TABLE app.order_detail_work` |
 | `OrderDetailWorkMapper#insert(OrderDetailWork)` | INSERT | 9列（`line_seq` 含む）＋ `created_at = now()` の単純 INSERT。`ON CONFLICT` は付けない（重複は設計上起きず、起きたら異常終了させる） |
-| `OrderDetailWorkMapper#selectKeys(ResultHandler<OrderKey>)` | SELECT | `SELECT order_no, line_no, line_seq FROM app.order_detail_work`。`ResultHandler` で1行ずつ受け、`fetchSize` は既定（100）のカーソルフェッチ。全件をリストに載せない（architecture.md §3.3） |
 | `OrderDetailMapper#deleteByOrderDate(LocalDate)` | DELETE | `DELETE FROM app.order_detail WHERE order_date = #{targetDate}` |
 | `OrderDetailMapper#insertFromWork()` | INSERT | `INSERT INTO app.order_detail (order_no, line_no, order_date, store_code, item_code, quantity, unit_price, amount, created_at) SELECT 同列 FROM app.order_detail_work`（`line_seq` は引き継がない。`created_at` はワークの値をそのまま） |
 | `DailyStoreSalesMapper#deleteBySalesDate(LocalDate)` | DELETE | `DELETE FROM app.daily_store_sales WHERE sales_date = #{targetDate}` |
 | `DailyStoreSalesMapper#insertAggregate(LocalDate)` | INSERT | `INSERT INTO app.daily_store_sales (...) SELECT order_date, store_code, COUNT(DISTINCT order_no), COUNT(*), SUM(quantity), SUM(amount), now() FROM app.order_detail WHERE order_date = #{targetDate} GROUP BY order_date, store_code` |
 
-- `OrderKey` は `selectKeys` の結果用 record（`orderNo: String`・`lineNo: int`・`lineSeq: int`）
+- 1.4 版で `OrderDetailWorkMapper#selectKeys` と結果用 record `OrderKey` を廃止した（既出キーをワークから復元しないため）
 - 戻り値: INSERT/DELETE は件数（`int`）を返す。TRUNCATE は `void`
 
 **Flyway `V5__create_order_daily_sales_tables.sql`**（基本設計書 §4 準拠）:
@@ -281,11 +287,17 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 
 ## 5. リラン設計
 
-- **途中失敗時**: 同一パラメータでリスタートする。失敗した Step から再開し、完了済み Step は再実行しない
-  - Step 4 で失敗: Reader は保存済みの読取位置（コミット済みチャンクの次）から再開する。Processor は `beforeStep` で
-    ワークから既出キーを復元するため、リスタートをまたいだ重複も検出できる。エラーファイルは同じパスへ追記される
-  - Step 5 で失敗: Tx 全体がロールバック済みで、ワークは残っているため、Step 5 を最初からやり直せばよい
-  - Step 1〜3 で失敗: 本テーブル・ワークとも影響なし（Step 3 失敗時はワークの TRUNCATE もロールバック）
+- **途中失敗時**: 同一パラメータでリスタートする。どの Step で失敗しても、リスタートは Step 1 から全 Step を実行する
+  （Step 1〜4 は `allowStartIfComplete(true)`、Step 4 の Reader は `saveState=false`。§1 Step 一覧・§2 Step 4）
+  - Step 3 でエラーファイルを削除し、ワークを空にしてから、Step 4 で入力ファイルの先頭から取り込み直す。
+    既出キーの対応も空から作る。Skip 件数・`skipLimit`・警告判定は1回で完走した場合と同じになる
+  - Step 5 で失敗: Tx 全体がロールバック済み。リスタートではワークも作り直してから Step 5 を実行する
+  - **リスタートまでの間に別の JobInstance が実行された場合**（別の対象日の定時実行、同じ対象日の訂正ファイルでの
+    再実行）: その実行がワークを入れ替えていても、リスタートは自分の入力ファイルからワークを作り直すため、
+    別の実行回の行は混ざらない（Issue #74）。同じ対象日の訂正実行の後に古い JobInstance をリスタートすると、
+    対象日の明細はリスタートした側の入力ファイルの内容で洗い替えられる（基本設計書 §5 の運用で、この操作はしない）
+  - 本テーブルはリスタートまで変わらない（Step 1〜4 で失敗した場合は Step 5 に達していないため、Step 5 で
+    失敗した場合はロールバック済みのため）
 - **冪等性**: Step 5 が対象日の受注明細・集計を削除してから入れ直す（洗い替え）。同じ入力で何度実行しても結果は同じ
   （`created_at` の監査列だけは実行ごとに変わる）
 - **成功後の再処理（訂正ファイル）**: 新しい `scheduledTime`（実行時の時刻）と同じ `targetDate` を指定して実行する。
@@ -326,7 +338,9 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 - `OrderDailySalesJobParametersValidator`: scheduledTime 欠落・オフセットなし（`2026-10-12T02:00:00`）・不正文字列、targetDate が String 型、未知のキー
 - `OrderItemProcessor`: 入力チェック仕様の各行の境界値（lineNo 0/1/999999999/1000000000、quantity 0/1/999999/1000000、unitPrice 0/999999999、
   桁超過、先頭ゼロ、前後空白、2026-02-30）、対象日不一致、重複（行番号が違う→エラー／同じ行番号の再処理→エラーにしない）、
-  1件目が不正で2件目が正常→2件目は通る、`beforeStep` でワークのキーを復元した後の重複検出、amount の計算（最大値で桁あふれしない）
+  1件目が不正で2件目が正常→2件目は通る、amount の計算（最大値で桁あふれしない）
+- `OrderDetailWorkClearTasklet`: エラーファイルがある→削除して TRUNCATE、無い→TRUNCATE のみ（例外にならない）、
+  削除できない（例: パスがディレクトリで中身がある）→ `SystemException` で TRUNCATE を呼ばない
 - `CsvHeaderCheckTasklet`: 一致、項目名違い、順序違い、列数違い、空ファイル、BOM 付き、前後空白
 - `CsvItemReaderFactory#createWithLineNumber`: 行番号（ヘッダ1行スキップで最初のデータ行が2）、値をトリムしない、列数不一致で `FlatFileParseException`、
   リスタート（`ExecutionContext` から読取位置を復元して続きを読み、行番号も続きから振られる）
@@ -338,13 +352,24 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 - 洗い替え: 同じ targetDate で別の scheduledTime により2回実行 → 1回目の明細・集計が2回目の内容に置き換わる。他の日のデータは変わらない
 - 異常: ファイルなし／ヘッダ不正 → 終了コード1、本テーブル不変。skipLimit 超過 → 終了コード1、本テーブル不変（旧データが残る）
 - Step 5 の一意制約違反（別の日に同じキーを事前登録）→ 終了コード1、本テーブル不変
-- リスタート: Step 4 の途中で失敗させ（例: 後半の行で DB 例外を起こす）、同一パラメータで再実行 → 続きから取り込み、
-  リスタートをまたいだ重複も Skip される、最終結果が1回で成功した場合と同じ
+- リスタート: Step 4 の途中で失敗させ（例: 後半の行で DB 例外を起こす）、同一パラメータで再実行 → 最初から取り込み直し、
+  最終結果（明細・集計・エラーファイルの内容・終了コード）が1回で成功した場合と同じ（エラーファイルに同じ行が重複しない）
+- 別インスタンスをまたぐリスタート（Issue #74 の再現）:
+  - 実行 A（targetDate=10/11）を Step 4 で失敗させ、実行 B（targetDate=10/12）を完了させてから A をリスタート →
+    A が完了し、10/11 の明細・集計が A の入力どおり、10/12 の明細・集計は B のまま変わらない
+  - 実行 A を Step 5 で失敗させ、実行 B（targetDate=10/12）を完了させてから A をリスタート →
+    10/11 の明細が A の入力どおりに登録される（0件にならない）
 - 二重起動防止・パラメータ不正（scheduledTime なし）→ 終了コード1
 
 **システムテスト**
 - 10万件のファイルで所要時間（基本設計書 §2 の見込み: 全体で十数分以内）と Step 5 の所要時間（数十秒以内）
 - EventBridge 想定の起動（`scheduledTime` に UTC を渡し、targetDate 等を省略）で前日分が既定パスから取り込まれること
+- 1.4 版の改訂に伴い、`system-test/scenarios.md` を次のとおり改訂する
+  - シナリオ3（Step 4 の途中で失敗→リスタート）の期待結果を「Step 1〜4 も再実行され、Step 4 はファイルの先頭から取り込み直す。
+    エラーファイルに同じ行が重複しない。最終結果が1回で成功した場合と同じ」に直す（「Step 1〜3 は再実行しない」「続きから」
+    「既出キー復元」の記述を削除する）
+  - 別の実行回をまたぐリスタートのシナリオを追加する（実行 A を Step 4・Step 5 で失敗させ、別の対象日の実行 B を完了させてから
+    A をリスタート→A・B の対象日の明細・集計がそれぞれの入力どおり）
 
 ## 8. 変更履歴
 
@@ -354,3 +379,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-11 | 1.1 | 設計レビュー指摘の反映: `OrderDailySalesRunParameters` を `@JobScope` Bean にせず各 `@StepScope` Bean で resolve を呼ぶ方式に変更（record はスコーププロキシ不可）／`@StepScope` のクラスを final にしない制約を明記／`beforeStep` を冪等にする（対応を空にしてから読み込む）と明記 |
 | 2026-10-12 | 1.2 | 結合テスト工程の指摘反映: §1 の `@StepScope` 注記を「継承元の public メソッドも final にしない」に直す（`ValidatingItemProcessorBase#process` から final を外した） |
 | 2026-10-12 | 1.3 | 基盤部品の挙動の訂正（Issue #42）: §1.1 の Validator の説明を「未知のキーは基盤部品ではなくこのクラスで拒否する」に直す（実装は変えない） |
+| 2026-10-18 | 1.4 | 基本設計書 1.4 版への追従（Issue #74）: リスタートは Step 1〜4 を最初からやり直す（Step 1〜4 に `allowStartIfComplete(true)`、Reader は `saveState=false`）／Step 3 でエラーファイルも削除し、Tasklet を `@StepScope` に変更／`OrderItemProcessor` の `beforeStep`（ワークからの既出キーの復元）と `StepExecutionListener` の登録を廃止し、`selectKeys`・`OrderKey` を削除／リラン設計とテスト観点を更新（設計レビューの指摘で、システムテストのシナリオの改訂の引き継ぎを追加） |
