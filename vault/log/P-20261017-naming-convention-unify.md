@@ -29,3 +29,5 @@
 - 2026-10-17 13:34 T-03 amend 基準差し替え=2
 - 2026-10-17 13:34 T-03 blocked→todo 人の指示: /plan unblock P-20261017-naming-convention-unify T-03
 - 2026-10-17 13:34 T-03 todo→doing attempt=1 worktree を引き継ぎ
+- 2026-10-17 13:34 T-03 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-ab8bef31e7f0a4dd4 branch=worktree-agent-ab8bef31e7f0a4dd4 plan_head=6972170e22672455cd502f0fe443ce486abae5b0
+- 2026-10-17 13:34 T-03 doing→review attempt=1 creator=sonnet
