@@ -6,20 +6,25 @@ import java.util.Map;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.batch.MyBatisBatchItemWriter;
 import org.mybatis.spring.batch.builder.MyBatisBatchItemWriterBuilder;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.infrastructure.item.ItemStreamReader;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.example.batch.core.exception.BusinessSkipPolicy;
 import com.example.batch.core.execution.DuplicateRunPreventingJobExecutionListener;
 import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.http.BatchHttpClient;
+import com.example.batch.core.item.JsonItemReaderFactory;
 import com.example.batch.core.item.RestApiPagingItemReader;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
@@ -35,9 +40,11 @@ import jakarta.validation.Validator;
  * API 呼出、ページング取得（全件メモリロードなし）、認証ヘッダの外部設定、
  * レスポンスの入力チェック。</p>
  *
- * <p><b>Step 構成:</b> 件数取得 Step（{@code sample05.00UserCountStep}、
- * {@code AbstractApiCallTasklet} 継承の {@link ApiUserCountTasklet}）の後に、
- * 取込 Step（{@code sample05.01ImportStep}）を実行する。HTTP のリトライは {@code BatchHttpClient} が行い、
+ * <p><b>Step 構成:</b> 任意パラメータ {@code inputFile} が未指定なら、件数取得 Step
+ * （{@code sample05.00UserCountStep}、{@code AbstractApiCallTasklet} 継承の {@link ApiUserCountTasklet}）の後に、
+ * 取込 Step（{@code sample05.01ImportStep}）で API から取り込む。{@code inputFile} を指定すると
+ * 件数取得 Step を飛ばし、API の代わりに保存済み JSON ファイルから取り込む（リプレイ用途。
+ * 分岐は {@link InputSourceDecider}）。HTTP のリトライは {@code BatchHttpClient} が行い、
  * Batch の Retry は使わない（方式設計 §5.2）。</p>
  *
  * <p>API の接続先・ページサイズ・トークンは {@code application.yml} の
@@ -46,6 +53,10 @@ import jakarta.validation.Validator;
  * <p><b>実行方法:</b></p>
  * <pre>{@code
  * --spring.batch.job.name=sample05ApiImportJob syncDate=2026-07-14,java.time.LocalDate
+ *
+ * # 保存済み JSON から取り込む（リプレイ）
+ * --spring.batch.job.name=sample05ApiImportJob syncDate=2026-07-14,java.time.LocalDate
+ *   inputFile=batch-sample/data/in/api-users.json
  * }</pre>
  */
 @Configuration(proxyBeanMethods = false)
@@ -59,12 +70,17 @@ public class Sample05JobConfig {
             Step sample05ImportStep,
             LoggingJobExecutionListener loggingJobExecutionListener,
             DuplicateRunPreventingJobExecutionListener duplicateRunPreventingJobExecutionListener) {
+        InputSourceDecider decider = new InputSourceDecider();
         return new JobBuilder(JOB_NAME, jobRepository)
-                .validator(JobParametersValidators.required("syncDate"))
+                .validator(JobParametersValidators.requiredAndOptional(
+                        new String[] {"syncDate"}, new String[] {"inputFile"}))
                 .listener(duplicateRunPreventingJobExecutionListener)
                 .listener(loggingJobExecutionListener)
-                .start(sample05UserCountStep)
+                .start(decider)
+                .on(InputSourceDecider.FILE).to(sample05ImportStep)
+                .from(decider).on(InputSourceDecider.API).to(sample05UserCountStep)
                 .next(sample05ImportStep)
+                .end()
                 .build();
     }
 
@@ -87,7 +103,7 @@ public class Sample05JobConfig {
 
     @Bean
     public Step sample05ImportStep(JobRepository jobRepository, PlatformTransactionManager transactionManager,
-            RestApiPagingItemReader<ApiUserResponse> sample05UserReader,
+            ItemStreamReader<ApiUserResponse> sample05UserReader,
             ApiUserItemProcessor sample05UserProcessor,
             MyBatisBatchItemWriter<ApiUser> sample05UserWriter,
             LoggingStepExecutionListener loggingStepExecutionListener,
@@ -105,8 +121,13 @@ public class Sample05JobConfig {
     }
 
     @Bean
-    public RestApiPagingItemReader<ApiUserResponse> sample05UserReader(BatchHttpClient batchHttpClient,
-            SampleProperties properties) {
+    @StepScope
+    public ItemStreamReader<ApiUserResponse> sample05UserReader(BatchHttpClient batchHttpClient,
+            SampleProperties properties, @Value("#{jobParameters['inputFile']}") String inputFile) {
+        if (inputFile != null && !inputFile.isBlank()) {
+            return JsonItemReaderFactory.create("sample05UserJsonReader", new FileSystemResource(inputFile),
+                    ApiUserResponse.class);
+        }
         SampleProperties.Job05.Api api = properties.job05().api();
         Map<String, String> authHeader = Map.of("Authorization", "Bearer " + api.token());
         return new RestApiPagingItemReader<>("sample05UserReader",
