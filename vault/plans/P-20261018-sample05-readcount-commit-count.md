@@ -1,6 +1,6 @@
 ---
 id: P-20261018-sample05-readcount-commit-count
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #81「sample05: 最後のチャンクのコミット後に取込Stepが COMPLETED 以外で終わると、取得件数が1件多くなり件数の突き合わせが失敗する」を解消する（コメントで統合された #82 のうち「件数の突き合わせに使う件数をコミット済み件数にする」部分を含む）。
