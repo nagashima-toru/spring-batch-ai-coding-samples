@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.listener.StepExecutionListener;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -38,7 +37,7 @@ import jakarta.validation.Validator;
  * ORDER-001: 受注CSV取込・日次売上集計ジョブ（Chunk ＋ Tasklet）。
  *
  * <p><b>デモする機能:</b> ワークテーブル経由の洗い替え（削除と登録を1トランザクションで行い、失敗時に旧データを残す）、
- * 行番号付き CSV 読取による重複検出（リスタート対応）、ヘッダ行の照合、
+ * 行番号付き CSV 読取によるファイル内の重複検出（リスタートは Step 1〜4 を最初からやり直す）、ヘッダ行の照合、
  * {@code scheduledTime}（UTC）から JST の前日を導出する省略時パラメータの補完。</p>
  *
  * <p>詳細設計書: docs/projects/order-daily-sales/detail-design/ORDER-001.md</p>
@@ -80,6 +79,7 @@ public class OrderDailySalesJobConfig {
             PlatformTransactionManager transactionManager, FileExistenceCheckTasklet orderDailySalesFileCheckTasklet,
             LoggingStepExecutionListener loggingStepExecutionListener) {
         return new StepBuilder("orderDailySales.01FileCheckStep", jobRepository)
+                .allowStartIfComplete(true)
                 .tasklet(orderDailySalesFileCheckTasklet, transactionManager)
                 .listener(loggingStepExecutionListener)
                 .build();
@@ -91,17 +91,19 @@ public class OrderDailySalesJobConfig {
             PlatformTransactionManager transactionManager, CsvHeaderCheckTasklet orderDailySalesHeaderCheckTasklet,
             LoggingStepExecutionListener loggingStepExecutionListener) {
         return new StepBuilder("orderDailySales.02HeaderCheckStep", jobRepository)
+                .allowStartIfComplete(true)
                 .tasklet(orderDailySalesHeaderCheckTasklet, transactionManager)
                 .listener(loggingStepExecutionListener)
                 .build();
     }
 
-    /** Step3: ワークテーブルを空にする。 */
+    /** Step3: エラーファイルを削除し、ワークテーブルを空にする。 */
     @Bean
     public Step orderDailySalesClearWorkStep(JobRepository jobRepository,
             PlatformTransactionManager transactionManager, OrderDetailWorkClearTasklet orderDailySalesClearWorkTasklet,
             LoggingStepExecutionListener loggingStepExecutionListener) {
         return new StepBuilder("orderDailySales.03ClearWorkStep", jobRepository)
+                .allowStartIfComplete(true)
                 .tasklet(orderDailySalesClearWorkTasklet, transactionManager)
                 .listener(loggingStepExecutionListener)
                 .build();
@@ -116,9 +118,8 @@ public class OrderDailySalesJobConfig {
             ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork> orderDailySalesErrorRecordSkipListener,
             LoggingStepExecutionListener loggingStepExecutionListener,
             SampleProperties properties) {
-        // Processor はインターフェース型の変数に受けて登録する（アノテーション走査だけにならないようにする）
-        StepExecutionListener processorListener = orderDailySalesProcessor;
         return new StepBuilder("orderDailySales.04ImportStep", jobRepository)
+                .allowStartIfComplete(true)
                 .<OrderCsvRecord, OrderDetailWork>chunk(properties.chunkSize())
                 .reader(orderDailySalesReader)
                 .processor(orderDailySalesProcessor)
@@ -128,7 +129,6 @@ public class OrderDailySalesJobConfig {
                 .skipPolicy(new BusinessSkipPolicy(properties.skipLimit()))
                 .skipListener(orderDailySalesErrorRecordSkipListener)
                 .listener(loggingStepExecutionListener)
-                .listener(processorListener)
                 .build();
     }
 
@@ -169,8 +169,16 @@ public class OrderDailySalesJobConfig {
     }
 
     @Bean
-    public OrderDetailWorkClearTasklet orderDailySalesClearWorkTasklet(OrderDetailWorkMapper orderDetailWorkMapper) {
-        return new OrderDetailWorkClearTasklet(orderDetailWorkMapper);
+    @StepScope
+    public OrderDetailWorkClearTasklet orderDailySalesClearWorkTasklet(
+            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
+            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
+            @Value("#{jobParameters['inputFile']}") String inputFile,
+            @Value("#{jobParameters['errorFile']}") String errorFile,
+            SampleProperties properties, OrderDetailWorkMapper orderDetailWorkMapper) {
+        return new OrderDetailWorkClearTasklet(
+                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).errorFile(),
+                orderDetailWorkMapper);
     }
 
     @Bean
@@ -183,9 +191,12 @@ public class OrderDailySalesJobConfig {
             SampleProperties properties) {
         OrderDailySalesRunParameters runParameters =
                 runParameters(scheduledTime, targetDate, inputFile, errorFile, properties);
-        return CsvItemReaderFactory.createWithLineNumber("orderDailySalesReader",
-                new FileSystemResource(runParameters.inputFile()), StandardCharsets.UTF_8, 1,
+        FlatFileItemReader<OrderCsvRecord> reader = CsvItemReaderFactory.createWithLineNumber(
+                "orderDailySalesReader", new FileSystemResource(runParameters.inputFile()), StandardCharsets.UTF_8, 1,
                 OrderCsvRecord.COLUMN_NAMES, OrderCsvRecord::of);
+        // リスタート時もファイルの先頭から読み直す（Step 4 は最初からやり直すため読取位置を保存しない）
+        reader.setSaveState(false);
+        return reader;
     }
 
     @Bean
@@ -195,10 +206,9 @@ public class OrderDailySalesJobConfig {
             @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
             @Value("#{jobParameters['inputFile']}") String inputFile,
             @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties, OrderDetailWorkMapper orderDetailWorkMapper) {
+            SampleProperties properties) {
         return new OrderItemProcessor(validator,
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).targetDate(),
-                orderDetailWorkMapper);
+                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).targetDate());
     }
 
     @Bean

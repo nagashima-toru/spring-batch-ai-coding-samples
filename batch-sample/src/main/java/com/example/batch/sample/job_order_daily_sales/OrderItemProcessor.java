@@ -5,11 +5,6 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.listener.StepExecutionListener;
-import org.springframework.batch.core.step.StepExecution;
-
 import com.example.batch.core.exception.BusinessException;
 import com.example.batch.core.item.ValidatingItemProcessorBase;
 
@@ -22,37 +17,19 @@ import jakarta.validation.Validator;
  * 本クラスは業務チェック（実在する日付・対象日との一致・ファイル内の重複）と変換を行う。</p>
  *
  * <p>重複検出は「キー → 最初に現れた行番号」の対応をメモリに持つ。同じキーでも行番号が同じなら
- * チャンク再処理による同一行の再入力とみなし、重複にしない。Step 開始時にワークテーブルから
- * 対応を復元するため、リスタートをまたいだ重複も検出できる。</p>
+ * チャンク再処理による同一行の再入力とみなし、重複にしない。リスタートは Step 1〜4 を最初からやり直すため、
+ * 対応を復元する処理は持たない。{@code @StepScope} のため Step 実行ごとに空の対応から作る。</p>
  *
  * <p>{@code @StepScope} で使うため final にしない。</p>
  */
-public class OrderItemProcessor extends ValidatingItemProcessorBase<OrderCsvRecord, OrderDetailWork>
-        implements StepExecutionListener {
-
-    private static final Logger log = LoggerFactory.getLogger(OrderItemProcessor.class);
+public class OrderItemProcessor extends ValidatingItemProcessorBase<OrderCsvRecord, OrderDetailWork> {
 
     private final LocalDate targetDate;
-    private final OrderDetailWorkMapper orderDetailWorkMapper;
     private final Map<String, Integer> seenKeys = new HashMap<>();
 
-    public OrderItemProcessor(Validator validator, LocalDate targetDate, OrderDetailWorkMapper orderDetailWorkMapper) {
+    public OrderItemProcessor(Validator validator, LocalDate targetDate) {
         super(validator);
         this.targetDate = targetDate;
-        this.orderDetailWorkMapper = orderDetailWorkMapper;
-    }
-
-    /**
-     * ワークの全行から既出キーの対応を復元する（何度呼ばれても結果は同じ）。
-     */
-    @Override
-    public void beforeStep(StepExecution stepExecution) {
-        seenKeys.clear();
-        orderDetailWorkMapper.selectKeys(context -> {
-            OrderKey key = context.getResultObject();
-            seenKeys.put(keyOf(key.orderNo(), key.lineNo()), key.lineSeq());
-        });
-        log.info("ワークから既出キーを読み込みました: 件数={}", seenKeys.size());
     }
 
     @Override

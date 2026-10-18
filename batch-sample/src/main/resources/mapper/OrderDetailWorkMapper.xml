@@ -18,10 +18,4 @@
         )
     </insert>
 
-    <!-- ORDER-001 Step 4 beforeStep: 既出キーの復元用。ResultHandler で1行ずつ受け取る（全件をリストに載せない） -->
-    <select id="selectKeys" resultType="com.example.batch.sample.job_order_daily_sales.OrderKey">
-        SELECT order_no, line_no, line_seq
-          FROM app.order_detail_work
-    </select>
-
 </mapper>

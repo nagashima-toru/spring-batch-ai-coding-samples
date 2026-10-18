@@ -8,7 +8,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Logger;
@@ -24,11 +27,14 @@ import org.springframework.dao.DataAccessResourceFailureException;
  */
 class OrderDetailWorkClearTaskletTest {
 
+    @TempDir
+    Path tempDir;
+
     private final OrderDetailWorkMapper mapper = mock(OrderDetailWorkMapper.class);
 
     @Test
     void 実行した場合＿truncateを1回だけ呼びFINISHEDで終了する() throws Exception {
-        OrderDetailWorkClearTasklet tasklet = new OrderDetailWorkClearTasklet(mapper);
+        OrderDetailWorkClearTasklet tasklet = new OrderDetailWorkClearTasklet(tempDir.resolve("error.txt"), mapper);
 
         RepeatStatus result = tasklet.execute(null, null);
 
@@ -41,24 +47,25 @@ class OrderDetailWorkClearTaskletTest {
     void Mapperが例外をスローした場合＿包み直さずそのまま送出する() {
         DataAccessResourceFailureException failure = new DataAccessResourceFailureException("接続断");
         doThrow(failure).when(mapper).truncate();
-        OrderDetailWorkClearTasklet tasklet = new OrderDetailWorkClearTasklet(mapper);
+        OrderDetailWorkClearTasklet tasklet = new OrderDetailWorkClearTasklet(tempDir.resolve("error.txt"), mapper);
 
         assertThatThrownBy(() -> tasklet.execute(null, null)).isSameAs(failure);
     }
 
     @Test
     void 実行した場合＿初期化したことをINFOログに出力する() throws Exception {
+        Path errorFile = tempDir.resolve("error.txt");
         Logger logger = (Logger) LoggerFactory.getLogger(OrderDetailWorkClearTasklet.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
         try {
-            new OrderDetailWorkClearTasklet(mapper).execute(null, null);
+            new OrderDetailWorkClearTasklet(errorFile, mapper).execute(null, null);
         } finally {
             logger.detachAppender(appender);
         }
 
         assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
-                .contains("受注明細ワークを初期化しました");
+                .contains("受注明細ワークを初期化しました: errorFile=" + errorFile + " 削除=false");
     }
 }
