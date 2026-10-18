@@ -1,6 +1,6 @@
 ---
 id: P-20261018-order001-restart-redo
-status: approved
+status: done
 ---
 # ゴール
 docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み。1.4 版。main にマージ済み・PR #85）の 1.4 版の改訂（GitHub Issue #74「ORDER-001: リスタート時に作業テーブルへ別日付の行が混ざり、主キー違反・重複の誤判定になる」）を implementation〜system-test のタスクに分けて実装・検証する。
