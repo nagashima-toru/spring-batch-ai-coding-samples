@@ -3,12 +3,12 @@
 | 項目 | 内容 |
 |---|---|
 | 対象ジョブ | ORDER-001 `orderDailySalesJob`（`batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/`） |
-| 入力 | `docs/projects/order-daily-sales/requirements.md`／`basic-design.md`（1.3版）／`detail-design/ORDER-001.md`（1.2版） |
+| 入力 | `docs/projects/order-daily-sales/requirements.md`／`basic-design.md`（1.4版）／`detail-design/ORDER-001.md`（1.4版） |
 | 実施環境 | ローカル（`docker compose -f docker/compose.yaml up -d` の PostgreSQL 16、`./mvnw -DskipTests package` で作った `batch-sample/target/batch-sample-0.1.0-SNAPSHOT.jar` を `--spring.profiles.active=local` で直接起動。Java 25 Temurin 系 `/opt/jdk-25`）。終了コードはプロセスの終了コード |
-| 実施期間 | 2026-10-12 |
-| テストデータ | `docs/projects/order-daily-sales/system-test/data/` のスクリプト（個人情報を含まない生成データ。実行時のファイルはリポジトリ外 `/tmp/claude/P-20261012-order-daily-sales-T-05/` に置く）: `env.sh`（共通環境）、`make_scenario_files.sh`（No.1〜5 の入力 CSV）、`gen_orders.sh`（件数指定の CSV 生成。No.3/4/6）、`run_job.sh`（ジョブ起動）、`expected.sh`（CSV からの期待集計の独立計算）、`actual.sql`・`checksum.sql`・`checksum_all.sql`（DB 側の確認クエリ）、`fail_trigger_on.sql`・`fail_trigger_off.sql`（No.3 の障害注入）、`hold_lock.sql`（No.4 の実行中状態の保持） |
+| 実施期間 | 2026-10-12（No.1・2・4〜6）、2026-10-18（No.3・7） |
+| テストデータ | `docs/projects/order-daily-sales/system-test/data/` のスクリプト（個人情報を含まない生成データ。実行時のファイルはリポジトリ外 `/tmp/claude/P-20261018-order001-restart-redo-T-05/` に置く。No.1・2・4〜6 の証跡のパスは 2026-10-12 の実施時の `/tmp/claude/P-20261012-order-daily-sales-T-05/`）: `env.sh`（共通環境）、`make_scenario_files.sh`（No.1〜5・7 の入力 CSV）、`gen_orders.sh`（件数指定の CSV 生成。No.3/4/6/7）、`run_job.sh`（ジョブ起動）、`expected.sh`（CSV からの期待集計の独立計算）、`actual.sql`・`checksum.sql`・`checksum_all.sql`（DB 側の確認クエリ）、`fail_trigger_on.sql`・`fail_trigger_off.sql`（No.3・7(a) の Step 4 の障害注入）、`fail_step5_on.sql`・`fail_step5_off.sql`（No.7(b) の Step 5 の障害注入）、`hold_lock.sql`（No.4 の実行中状態の保持） |
 
-実施手順の共通部分: `make_scenario_files.sh` で入力を作り、`run_job.sh <ログ> scheduledTime=...`（`--sample.order-daily-sales.input-dir`・`error-dir` を `/tmp/claude/P-20261012-order-daily-sales-T-05/in`・`error` に向ける）で起動する。DB は新規（Flyway V1〜V5 適用直後）の状態から No.1 → 6 の順に実施した。
+実施手順の共通部分: `make_scenario_files.sh` で入力を作り、`run_job.sh <ログ> scheduledTime=...`（`--sample.order-daily-sales.input-dir`・`error-dir` を実行時ディレクトリの `in`・`error` に向ける）で起動する。No.1・2・4〜6 は DB が新規（Flyway V1〜V5 適用直後）の状態から No.1 → 6 の順に実施した。No.3・7 は 2026-10-18 に、新規の PostgreSQL 16 コンテナ（`docker compose -f docker/compose.yaml down -v` の後に起動し、Flyway 適用だけ済ませた状態）で No.3 → No.7 の順に実施した（1.4 版の jar を `./mvnw -DskipTests package` で作成。実行時の Java は Temurin ではなく OS 同梱の OpenJDK 25.0.4）。
 
 ## シナリオ一覧
 
@@ -16,12 +16,15 @@
 |---|---|---|---|---|
 | 1 | 業務 | 日次実行の正常系（EventBridge 想定の起動。省略パラメータの補完・既定パス取込・入力との突合） | 高 | OK |
 | 2 | 運用 | 警告終了の運用（不正行 → 終了コード2 → エラーファイル確認 → 訂正ファイルで再実行 → 洗い替え） | 高 | OK |
-| 3 | 運用 | 異常終了 → リラン（Step 4 の途中で失敗 → 原因除去 → 同一パラメータで続きから完走） | 高 | OK |
+| 3 | 運用 | 異常終了 → リラン（Step 4 の途中で失敗 → 原因除去 → 同一パラメータで最初から取り込み直して完走） | 高 | OK |
 | 4 | 運用 | 二重起動の防止（終了コード1） | 高 | OK |
 | 5 | 運用 | 入力不備での異常終了（ファイルなし・ヘッダ不正で終了コード1、本テーブル不変） | 高 | OK |
 | 6 | 運用 | 処理時間（10万件） | 高 | OK |
+| 7 | 運用 | 別の実行回をまたぐリスタート（Issue #74 の再現。Step 4 で失敗した A・Step 5 で失敗した A を、別の対象日の B の完了後にリスタート） | 高 | OK |
 
-全6シナリオOK。不具合（期待結果と違う動作）は検出されなかった。
+全7シナリオOK。不具合（期待結果と違う動作）は検出されなかった。
+
+No.1・2・4〜6 は 1.3 版の実装で 2026-10-12 に実施した結果。1.4 版の変更（リスタートと Step 3 のエラーファイル削除）の影響は結合テスト（`OrderDailySalesJobIT`）で確認した。No.3・7 は 1.4 版の実装で 2026-10-18 に実施した。
 
 ---
 
@@ -112,51 +115,60 @@ S003|1|1|2|1400
 
 ## No.3: 異常終了 → リラン
 
-- **目的**: Step 4 の途中（後半のチャンク）で失敗した後、原因を除いて同一パラメータで再実行すると、完了済みの Step を再実行せず続きから完走し、1回で成功した場合と同じ結果になることを確認する（詳細設計書 §5）
-- **事前条件**: `in/orders_20261013.csv`（500明細・5店舗、チャンクサイズ100で5チャンク）を既定パスに配置。DB に `fail_trigger_on.sql` を適用し、`app.order_detail_work` への INSERT が `line_seq >= 350` の行で失敗するようにする（障害注入）
+- **目的**: Step 4 の途中（後半のチャンク）で失敗した後、原因を除いて同一パラメータでリスタートすると、Step 1〜4 も再実行されてワークを作り直し、Step 4 が入力ファイルの先頭から取り込み直して完走し、1回で成功した場合と同じ結果になることを確認する（詳細設計書 §5）。1.4 版で書き直したシナリオ（2026-10-18 に再実施）
+- **事前条件**: `in/orders_20261013.csv`（500明細・5店舗、チャンクサイズ100で5チャンク。不正行なし）を既定パスに配置。DB は Flyway 適用直後で `app.order_detail`・`app.daily_store_sales` が空。`fail_trigger_on.sql` を適用し、`app.order_detail_work` への INSERT が `line_seq >= 350` の行で失敗するようにする（障害注入）
 - **手順**:
 
 | # | 操作 | 期待結果 | 実施結果 |
 |---|---|---|---|
-| 1 | `fail_trigger_on.sql` を適用し、`run_job.sh no3a.log scheduledTime=2026-10-13T17:00:00Z` | 終了コード1。Step 4 の4チャンク目で失敗し、本テーブルは不変 | OK（exit=1。executionId=4 FAILED、`forced failure at line_seq=350`） |
+| 1 | `fail_trigger_on.sql` を適用し、`run_job.sh no3a.log scheduledTime=2026-10-13T17:00:00Z` | 終了コード1。Step 4 の4チャンク目で失敗し、本テーブルは不変 | OK（exit=1。executionId=2 FAILED、`forced failure at line_seq=350`） |
 | 2 | ワークと本テーブルの状態 | ワークにコミット済みの3チャンク（300行）が残り、対象日の本テーブルは0件 | OK（work=300件・最大 line_seq=301、order_detail=0件） |
-| 3 | `fail_trigger_off.sql` で障害を除去し、同一パラメータ（`scheduledTime=2026-10-13T17:00:00Z`）で再実行 | 終了コード0。Step 1〜3 は再実行されず、Step 4 は続きの200行から、Step 5 は最初から実行される | OK（exit=0。executionId=5。Step 1〜3 は「Step already complete」でスキップ、Step 4 read=200 write=200 commit=2、既出キー復元=300件） |
+| 3 | `fail_trigger_off.sql` で障害を除去し、同一パラメータ（`scheduledTime=2026-10-13T17:00:00Z`）で再実行 | 終了コード0。Step 1〜4 も再実行され、Step 4 はファイルの先頭から取り込み直す。エラーファイルに同じ行が重複しない。最終結果が1回で成功した場合と同じ | OK（exit=0。executionId=3 で Step 1〜5 がすべて実行され、Step 4 は read=500 write=500 commit=5。ワークの初期化のログあり。エラーファイルは作られていない） |
 | 4 | 本テーブルのチェックサム（`checksum.sql`）と、CSV からの期待集計（`expected.sh`）を比較 | 500明細・5店舗の集計が入力と一致 | OK（期待値と diff なし） |
-| 5 | 参照として、障害なしで新しい `scheduledTime=2026-10-13T20:00:00Z` により洗い替えを1回で実行し、チェックサムを比較 | リラン後のチェックサムと同一（1回で成功した場合と同じ結果） | OK（exit=0。`order_detail` 500件・`daily_store_sales` 5件とも md5 が一致） |
+| 5 | 参照として、障害なしで新しい `scheduledTime=2026-10-13T20:00:00Z` により洗い替えを1回で実行し、チェックサムを比較 | リスタート後のチェックサムと同一（1回で成功した場合と同じ結果） | OK（exit=0。`order_detail` 500件・`daily_store_sales` 5件とも md5 が一致） |
 
-- **確認ポイント**: 失敗時の終了コード1、コミット済みチャンクが残ること、リスタートが同一パラメータで失敗した Step 4 から続きを実行すること（Step 1〜3 は再実行しない）、ワークのキー復元、最終結果が1回成功と同じになること、障害注入は SQL（トリガ）だけで本番コードに手を入れていないこと
+- **確認ポイント**: 失敗時の終了コード1、コミット済みチャンクがワークに残ること、リスタートが同一パラメータで Step 1 から全 Step を実行し Step 4 が入力ファイルの先頭（500行すべて）から取り込むこと（実行回の step 実行履歴で確認）、Step 3 がワークを空にしてから取り込み直すこと（取込件数が失敗時の続き分ではなく500であること）、最終結果が1回成功と同じになること、障害注入は SQL（トリガ）だけで本番コードに手を入れていないこと。入力に不正行を含めていないため、エラーファイルはどちらの実行でも作られない（Skip 行のエラーファイルが重複しないことは結合テストで確認している）
 - **実施結果**: OK
 - **証跡**:
 ```
 $ psql -f fail_trigger_on.sql                                  -> CREATE FUNCTION / CREATE TRIGGER
 $ run_job.sh no3a.log scheduledTime=2026-10-13T17:00:00Z        -> exit=1
+ジョブ終了: jobName=orderDailySalesJob executionId=2 status=FAILED exitCode=FAILED readCount=400 writeCount=300 skipCount=0
 Caused by: org.postgresql.util.PSQLException: ERROR: system-test: forced failure at line_seq=350
 -- select 'work',count(*),max(line_seq) from app.order_detail_work ; select 'detail',count(*) from app.order_detail where order_date='2026-10-13'
 work|300|301
 detail|0
+-- ls error/ （空）
 
 $ psql -f fail_trigger_off.sql                                 -> DROP TRIGGER / DROP FUNCTION
 $ run_job.sh no3b.log scheduledTime=2026-10-13T17:00:00Z        -> exit=0
-SimpleStepHandler : Step already complete or not restartable, so no action to execute: StepExecution: ... name=orderDailySales.01FileCheckStep, status=COMPLETED
-SimpleStepHandler : Step already complete ... name=orderDailySales.02HeaderCheckStep
-SimpleStepHandler : Step already complete ... name=orderDailySales.03ClearWorkStep
-OrderItemProcessor : ワークから既出キーを読み込みました: 件数=300
-Step終了: stepName=orderDailySales.04ImportStep status=COMPLETED readCount=200 writeCount=200 commitCount=2
-Step終了: stepName=orderDailySales.05ReplaceStep status=COMPLETED writeCount=500 commitCount=1
-ジョブ終了: jobName=orderDailySalesJob executionId=5 status=COMPLETED exitCode=COMPLETED
+Step終了: stepName=orderDailySales.01FileCheckStep status=COMPLETED ... commitCount=1
+Step終了: stepName=orderDailySales.02HeaderCheckStep status=COMPLETED ... commitCount=1
+OrderDetailWorkClearTasklet : 受注明細ワークを初期化しました: errorFile=.../error/orders_20261013_20261014020000_error.txt 削除=false
+Step終了: stepName=orderDailySales.04ImportStep status=COMPLETED readCount=500 writeCount=500 skipCount=0 commitCount=5
+OrderDailySalesReplaceTasklet : 日次売上を入れ替えました: 対象日=2026-10-13 明細削除=0 集計削除=0 明細登録=500 集計登録=5
+ジョブ終了: jobName=orderDailySalesJob executionId=3 status=COMPLETED exitCode=COMPLETED readCount=500 writeCount=1000 skipCount=0
 
--- batch.batch_step_execution（同一ジョブインスタンス）: job_execution_id|step|status|read|write|commit
-4|orderDailySales.01FileCheckStep|COMPLETED|0|0|1
-4|orderDailySales.02HeaderCheckStep|COMPLETED|0|0|1
-4|orderDailySales.03ClearWorkStep|COMPLETED|0|0|1
-4|orderDailySales.04ImportStep|FAILED|400|300|3
-5|orderDailySales.04ImportStep|COMPLETED|200|200|2
-5|orderDailySales.05ReplaceStep|COMPLETED|0|500|1
+-- batch.batch_step_execution（job_execution_id 1 は DB 初期化用の入力ファイルなし起動。2 が失敗した実行、3 がリスタート）: job_execution_id|step|status|read|write|commit
+2|orderDailySales.01FileCheckStep|COMPLETED|0|0|1
+2|orderDailySales.02HeaderCheckStep|COMPLETED|0|0|1
+2|orderDailySales.03ClearWorkStep|COMPLETED|0|0|1
+2|orderDailySales.04ImportStep|FAILED|400|300|3
+3|orderDailySales.01FileCheckStep|COMPLETED|0|0|1
+3|orderDailySales.02HeaderCheckStep|COMPLETED|0|0|1
+3|orderDailySales.03ClearWorkStep|COMPLETED|0|0|1
+3|orderDailySales.04ImportStep|COMPLETED|500|500|5
+3|orderDailySales.05ReplaceStep|COMPLETED|0|500|1
 
--- checksum.sql（リラン後）                      -- checksum.sql（参照: 障害なし1回の洗い替え後）
-order_detail|500|f9c2cac5b65140fbe09b574cdfe2893c   order_detail|500|f9c2cac5b65140fbe09b574cdfe2893c
-daily_store_sales|5|8af9b98b99e8ea9349d8e17c5e1d7e16   daily_store_sales|5|8af9b98b99e8ea9349d8e17c5e1d7e16
+-- checksum.sql（リスタート後）                       -- checksum.sql（参照: 障害なし1回の洗い替え後、executionId=4）
+order_detail|500|42bdb4030870edaa6183f381911ed69c        order_detail|500|42bdb4030870edaa6183f381911ed69c
+daily_store_sales|5|73ba74ea1123277bf70156e535898560     daily_store_sales|5|73ba74ea1123277bf70156e535898560
 -- expected.sh と actual.sql の diff: 差分なし（EXPECTED_SAME）
+S001|86|255|1355|3487700
+S002|38|121|677|1619900
+S003|22|61|290|849700
+S004|16|57|323|927500
+S005|2|6|21|74700
 ```
 
 ---
@@ -274,4 +286,101 @@ orderDailySales.05ReplaceStep|COMPLETED|03:09:14.664|03:09:15.535|0.87
 $ time run_job.sh no6b.log scheduledTime=2026-10-16T20:00:00Z    -> exit=0（real 0m12.400s）
 日次売上を入れ替えました: 対象日=2026-10-16 明細削除=100000 集計削除=50 明細登録=100000 集計登録=50
 -- execution 14: job 8.09 秒 / 01=0.05 02=0.01 03=0.03 04=6.48 05=1.40（秒）。集計は期待値と diff なし
+```
+
+---
+
+## No.7: 別の実行回をまたぐリスタート
+
+- **目的**: リスタートまでの間に別の対象日の実行 B が完了してワークを入れ替えていても、失敗した実行 A のリスタートが A 自身の入力ファイルからワークを作り直し、A・B の対象日の明細・集計がそれぞれの入力どおりになることを確認する（Issue #74 の再現。詳細設計書 §5、§7「システムテスト」）。A を Step 4 で失敗させる場合 (a) と、Step 5 で失敗させる場合 (b) の2つを1シナリオに含める
+- **事前条件**: No.3 実施後の状態（`app.order_detail`=500件）。入力は `make_scenario_files.sh` が作る (a) A=`orders_20261017.csv`（500明細）・B=`orders_20261018.csv`（200明細）、(b) A=`orders_20261019.csv`（200明細）・B=`orders_20261020.csv`（150明細）。受注番号は `gen_orders.sh` が日付を含めるため A と B で重ならない（`app.order_detail` の主キーが受注日を含まないため）。(a) の Step 4 の失敗は `fail_trigger_on.sql`（ワークへの INSERT が `line_seq >= 350` で失敗）、(b) の Step 5 の失敗は `fail_step5_on.sql`（`app.order_detail` への INSERT で例外）で SQL（トリガ）だけで注入する
+- **手順**:
+
+| # | 操作 | 期待結果 | 実施結果 |
+|---|---|---|---|
+| 1 | (a) `fail_trigger_on.sql` を適用し、実行 A `run_job.sh no7a_A1.log scheduledTime=2026-10-17T17:00:00Z`（targetDate=2026-10-17） | 終了コード1。Step 4 の4チャンク目で失敗し、10/17 の本テーブルは0件 | OK（exit=1。executionId=5 FAILED、work=300件、10/17 の order_detail=0件） |
+| 2 | (a) `fail_trigger_off.sql` で障害を除去し、実行 B `run_job.sh no7a_B.log scheduledTime=2026-10-18T17:00:00Z`（targetDate=2026-10-18） | 終了コード0。ワークは B の200行（受注日=10/18）に入れ替わっている | OK（exit=0。executionId=6 COMPLETED。取込後のワーク=200件・受注日は 10/18 のみ。10/18 の明細=200・集計=4） |
+| 3 | (a) A を同一パラメータ（`scheduledTime=2026-10-17T17:00:00Z`）でリスタート | 終了コード0。A の入力500行をすべて取り込み、ワークに B の行が混ざらない | OK（exit=0。executionId=7 COMPLETED、Step 4 read=500 write=500 commit=5、明細登録=500・集計登録=5） |
+| 4 | (a) 10/17 の明細・集計を A の入力（`expected.sh`）と、10/18 を B の入力および手順2直後のチェックサムと比較 | 10/17 は A の入力どおり。10/18 は B の入力どおりで、リスタート前後でチェックサムが変わらない | OK（10/17: 500明細・166受注・5店舗の集計が期待値と diff なし。10/18: 200明細・4店舗が期待値と diff なし、チェックサム同一） |
+| 5 | (b) `fail_step5_on.sql` を適用し、実行 A `run_job.sh no7b_A1.log scheduledTime=2026-10-19T17:00:00Z`（targetDate=2026-10-19） | 終了コード1。Step 1〜4 は成功し Step 5 で失敗、10/19 の本テーブルは0件 | OK（exit=1。executionId=8 FAILED。Step 4 は read=200 write=200 で COMPLETED、Step 5 が FAILED（`forced failure on app.order_detail insert`）、ワーク=200件・10/19 の order_detail=0件） |
+| 6 | (b) `fail_step5_off.sql` で障害を除去し、実行 B `run_job.sh no7b_B.log scheduledTime=2026-10-20T17:00:00Z`（targetDate=2026-10-20） | 終了コード0。ワークは B の150行（受注日=10/20）に入れ替わっている | OK（exit=0。executionId=9 COMPLETED。取込後のワーク=150件・受注日は 10/20 のみ。10/20 の明細=150・集計=3） |
+| 7 | (b) A を同一パラメータ（`scheduledTime=2026-10-19T17:00:00Z`）でリスタートし、10/19 の明細・集計を A の入力と、10/20 を B の入力および手順6直後のチェックサムと比較 | 終了コード0。10/19 の明細は A の入力どおり（0件でない）。10/20 は B のまま変わらない | OK（exit=0。executionId=10 COMPLETED、明細登録=200・集計登録=5。10/19: 200明細・68受注が期待値と diff なし。10/20: 150明細が期待値と diff なし、チェックサム同一） |
+
+- **確認ポイント**: リスタートがワークを自分の入力ファイルから作り直すこと（A の取込件数が B の行数ではなく A の入力の行数であること）、Issue #74 で起きていた「A の対象日の明細が0件になる（B の行が受注日で絞られて捨てられる）」「A の対象日に B の行が混ざる」が起きないこと、B の対象日のデータが A のリスタートで変わらないこと、障害注入は SQL（トリガ）だけで本番コードに手を入れていないこと、実施後にトリガが残っていないこと
+- **実施結果**: OK
+- **証跡**:
+```
+== (a) ==
+$ psql -f fail_trigger_on.sql                                  -> CREATE FUNCTION / CREATE TRIGGER
+$ run_job.sh no7a_A1.log scheduledTime=2026-10-17T17:00:00Z     -> exit=1
+ジョブ終了: jobName=orderDailySalesJob executionId=5 status=FAILED exitCode=FAILED readCount=400 writeCount=300 skipCount=0
+Caused by: ... ERROR: system-test: forced failure at line_seq=350
+work|300|301
+detail(10/17)|0
+
+$ psql -f fail_trigger_off.sql                                 -> DROP TRIGGER / DROP FUNCTION
+$ run_job.sh no7a_B.log scheduledTime=2026-10-18T17:00:00Z      -> exit=0
+日次売上を入れ替えました: 対象日=2026-10-18 明細削除=0 集計削除=0 明細登録=200 集計登録=4
+ジョブ終了: jobName=orderDailySalesJob executionId=6 status=COMPLETED exitCode=COMPLETED readCount=200 writeCount=400
+work(B 取込後)|200|2026-10-18|2026-10-18
+-- checksum.sql（10/18、A リスタート前）
+order_detail|200|0b97388f9ca03d7a29cbe9cfdc4e371a
+daily_store_sales|4|cc7a1fbaa06d00533f76b7e5a5d1df7b
+
+$ run_job.sh no7a_A2.log scheduledTime=2026-10-17T17:00:00Z     -> exit=0（A のリスタート）
+OrderDetailWorkClearTasklet : 受注明細ワークを初期化しました: errorFile=.../error/orders_20261017_20261018020000_error.txt 削除=false
+日次売上を入れ替えました: 対象日=2026-10-17 明細削除=0 集計削除=0 明細登録=500 集計登録=5
+ジョブ終了: jobName=orderDailySalesJob executionId=7 status=COMPLETED exitCode=COMPLETED readCount=500 writeCount=1000
+-- batch.batch_step_execution（job_execution_id|step|status|read|write|commit。5 が A の失敗、6 が B、7 が A のリスタート）
+5|orderDailySales.01FileCheckStep〜03ClearWorkStep|COMPLETED
+5|orderDailySales.04ImportStep|FAILED|400|300|3
+6|orderDailySales.04ImportStep|COMPLETED|200|200|2
+6|orderDailySales.05ReplaceStep|COMPLETED|0|200|1
+7|orderDailySales.01FileCheckStep〜03ClearWorkStep|COMPLETED
+7|orderDailySales.04ImportStep|COMPLETED|500|500|5
+7|orderDailySales.05ReplaceStep|COMPLETED|0|500|1
+-- A（10/17）: expected.sh と actual.sql の diff なし（A_EXPECTED_SAME）。入力は500明細・166受注、DB は detail(10/17)|500|166
+S001|90|264|1365|3315800
+S002|40|121|655|1811400
+S003|23|75|413|1008100
+S004|9|31|148|405600
+S005|4|9|55|93800
+-- B（10/18）: diff なし（B_EXPECTED_SAME）。checksum.sql はリスタート後も上と同一（B_UNCHANGED）。detail(10/18)|200（入力200明細）
+
+== (b) ==
+$ psql -f fail_step5_on.sql                                    -> CREATE FUNCTION / CREATE TRIGGER
+$ run_job.sh no7b_A1.log scheduledTime=2026-10-19T17:00:00Z     -> exit=1
+Step終了: 01〜04 status=COMPLETED（04ImportStep readCount=200）、05ReplaceStep status=FAILED
+ジョブ終了: jobName=orderDailySalesJob executionId=8 status=FAILED exitCode=FAILED
+### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: system-test: forced failure on app.order_detail insert (order_no=O202610190000001)
+work|200|2026-10-19|2026-10-19
+detail(10/19)|0
+
+$ psql -f fail_step5_off.sql                                   -> DROP TRIGGER / DROP FUNCTION
+$ run_job.sh no7b_B.log scheduledTime=2026-10-20T17:00:00Z      -> exit=0
+日次売上を入れ替えました: 対象日=2026-10-20 明細削除=0 集計削除=0 明細登録=150 集計登録=3
+ジョブ終了: jobName=orderDailySalesJob executionId=9 status=COMPLETED exitCode=COMPLETED readCount=150 writeCount=300
+work(B 取込後)|150|2026-10-20|2026-10-20
+-- checksum.sql（10/20、A リスタート前）
+order_detail|150|9529abad5e09ecc750a3eb1edb077208
+daily_store_sales|3|e9be01ab2f14235f22bf4c619c8fc0a5
+
+$ run_job.sh no7b_A2.log scheduledTime=2026-10-19T17:00:00Z     -> exit=0（A のリスタート）
+OrderDetailWorkClearTasklet : 受注明細ワークを初期化しました: errorFile=.../error/orders_20261019_20261020020000_error.txt 削除=false
+日次売上を入れ替えました: 対象日=2026-10-19 明細削除=0 集計削除=0 明細登録=200 集計登録=5
+ジョブ終了: jobName=orderDailySalesJob executionId=10 status=COMPLETED exitCode=COMPLETED readCount=200 writeCount=400
+-- batch.batch_step_execution（8 が A の失敗、9 が B、10 が A のリスタート）
+8|orderDailySales.04ImportStep|COMPLETED|200|200|2
+8|orderDailySales.05ReplaceStep|FAILED|0|0|0
+9|orderDailySales.05ReplaceStep|COMPLETED|0|150|1
+10|orderDailySales.04ImportStep|COMPLETED|200|200|2
+10|orderDailySales.05ReplaceStep|COMPLETED|0|200|1
+-- A（10/19）: diff なし（A_EXPECTED_SAME）。入力は200明細・68受注、DB は detail(10/19)|200|68
+S001|36|99|486|1118500
+S002|16|46|233|621000
+S003|11|44|239|658500
+S004|3|8|47|114300
+S005|2|3|6|8300
+-- B（10/20）: diff なし（B_EXPECTED_SAME）。checksum.sql はリスタート後も上と同一（B_UNCHANGED）。detail(10/20)|150（入力150明細）
+-- select count(*) from pg_trigger where tgname like 'st\_fail%'  -> 0（トリガ残存なし）
 ```
