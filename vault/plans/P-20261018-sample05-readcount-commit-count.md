@@ -22,7 +22,7 @@ GitHub Issue #81「sample05: 最後のチャンクのコミット後に取込Ste
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | sample05 解説の取得件数の数え方をコミット済み件数に改訂する | |
-| T-02 | doing | 1 | T-01 | batch-core に件数を数えて保存する Reader デコレータ CountingItemStreamReader を足す | |
+| T-02 | review | 1 | T-01 | batch-core に件数を数えて保存する Reader デコレータ CountingItemStreamReader を足す | |
 | T-03 | todo | 0 | T-02 | sample05 の取得件数を CountingItemStreamReader の件数から求める | |
 | T-04 | todo | 0 | T-03 | 最後のチャンクのコミット後の停止とリスタートを Sample05ApiImportJobIT で確かめる | |
 | T-05 | todo | 0 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
