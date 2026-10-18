@@ -212,7 +212,9 @@ PR テンプレートは PR の種類で使い分ける。設計 PR 用と実装
   `?template=implementation.md` を付ける（例: `.../compare/main...{ブランチ}?template=implementation.md`）。
   付けなければ既定の汎用テンプレートが入る
 - 設計 PR・実装 PR のテンプレートは、レビュー Skill（設計 PR は `/review-design`、実装 PR は `/review-standards`）を
-  **[Must]・[Should] の指摘が 0 件になるまで繰り返し実行した**ことを確認し、回ごとの指摘件数をレビュー実施記録に書く
+  **[Must]・[Should] の指摘が 0 件になるまで繰り返し実行した**ことを確認し、回ごとの指摘件数をレビュー実施記録に書く。
+  ただし `/review-standards` の中で実行する組み込みの `/code-review` の指摘は、[Must] だけを 0 件にすればよい
+  （[Should] は直すかを任意とし、直さないものは理由をレビュー実施記録に書く。ハーネスの計画単位のレビュータスクの判定と同じ物差し）
 - `gh api`・GitHub MCP・ハーネス（`scripts/vcs_finish.sh`）で PR を作る時はテンプレートが自動では入らない。
   本文を渡す側が該当テンプレートの見出しに沿って書く
 - 設計と実装を別 PR にする場合（ハーネスで実装以降を進める場合など。§2.4）は、設計 PR をマージしてから
