@@ -29,6 +29,7 @@ import com.example.batch.core.exception.BusinessSkipPolicy;
 import com.example.batch.core.execution.DuplicateRunPreventingJobExecutionListener;
 import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.http.BatchHttpClient;
+import com.example.batch.core.item.CountingItemStreamReader;
 import com.example.batch.core.item.JsonItemReaderFactory;
 import com.example.batch.core.item.RestApiPagingItemReader;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
@@ -73,11 +74,17 @@ public class Sample05JobConfig {
     /** ジョブ名。 */
     public static final String JOB_NAME = "sample05ApiImportJob";
 
-    /** API 取得用 Reader の名前。ExecutionContext の読込位置のキー（{@code <名前>.read.count}）に使われる。 */
+    /** API 取得用の委譲先 Reader の名前。読込位置の保存とリスタートに使われる（キーは {@code <名前>.read.count}）。 */
     public static final String USER_READER_NAME = "sample05UserReader";
 
-    /** inputFile 指定時に使う JSON 用 Reader の名前。ExecutionContext の読込位置のキーに使われる。 */
+    /** inputFile 指定時に使う委譲先の JSON 用 Reader の名前。読込位置の保存とリスタートに使われる。 */
     public static final String USER_JSON_READER_NAME = "sample05UserJsonReader";
+
+    /**
+     * 取得件数を数える {@code CountingItemStreamReader} の名前。
+     * Step の ExecutionContext のキー {@code sample05UserReadCounter.item.count} に使われる。
+     */
+    public static final String USER_READ_COUNTER_NAME = "sample05UserReadCounter";
 
     private static final Logger log = LoggerFactory.getLogger(Sample05JobConfig.class);
 
@@ -164,7 +171,7 @@ public class Sample05JobConfig {
                 .transactionManager(transactionManager)
                 .faultTolerant()
                 .skipPolicy(new BusinessSkipPolicy(properties.skipLimit()))
-                .listener(new ApiUserReadCountListener(USER_READER_NAME, USER_JSON_READER_NAME))
+                .listener(new ApiUserReadCountListener(USER_READ_COUNTER_NAME))
                 .listener(loggingStepExecutionListener)
                 .build();
     }
@@ -173,17 +180,21 @@ public class Sample05JobConfig {
     @StepScope
     public ItemStreamReader<ApiUserResponse> sample05UserReader(BatchHttpClient batchHttpClient,
             SampleProperties properties, @Value("#{jobParameters['inputFile']}") String inputFile) {
+        ItemStreamReader<ApiUserResponse> delegate;
         if (InputSourceDecider.isFileInput(inputFile)) {
-            return JsonItemReaderFactory.create(USER_JSON_READER_NAME, new FileSystemResource(inputFile),
+            delegate = JsonItemReaderFactory.create(USER_JSON_READER_NAME, new FileSystemResource(inputFile),
                     ApiUserResponse.class);
+        } else {
+            SampleProperties.Job05.Api api = properties.job05().api();
+            Map<String, String> authHeader = Map.of("Authorization", "Bearer " + api.token());
+            delegate = new RestApiPagingItemReader<>(USER_READER_NAME,
+                    page -> batchHttpClient.get(api.baseUrl() + "/users?page={page}&size={size}",
+                            new ParameterizedTypeReference<List<ApiUserResponse>>() {
+                            }, authHeader, page, api.pageSize()),
+                    api.pageSize());
         }
-        SampleProperties.Job05.Api api = properties.job05().api();
-        Map<String, String> authHeader = Map.of("Authorization", "Bearer " + api.token());
-        return new RestApiPagingItemReader<>(USER_READER_NAME,
-                page -> batchHttpClient.get(api.baseUrl() + "/users?page={page}&size={size}",
-                        new ParameterizedTypeReference<List<ApiUserResponse>>() {
-                        }, authHeader, page, api.pageSize()),
-                api.pageSize());
+        // 取得件数（コミット済みの件数）を数えるため包む。読込位置は委譲先が引き続き保存する
+        return new CountingItemStreamReader<>(USER_READ_COUNTER_NAME, delegate);
     }
 
     @Bean
