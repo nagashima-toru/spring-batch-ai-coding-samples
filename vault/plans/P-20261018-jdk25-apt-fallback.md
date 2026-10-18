@@ -1,6 +1,6 @@
 ---
 id: P-20261018-jdk25-apt-fallback
-status: approved
+status: done
 ---
 # ゴール
 
