@@ -1,0 +1,15 @@
+{
+  "task": "P-20261018-order001-restart-redo/T-04",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 10:07",
+  "criteria": [
+    {"text": "全モジュールの Checkstyle・SpotBugs・単体テストが通る：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^\\[INFO\\] BUILD SUCCESS$'` の出力が `1`", "ok": true, "note": "worktree で `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` を実行 / 終了コード 0、BUILD SUCCESS 行の grep -c = 1"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが通る：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^\\[INFO\\] BUILD SUCCESS$'` の出力が `1`", "ok": true, "note": "worktree で `./mvnw clean verify -DskipITs -pl batch-core` を実行 / 終了コード 0、grep -c = 1。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "結合テストと batch-sample のカバレッジ80%を含むビルドが通る：`./mvnw clean verify 2>&1 | grep -c '^\\[INFO\\] BUILD SUCCESS$'` の出力が `1`", "ok": true, "note": "`docker info` 成功（終了コード 0）の上で `./mvnw clean verify` を実行 / 終了コード 0、grep -c = 1。差分の test に @Disabled 追加なし（git diff --merge-base main の grep 結果 0 件）"},
+    {"text": "このタスク票の「進捗」に `/review-standards` の指摘一覧の表がある：`grep -c '# [|] 区分 [|] 出典 [|] ファイル:行 [|] 指摘 [|] 根拠' vault/tasks/P-20261018-order001-restart-redo/T-04.md` の出力が `1`", "ok": true, "note": "worktree で実行コマンドを実行 / 出力: 1"},
+    {"text": "指摘一覧の [Must] と [Should] の指摘がすべて、修正済み（修正したファイル）か、修正しない理由付きで記録されており、未対応の [Must] が無い（「進捗」を読んで判定する）", "ok": true, "note": "T-04.md の進捗を Read で確認: 指摘 #1 [Should] は「対応 #1: 修正済み（OrderDetailWorkClearTaskletTest.java）」、[Must] 0件、[Ask] 0件、対象外（既存コード）なし"},
+    {"text": "詳細設計書 1.4 版の §1 Step 一覧・Bean 一覧、§2 Step 3・Step 4、§4 と実装の差異が無い（手順1の結果として「進捗」に「設計との差異なし」か、差異とその修正が書かれている）", "ok": true, "note": "進捗に「手順1（設計との差異なし。…）」の記載あり。実装を `grep` で抜き取り確認: OrderDailySalesJobConfig.java の allowStartIfComplete(true) が 82/94/106/122 行の4箇所（Step 1〜4）、Reader は 198 行で setSaveState(false)、(Object) キャスト無し。設計書との全文突合までは行っていない"}
+  ],
+  "reasons": []
+}
