@@ -59,20 +59,12 @@ class OrderDetailWorkClearTaskletTest {
     }
 
     @Test
-    void 実行した場合＿初期化したことをINFOログに出力する() throws Exception {
+    void 実行した場合＿初期化したことをINFOログに出力する() {
         Path errorFile = tempDir.resolve("error.txt");
-        Logger logger = (Logger) LoggerFactory.getLogger(OrderDetailWorkClearTasklet.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
-        try {
-            new OrderDetailWorkClearTasklet(errorFile, mapper).execute(null, null);
-        } finally {
-            logger.detachAppender(appender);
-        }
 
-        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
-                .contains("受注明細ワークを初期化しました: errorFile=" + errorFile + " 削除=false");
+        List<String> logs = captureLogs(() -> new OrderDetailWorkClearTasklet(errorFile, mapper).execute(null, null));
+
+        assertThat(logs).contains("受注明細ワークを初期化しました: errorFile=" + errorFile + " 削除=false");
     }
 
     private static List<String> captureLogs(Runnable action) {
