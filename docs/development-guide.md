@@ -49,15 +49,25 @@ Claude Code on the web などのクラウド環境では、JDK 25 と Docker デ
 
 ```bash
 #!/usr/bin/env bash
-# JDK 25（Temurin）と Docker デーモンを用意する
+# JDK 25 と Docker デーモンを用意する（Temurin を優先し、取得できなければ apt の OpenJDK 25 にフォールバックする）
 set -euo pipefail
 if [ ! -x /opt/jdk-25/bin/java ]; then
   mkdir -p /opt/jdk-25
   curl -fsSL "https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse" \
-    | tar -xz -C /opt/jdk-25 --strip-components=1
+    | tar -xz -C /opt/jdk-25 --strip-components=1 \
+    || echo "Temurin を取得できなかったため apt の OpenJDK 25 にフォールバックする" >&2
+fi
+if [ -x /opt/jdk-25/bin/java ]; then
+  JAVA_HOME_25=/opt/jdk-25
+else
+  JAVA_HOME_25=/usr/lib/jvm/java-25-openjdk-amd64
+  if [ ! -x "$JAVA_HOME_25/bin/java" ]; then
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-25-jdk-headless
+  fi
 fi
 # ./mvnw は ~/.mavenrc の JAVA_HOME を使う（PATH の java が 25 でなくてもよい）
-printf 'JAVA_HOME=/opt/jdk-25\nexport JAVA_HOME\n' > ~/.mavenrc
+printf 'JAVA_HOME=%s\nexport JAVA_HOME\n' "$JAVA_HOME_25" > ~/.mavenrc
 if ! docker info >/dev/null 2>&1; then
   nohup dockerd >/tmp/dockerd.log 2>&1 &
   for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
@@ -65,6 +75,10 @@ fi
 ./mvnw -v
 docker info --format '{{.ServerVersion}}'
 ```
+
+技術スタックは Temurin 固定であり、apt の OpenJDK 25（`openjdk-25-jdk-headless`、JAVA_HOME は `/usr/lib/jvm/java-25-openjdk-amd64`）は Temurin を取得できない時のフォールバックである。ローカル検証は OpenJDK 25 でよい（CI は Temurin で検証する）。
+
+Temurin を使いたい時は、環境の Network access で `api.adoptium.net` を許可する（403 で拒否される時はこの許可が無い）。
 
 ## 2. 開発の進め方（工程と Skills）
 
@@ -294,3 +308,4 @@ flowchart LR
 | ローカルDB の状態を初期化したい | `docker compose -f docker/compose.yaml down -v && docker compose -f docker/compose.yaml up -d` |
 | Checkstyle/SpotBugs 違反でビルド失敗 | `target/site` のレポートを確認し修正する。抑止が妥当な場合のみ理由コメント付きで除外設定へ追加 |
 | クラウド環境で `./mvnw` が JDK 25 以外で動く、または `docker info` が失敗する | §1.4 の準備スクリプトを実行する |
+| クラウド環境で api.adoptium.net からの JDK 取得が 403 で失敗する | §1.4 の準備スクリプトが apt の OpenJDK 25 にフォールバックする。Temurin を使う時は §1.4 のとおり環境の設定で許可を足す |
