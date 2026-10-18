@@ -3,18 +3,9 @@ package com.example.batch.sample.job_order_daily_sales;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.util.List;
 
-import org.apache.ibatis.session.ResultContext;
-import org.apache.ibatis.session.ResultHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,16 +20,14 @@ import jakarta.validation.ValidatorFactory;
  * {@link OrderItemProcessor} の単体テスト。
  *
  * <p>詳細設計書 ORDER-001 §2「入力チェック仕様」・§7「単体テスト」の OrderItemProcessor の観点に基づく。
- * Mapper はモックにし、Bean Validation は実際の Validator で検証する。</p>
+ * Bean Validation は実際の Validator で検証する。</p>
  */
 class OrderItemProcessorTest {
 
     private static final ValidatorFactory VALIDATOR_FACTORY = Validation.buildDefaultValidatorFactory();
     private static final LocalDate TARGET = LocalDate.of(2026, 10, 11);
 
-    private final OrderDetailWorkMapper mapper = mock(OrderDetailWorkMapper.class);
-    private final OrderItemProcessor processor =
-            new OrderItemProcessor(VALIDATOR_FACTORY.getValidator(), TARGET, mapper);
+    private final OrderItemProcessor processor = new OrderItemProcessor(VALIDATOR_FACTORY.getValidator(), TARGET);
 
     @AfterAll
     static void closeFactory() {
@@ -350,66 +339,11 @@ class OrderItemProcessorTest {
         assertThatCode(() -> processor.process(withKey("A001", "1", 3))).doesNotThrowAnyException();
     }
 
-    // ---- beforeStep ----
-
-    @SuppressWarnings("unchecked")
-    private void stubKeys(List<OrderKey> keys) {
-        doAnswer(invocation -> {
-            ResultHandler<OrderKey> handler = invocation.getArgument(0);
-            for (OrderKey key : keys) {
-                ResultContext<OrderKey> context = mock(ResultContext.class);
-                when(context.getResultObject()).thenReturn(key);
-                handler.handleResult(context);
-            }
-            return null;
-        }).when(mapper).selectKeys(any());
-    }
-
     @Test
-    void beforeStepでワークのキーを復元した場合＿リスタートをまたいだ重複も検出する() throws Exception {
-        stubKeys(List.of(new OrderKey("A001", 1, 2), new OrderKey("A001", 2, 3)));
-        processor.beforeStep(null);
-
-        assertThatThrownBy(() -> processor.process(withKey("A001", "2", 10)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("先頭の行=3");
-        assertThatCode(() -> processor.process(withKey("A001", "3", 11))).doesNotThrowAnyException();
-    }
-
-    @Test
-    void beforeStepで復元したキーと同じ行番号の場合＿再処理とみなしエラーにしない() {
-        stubKeys(List.of(new OrderKey("A001", 1, 2)));
-        processor.beforeStep(null);
-
-        assertThatCode(() -> processor.process(withKey("A001", "1", 2))).doesNotThrowAnyException();
-    }
-
-    @Test
-    void beforeStepを2回呼んだ場合＿結果が同じで既出キーは1回目の内容に増えない() throws Exception {
-        stubKeys(List.of(new OrderKey("A001", 1, 2)));
-        processor.beforeStep(null);
-        processor.beforeStep(null);
-
-        assertThatThrownBy(() -> processor.process(withKey("A001", "1", 9)))
-                .isInstanceOf(BusinessException.class);
-        verify(mapper, times(2)).selectKeys(any());
-    }
-
-    @Test
-    void beforeStepを再度呼んだ場合＿それまでに登録した既出キーは空にしてから読み直す() throws Exception {
-        stubKeys(List.of());
+    void 別のインスタンスの場合＿前のインスタンスの既出キーを引き継がず重複にしない() throws Exception {
         processor.process(withKey("A001", "1", 2));
+        OrderItemProcessor next = new OrderItemProcessor(VALIDATOR_FACTORY.getValidator(), TARGET);
 
-        processor.beforeStep(null);
-
-        assertThatCode(() -> processor.process(withKey("A001", "1", 9))).doesNotThrowAnyException();
-    }
-
-    @Test
-    void ワークが空でbeforeStepを呼んだ場合＿重複は検出されず通る() {
-        stubKeys(List.of());
-        processor.beforeStep(null);
-
-        assertThatCode(() -> processor.process(valid())).doesNotThrowAnyException();
+        assertThatCode(() -> next.process(withKey("A001", "1", 10))).doesNotThrowAnyException();
     }
 }
