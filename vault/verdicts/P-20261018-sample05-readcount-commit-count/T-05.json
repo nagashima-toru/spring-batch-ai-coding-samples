@@ -1,0 +1,39 @@
+{
+  "task": "P-20261018-sample05-readcount-commit-count/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 11:14",
+  "criteria": [
+    {
+      "text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）",
+      "ok": true,
+      "note": "参照ルール: vault/rules/verifier/code-review.md。実行: Skill code-review（範囲: 対象 worktree で `git diff --merge-base main`、計画一式4種を除く）/ 出力: 指摘7件。区分は Must 0 / Should 7 / Ask 0。内訳は IT の chunk.size()==2 依存、IT の import 順（Checkstyle はビルド成功で通過済み）、Javadoc の「書込＋Skip」表現と実装（フィルタ分も数える）のずれ、saveState=false の delegate への実行時ガード無し、rollback 時の in-memory 値という仮定の話、カウンタ名の結び付き、IT の item.count 未検証。クラッシュ・データ破損・誤った結果に当たる確定した指摘は無く、いずれも保守性・テスト不足・仮定ベースのため FAIL の根拠にしない"
+    },
+    {
+      "text": "結合テストと batch-sample のカバレッジ80%を含む全体のビルドが成功する：`./mvnw clean verify 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: worktree で `./mvnw clean verify`（docker info は成功）/ 出力: 終了コード 0、`INFO. BUILD SUCCESS` の件数 1"
+    },
+    {
+      "text": "batch-core のカバレッジ80%を含むビルドが成功する：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -pl batch-core` / 出力: 終了コード 0、`INFO. BUILD SUCCESS` の件数 1"
+    },
+    {
+      "text": "全モジュールの静的解析と単体テストが成功する：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 出力: 終了コード 0、`INFO. BUILD SUCCESS` の件数 1"
+    },
+    {
+      "text": "終端の読込を差し引く記述が batch-sample・docs に残っていない：`grep -rn --include='*.java' --include='*.md' -e '1を引' -e '1件を引' batch-sample docs` の出力が空",
+      "ok": true,
+      "note": "実行コマンド: worktree で `grep -rn --include='*.java' --include='*.md' -e '1を引' -e '1件を引' batch-sample docs | wc -l` / 出力: 0（空）"
+    },
+    {
+      "text": "smoke の参照検査が通る：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: worktree で `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1"
+    }
+  ],
+  "reasons": []
+}
