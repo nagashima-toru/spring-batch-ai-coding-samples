@@ -1,0 +1,16 @@
+{
+  "task": "P-20261018-sample05-readcount-commit-count/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 10:56",
+  "criteria": [
+    {"text": "Listener の単体テストが成功する：`./mvnw test -pl batch-sample -am -Dtest=ApiUserReadCountListenerTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -c 'Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in com.example.batch.sample.job05_api_import.ApiUserReadCountListenerTest'` の出力が `1`", "ok": true, "note": "worktree で実行 / 終了コード0、該当 grep -c の出力: 1"},
+    {"text": "単体テストが、最後のチャンクのコミット後に停止・失敗した場合を決定済みの名前で確かめている：`grep -c -e 'void 取込Stepが最後のチャンクのコミット後に停止した場合_コミット済みの件数をそのまま保存する' -e 'void 取込Stepが最後のチャンクのコミット後に失敗した場合_コミット済みの件数をそのまま保存する' batch-sample/src/test/java/com/example/batch/sample/job05_api_import/ApiUserReadCountListenerTest.java` の出力が `2`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 2"},
+    {"text": "Listener が Reader の読込位置を使わなくなっている：`grep -c 'read.count' batch-sample/src/main/java/com/example/batch/sample/job05_api_import/ApiUserReadCountListener.java` の出力が `0`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 0。決定済みどおり CountingItemStreamReader のキーを使う構成で、基準は目的に沿っている"},
+    {"text": "終端の読込を差し引く記述がリポジトリの batch-sample・docs に残っていない：`grep -rn --include='*.java' --include='*.md' -e '1を引' -e '1件を引' batch-sample docs` の出力が空", "ok": true, "note": "実行コマンド: 同 grep -rn / 出力: 空"},
+    {"text": "JobConfig が Reader を包み、Listener に同じ名前を渡している：`grep -c -e 'new CountingItemStreamReader...USER_READ_COUNTER_NAME' -e 'new ApiUserReadCountListener.USER_READ_COUNTER_NAME.' batch-sample/src/main/java/com/example/batch/sample/job05_api_import/Sample05JobConfig.java` の出力が `2`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 2"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが成功する：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw clean verify -DskipITs -pl batch-core` / 終了コード0、BUILD SUCCESS 件数: 1 (参照: vault/rules/verifier/build-verification.md)"},
+    {"text": "全モジュールの静的解析と単体テストが成功する：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 終了コード0、BUILD SUCCESS 件数: 1 (参照: vault/rules/verifier/build-verification.md)"}
+  ],
+  "reasons": []
+}
