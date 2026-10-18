@@ -37,6 +37,7 @@ implementation Skill の「最重要ルール」表にある基盤部品ごと�
 | `CsvItemWriterFactory` | `job03_file_export` / `Sample03JobConfig` |
 | `FixedLengthItemWriterFactory` | `job03_file_export` / `Sample03JobConfig`（`format=fixed` の固定長出力） |
 | `RestApiPagingItemReader` | `job05_api_import` / `Sample05JobConfig` |
+| `CountingItemStreamReader` | `job05_api_import` / `Sample05JobConfig`（件数 API と突き合わせる取得件数） |
 | `ValidatingItemProcessorBase` | `job01_csv_import` / `CustomerItemProcessor`、`job02_fixedlength_import` / `ProductItemProcessor`、`job_order_daily_sales` / `OrderItemProcessor` |
 | `BusinessSkipPolicy` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
 | `ErrorRecordSkipListener` | `job01_csv_import` / `Sample01JobConfig`、`job02_fixedlength_import` / `Sample02JobConfig`、`job_announcement_notify` / `AnnouncementNotifyJobConfig` |
