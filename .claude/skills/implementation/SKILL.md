@@ -53,6 +53,7 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 | HTTP 呼出 | `BatchHttpClient`（RestClient 直接使用禁止） |
 | CSV / 固定長 / JSON の読み書き | `CsvItemReaderFactory` / `FixedLengthItemReaderFactory` / `JsonItemReaderFactory` / `CsvItemWriterFactory` / `FixedLengthItemWriterFactory` |
 | API のページング取得 | `RestApiPagingItemReader` |
+| Reader が返した件数（コミット済み）の保存 | `CountingItemStreamReader`（Reader を包む） |
 | 入力チェック | `ValidatingItemProcessorBase` 継承（Bean Validation 併用） |
 | Skip 制御 | `BusinessSkipPolicy`（skipLimit 必須） |
 | Skip レコードの退避 | `ErrorRecordSkipListener` |

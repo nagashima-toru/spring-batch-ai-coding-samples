@@ -9,19 +9,26 @@ import org.springframework.batch.core.job.JobInstance;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.step.StepExecution;
 
+import com.example.batch.core.item.CountingItemStreamReader;
+
 /**
  * {@link ApiUserReadCountListener} の単体テスト。
  */
 class ApiUserReadCountListenerTest {
 
-    private static final String API_KEY = Sample05JobConfig.USER_READER_NAME + ".read.count";
-    private static final String JSON_KEY = Sample05JobConfig.USER_JSON_READER_NAME + ".read.count";
+    private static final String COUNT_KEY = CountingItemStreamReader.countKey(Sample05JobConfig.USER_READ_COUNTER_NAME);
 
     private final ApiUserReadCountListener listener = new ApiUserReadCountListener(
-            Sample05JobConfig.USER_READER_NAME, Sample05JobConfig.USER_JSON_READER_NAME);
+            Sample05JobConfig.USER_READ_COUNTER_NAME);
 
     private JobExecution newJobExecution(long id) {
         return new JobExecution(id, new JobInstance(1L, "sample05ApiImportJob"), new JobParameters());
+    }
+
+    private StepExecution newStepExecution(JobExecution jobExecution, BatchStatus status) {
+        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
+        stepExecution.setStatus(status);
+        return stepExecution;
     }
 
     private long savedCount(JobExecution jobExecution) {
@@ -29,11 +36,10 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
-    void 取込Stepが完了した場合_Readerの読込位置から終端の読込1件を引いた件数を保存する() {
+    void 取込Stepが完了した場合_件数のキーの値をそのまま保存する() {
         JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.COMPLETED);
-        stepExecution.getExecutionContext().putInt(API_KEY, 4);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.COMPLETED);
+        stepExecution.getExecutionContext().putLong(COUNT_KEY, 3L);
         stepExecution.setReadCount(99);
 
         listener.afterStep(stepExecution);
@@ -42,23 +48,10 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
-    void inputFile指定で取込Stepが完了した場合_JSON用Readerの読込位置から件数を求める() {
+    void 取込Stepがチャンクの途中で失敗した場合_readCountではなくコミット済みの件数を保存する() {
         JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.COMPLETED);
-        stepExecution.getExecutionContext().putInt(JSON_KEY, 3);
-
-        listener.afterStep(stepExecution);
-
-        assertThat(savedCount(jobExecution)).isEqualTo(2L);
-    }
-
-    @Test
-    void 取込Stepがチャンクの途中で失敗した場合_readCountではなくコミット済みの読込位置を保存する() {
-        JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.FAILED);
-        stepExecution.getExecutionContext().putInt(API_KEY, 2);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.FAILED);
+        stepExecution.getExecutionContext().putLong(COUNT_KEY, 2L);
         stepExecution.setReadCount(3);
 
         listener.afterStep(stepExecution);
@@ -67,10 +60,31 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
-    void 取込Stepが最初のチャンクで失敗した場合_読込位置が無いため0件を保存する() {
+    void 取込Stepが最後のチャンクのコミット後に停止した場合_コミット済みの件数をそのまま保存する() {
         JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.FAILED);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.STOPPED);
+        stepExecution.getExecutionContext().putLong(COUNT_KEY, 5L);
+
+        listener.afterStep(stepExecution);
+
+        assertThat(savedCount(jobExecution)).isEqualTo(5L);
+    }
+
+    @Test
+    void 取込Stepが最後のチャンクのコミット後に失敗した場合_コミット済みの件数をそのまま保存する() {
+        JobExecution jobExecution = newJobExecution(1L);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.FAILED);
+        stepExecution.getExecutionContext().putLong(COUNT_KEY, 5L);
+
+        listener.afterStep(stepExecution);
+
+        assertThat(savedCount(jobExecution)).isEqualTo(5L);
+    }
+
+    @Test
+    void 取込Stepが最初のチャンクで失敗した場合_件数のキーが無いため0件を保存する() {
+        JobExecution jobExecution = newJobExecution(1L);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.FAILED);
         stepExecution.setReadCount(2);
 
         listener.afterStep(stepExecution);
@@ -79,23 +93,10 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
-    void 取込Stepが停止した場合_終端の読込を引かずに読込位置をそのまま保存する() {
+    void 取込Stepが完了したのに件数のキーが無い場合_0件を保存する() {
         JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.STOPPED);
-        stepExecution.getExecutionContext().putInt(API_KEY, 3);
-
-        listener.afterStep(stepExecution);
-
-        assertThat(savedCount(jobExecution)).isEqualTo(3L);
-    }
-
-    @Test
-    void 取込Stepが完了したのに読込位置が無い場合_0件を保存する() {
-        JobExecution jobExecution = newJobExecution(1L);
-        StepExecution stepExecution = new StepExecution(1L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.COMPLETED);
-        stepExecution.getExecutionContext().putInt("otherReader.read.count", 4);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.COMPLETED);
+        stepExecution.getExecutionContext().putLong("otherCounter.item.count", 4L);
 
         listener.afterStep(stepExecution);
 
@@ -103,12 +104,11 @@ class ApiUserReadCountListenerTest {
     }
 
     @Test
-    void リスタートで取込Stepが完了した場合_前回の件数に足し込まず読込位置から求めた件数で上書きする() {
+    void リスタートで取込Stepが完了した場合_前回の件数に足し込まず引き継いだ件数で上書きする() {
         JobExecution jobExecution = newJobExecution(2L);
         jobExecution.getExecutionContext().putLong(ApiUserReadCountListener.READ_COUNT_KEY, 2L);
-        StepExecution stepExecution = new StepExecution(2L, "sample05.01ImportStep", jobExecution);
-        stepExecution.setStatus(BatchStatus.COMPLETED);
-        stepExecution.getExecutionContext().putInt(API_KEY, 6);
+        StepExecution stepExecution = newStepExecution(jobExecution, BatchStatus.COMPLETED);
+        stepExecution.getExecutionContext().putLong(COUNT_KEY, 5L);
 
         listener.afterStep(stepExecution);
 

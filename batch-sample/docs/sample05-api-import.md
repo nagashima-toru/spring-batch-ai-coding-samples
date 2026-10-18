@@ -21,12 +21,11 @@
   （architecture.md §3.1）
 - `sample05.01ImportStep`：API 取込（`RestApiPagingItemReader`）または `inputFile` の JSON 読込
   （`JsonItemReaderFactory`）から取り込む。入力チェックと UPSERT は両方で共通。
-  - Step の終了時に、取得件数を Job の ExecutionContext の `apiUserReadCount` に保存する（前回の値は上書きする）。
-  - 取得件数は、取込 Step の Reader が確定させた読込位置（Step の ExecutionContext の `sample05UserReader.read.count`。`inputFile` 指定時は `sample05UserJsonReader.read.count`）から求める。
-  - 読込位置はチャンクのコミット時に保存されるため、途中で失敗した実行ではコミット済みの件数と一致する（最初のチャンクで失敗した時は読込位置が無く、0件とする）。リスタートでは前回の読込位置が引き継がれて続きから数えるため、前回の件数に足し込まない。
-  - Step が COMPLETED の時は、データの終端を確かめる最後の読込（null が返る読込）も読込位置に1件として数えられるため、1を引く。
-    COMPLETED なのに読込位置が無い時（Reader 名の不一致など設定の誤り）は0件とし、原因が分かるよう警告ログを出す。
-  - 読込位置は、入力チェックで Skip した件と読込時の例外で Skip した件も含む（どちらも Reader から読んだ件として数えられる）。
+  - 取得件数は、取込 Step の Reader が返した null 以外の件のうち、コミット済みのチャンクに含まれる件数（＝書込件数＋入力チェック・書込で Skip した件数）とする。
+  - batch-core の `CountingItemStreamReader` が Reader（`RestApiPagingItemReader`、`inputFile` 指定時は `JsonItemReaderFactory` の Reader）を包んで数え、チャンクのコミットごとに Step の ExecutionContext の `sample05UserReadCounter.item.count` に保存する。リスタート時はこの値を引き継いで続きから数えるため、前回の件数に足し込まない。
+  - Step の終了時（状態を問わない）に、この件数を Job の ExecutionContext の `apiUserReadCount` に保存する（前回の値は上書きする）。値が無い時は0件とし、COMPLETED なのに無い時（設定の誤り）は警告ログを出す。
+  - 終端を確かめる null の読込は数えないため、最後のチャンクのコミット後に停止・失敗しても取得件数は変わらない。Issue #81 の経緯：以前は終端の読込1件を COMPLETED の時だけ差し引いており、最後のチャンクのコミット後に STOPPED・FAILED で終わると1件多くなったため、終端の読込を差し引く推定をやめた。
+  - 読込時の例外は Skip しない（`BusinessSkipPolicy` が Skip するのは `BusinessException`・`FlatFileParseException` だけで、Reader の例外は `SystemException` などになる）ため、Reader が返さなかった件は数え方に影響しない。
   - StepExecution の読込件数（readCount）は使わない。Spring Batch 6 では、失敗した実行の readCount にロールバックしたチャンクの読込件数も入ることがあり、リスタート後の合計が水増しされて件数の突き合わせが失敗するため（Issue #79）。
 - `sample05.02CountCheckStep`：batch-core の `TableCountCheckTasklet` で、取得件数 `apiUserReadCount` が
   件数 API の `apiUserCount` と一致することを確かめる（最小件数＝最大件数＝`apiUserCount`）。
@@ -50,6 +49,7 @@
 - `AbstractApiCallTasklet`：件数取得 Step（`sample05.00UserCountStep`）で単発の API コールを行う
 - `JsonItemReaderFactory`：`inputFile` 指定時に保存済み JSON から取り込む（リプレイ）
 - `RetryableSystemException`：リトライを使い切った 5xx・接続エラーで異常終了する
+- `CountingItemStreamReader`：コミット済みの取得件数を数えて保存し、件数の突き合わせに使う
 - `TableCountCheckTasklet`：件数 API の件数と取得件数の突き合わせ（`sample05.02CountCheckStep`）
 
 ## 設定（application.yml）
