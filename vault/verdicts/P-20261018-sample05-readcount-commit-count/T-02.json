@@ -1,0 +1,14 @@
+{
+  "task": "P-20261018-sample05-readcount-commit-count/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 10:53",
+  "criteria": [
+    {"text": "単体テストが成功する：`./mvnw test -pl batch-core -Dtest=CountingItemStreamReaderTest 2>&1 | grep -c 'Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in com.example.batch.core.item.CountingItemStreamReaderTest'` の出力が `1`", "ok": true, "note": "worktree で上記コマンドを実行 / 出力: 1"},
+    {"text": "単体テストが決定済みの4観点のテストメソッドを持つ：`grep -c -e 'void nullでない件だけを数え終端のnullは数えない' -e 'void updateで件数を名前とitem.countをつないだキーに保存し委譲先のupdateも呼ぶ' -e 'void openで保存済みの件数を引き継ぎ続きから数える' -e 'void closeを委譲先に伝える' batch-core/src/test/java/com/example/batch/core/item/CountingItemStreamReaderTest.java` の出力が `4`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 4"},
+    {"text": "部品が ItemStreamReader のデコレータとして宣言されている：`grep -c 'public class CountingItemStreamReader.T. implements ItemStreamReader.T.' batch-core/src/main/java/com/example/batch/core/item/CountingItemStreamReader.java` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが成功する：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: ./mvnw clean verify -DskipITs -pl batch-core / 終了コード 0、BUILD SUCCESS の grep -c 出力: 1（ルール vault/rules/verifier/build-verification.md 参照）"},
+    {"text": "全モジュールの静的解析と単体テストが成功する：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false / 終了コード 0、BUILD SUCCESS の grep -c 出力: 1"}
+  ],
+  "reasons": []
+}
