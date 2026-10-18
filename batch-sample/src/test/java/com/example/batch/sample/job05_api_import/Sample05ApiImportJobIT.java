@@ -1,6 +1,8 @@
 package com.example.batch.sample.job05_api_import;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,21 +18,26 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mybatis.spring.batch.MyBatisBatchItemWriter;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.scope.context.StepSynchronizationManager;
+import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.core.step.StepExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.DynamicPropertySource;
 
 import com.example.batch.core.exception.BusinessException;
 import com.example.batch.core.exception.RetryableSystemException;
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
+import com.example.batch.sample.common.ApiUser;
 import com.example.batch.sample.common.ApiUserMapper;
 import com.sun.net.httpserver.HttpServer;
 
@@ -67,6 +74,13 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
 
     @Autowired
     private JobOperator jobOperator;
+
+    /** 取込 Step のライター。最後のチャンクを書く時に停止要求を出すため、実物を呼ぶ spy にする。 */
+    @MockitoSpyBean
+    private MyBatisBatchItemWriter<ApiUser> sample05UserWriter;
+
+    /** 真の間、U005 を含むチャンクの書込みで実行中のジョブに停止要求を出す（1回出したら偽に戻す）。 */
+    private boolean stopOnLastChunk;
 
     @Autowired
     @Qualifier("sample05ApiImportJob")
@@ -181,6 +195,7 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
         errorPage = -1;
         invalidU003 = false;
         sixUsers = false;
+        stopOnLastChunk = false;
         COUNT_REQUESTS.set(0);
         USERS_REQUESTS.set(0);
     }
@@ -291,10 +306,47 @@ class Sample05ApiImportJobIT extends AbstractJobIT {
                 .toJobParameters());
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        // 2チャンク（3件＋3件）をコミットした後、終端の null だけを読む空のチャンクでも読込位置が保存される
+        // 2チャンク（3件＋3件）をコミットした後、終端の null だけを読む空のチャンクでも取得件数が保存される
         assertThat(execution.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(6L);
         assertThat(findStep(execution, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
         assertThat(apiUserMapper.count()).isEqualTo(6);
+    }
+
+    @Test
+    void 最後のチャンクのコミット後に停止した場合_リスタートで取得件数がコミット済みの件数のまま件数の突き合わせが通る() throws Exception {
+        // チャンク2（U004・U005と終端のnull）を読み終えた後、その書込みの中で停止要求を出す。
+        // チャンク2のコミット後に停止が検知され、委譲先Readerの読込位置は終端のnullを含む6になる（Issue #81の条件）。
+        // 停止要求を読込中（スタブの別スレッド）に出すと、JobOperator#stop が Step スコープの Reader を閉じて
+        // 読込位置が0に戻る（同じスレッドから出しても同じ）。JobOperator#stop が行う実行中の Step への停止要求
+        // （StepExecution#setTerminateOnly）だけを、Step と同じスレッドの書込みの中で出す
+        stopOnLastChunk = true;
+        doAnswer(invocation -> {
+            Chunk<?> chunk = invocation.getArgument(0);
+            if (stopOnLastChunk && chunk.size() == 2) {
+                stopOnLastChunk = false;
+                StepSynchronizationManager.getContext().getStepExecution().setTerminateOnly();
+            }
+            return invocation.callRealMethod();
+        }).when(sample05UserWriter).write(any());
+
+        JobExecution stopped = jobOperator.start(job, uniqueParameters()
+                .addLocalDate("syncDate", LocalDate.of(2026, 7, 14))
+                .toJobParameters());
+
+        assertThat(stopped.getStatus()).isEqualTo(BatchStatus.STOPPED);
+        StepExecution stoppedImport = findStep(stopped, "sample05.01ImportStep");
+        assertThat(stoppedImport.getStatus()).isEqualTo(BatchStatus.STOPPED);
+        assertThat(stoppedImport.getWriteCount()).isEqualTo(5);
+        assertThat(stoppedImport.getExecutionContext().getInt(Sample05JobConfig.USER_READER_NAME + ".read.count"))
+                .isEqualTo(6);
+        assertThat(stopped.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
+
+        JobExecution restarted = jobOperator.restart(stopped);
+
+        assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(restarted.getExecutionContext().getLong(ApiUserReadCountListener.READ_COUNT_KEY)).isEqualTo(5L);
+        assertThat(findStep(restarted, "sample05.02CountCheckStep").getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(apiUserMapper.count()).isEqualTo(5);
     }
 
     @Test
