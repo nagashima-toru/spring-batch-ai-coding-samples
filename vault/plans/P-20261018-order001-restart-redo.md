@@ -17,7 +17,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | ORDER-001 1.4 版のリスタート方式（Step 1〜4 のやり直し・エラーファイル削除・既出キー復元の廃止）を実装する | |
-| T-02 | doing | 1 | T-01 | ORDER-001 1.4 版の単体テスト（OrderDetailWorkClearTasklet のエラーファイル削除・Processor の既出キー）を追加する | |
+| T-02 | review | 1 | T-01 | ORDER-001 1.4 版の単体テスト（OrderDetailWorkClearTasklet のエラーファイル削除・Processor の既出キー）を追加する | |
 | T-03 | todo | 0 | T-02 | ORDER-001 1.4 版の結合テスト（最初からのリスタート・Issue #74 の再現）を OrderDailySalesJobIT に書く | |
 | T-04 | todo | 0 | T-03 | ORDER-001 1.4 版の差分を /review-standards の手順1〜3でレビューし指摘を反映する | |
 | T-05 | todo | 0 | T-04 | ORDER-001 のシステムテスト（No.3 の改訂・別の実行回をまたぐリスタートの追加）を実施し scenarios.md に記録する | |
