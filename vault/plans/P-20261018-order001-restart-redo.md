@@ -20,7 +20,7 @@ docs/projects/order-daily-sales/detail-design/ORDER-001.md（レビュー済み�
 | T-02 | done | 1 | T-01 | ORDER-001 1.4 版の単体テスト（OrderDetailWorkClearTasklet のエラーファイル削除・Processor の既出キー）を追加する | |
 | T-03 | done | 1 | T-02 | ORDER-001 1.4 版の結合テスト（最初からのリスタート・Issue #74 の再現）を OrderDailySalesJobIT に書く | |
 | T-04 | done | 1 | T-03 | ORDER-001 1.4 版の差分を /review-standards の手順1〜3でレビューし指摘を反映する | |
-| T-05 | todo | 0 | T-04 | ORDER-001 のシステムテスト（No.3 の改訂・別の実行回をまたぐリスタートの追加）を実施し scenarios.md に記録する | |
+| T-05 | doing | 1 | T-04 | ORDER-001 のシステムテスト（No.3 の改訂・別の実行回をまたぐリスタートの追加）を実施し scenarios.md に記録する | |
 | T-06 | todo | 0 | T-01,T-02,T-03,T-04,T-05 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
