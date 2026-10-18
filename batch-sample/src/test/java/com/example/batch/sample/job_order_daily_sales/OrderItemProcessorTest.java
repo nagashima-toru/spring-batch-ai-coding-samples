@@ -338,4 +338,12 @@ class OrderItemProcessorTest {
 
         assertThatCode(() -> processor.process(withKey("A001", "1", 3))).doesNotThrowAnyException();
     }
+
+    @Test
+    void 別のインスタンスの場合＿前のインスタンスの既出キーを引き継がず重複にしない() throws Exception {
+        processor.process(withKey("A001", "1", 2));
+        OrderItemProcessor next = new OrderItemProcessor(VALIDATOR_FACTORY.getValidator(), TARGET);
+
+        assertThatCode(() -> next.process(withKey("A001", "1", 10))).doesNotThrowAnyException();
+    }
 }
