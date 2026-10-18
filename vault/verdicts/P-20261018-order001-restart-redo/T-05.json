@@ -1,0 +1,15 @@
+{
+  "task": "P-20261018-order001-restart-redo/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-18 10:20",
+  "criteria": [
+    {"text": "全モジュールの Checkstyle・SpotBugs・単体テストが通る：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^\\[INFO\\] BUILD SUCCESS$'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 出力: exit=0、BUILD SUCCESS 行の grep -c = 1"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが通る：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^\\[INFO\\] BUILD SUCCESS$'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -pl batch-core` / 出力: exit=0、BUILD SUCCESS 行の grep -c = 1"},
+    {"text": "入力の版が 1.4 になっている：`grep -c 'basic-design.md.（1.4版）／.detail-design/ORDER-001.md.（1.4版）' docs/projects/order-daily-sales/system-test/scenarios.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1（scenarios.md 6行目）"},
+    {"text": "No.3 の期待結果が 1.4 版の文言で、No.7 が追加されている：`scenarios.md` に対し `grep -c 'Step 1〜4 も再実行され、Step 4 はファイルの先頭から取り込み直す'` が `1`、`grep -c '## No.7: 別の実行回をまたぐリスタート'` が `1`", "ok": true, "note": "実行コマンド: 2つの grep -c / 出力: 1 と 1。No.7 の手順(a)(b)と fail_step5_on/off.sql が data/ に追加済みなのも ls で確認"},
+    {"text": "旧方式（続きから・既出キーの復元）の記述が、設計書の変更履歴・テスト観点以外のリポジトリから消えている：`git grep -n -e 'キー復元' -e '既出キーを読み込みました' -e 'Step 1〜3 は再実行' -- . ':!vault/' ':!docs/projects/order-daily-sales/detail-design/'` の出力が空", "ok": true, "note": "実行コマンド: worktree で同 git grep / 出力: 空。scenarios.md 内の「続きから」「既出キー」も grep -c = 0"},
+    {"text": "No.3 と No.7 を実際に実施し、シナリオ一覧の No.3・No.7 の結果列と、両シナリオの手順の表の「実施結果」列がすべて OK か NG で埋まり、「証跡」にジョブの終了コードと DB の確認結果が載っている（`scenarios.md` を読んで判定する）", "ok": true, "note": "確認方法: scenarios.md を Read。一覧の No.3・7 は OK、No.3 手順1〜5・No.7 手順1〜7の実施結果列はすべて OK で埋まり、証跡に exit=、executionId、batch_step_execution、チェックサム、件数が載っている。なお実施そのものの再現は行っていない（記録の内容と整合性のみ確認）"}
+  ],
+  "reasons": []
+}
