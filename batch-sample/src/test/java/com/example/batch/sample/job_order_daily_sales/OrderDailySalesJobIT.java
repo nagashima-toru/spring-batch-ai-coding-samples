@@ -27,6 +27,7 @@ import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.StepExecution;
 import org.springframework.batch.infrastructure.item.ExecutionContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -76,9 +77,13 @@ class OrderDailySalesJobIT extends AbstractJobIT {
     }
 
     private JobParameters parameters(String scheduledTime, Path inputFile, Path errorFile) {
+        return parameters(scheduledTime, TARGET_DATE, inputFile, errorFile);
+    }
+
+    private JobParameters parameters(String scheduledTime, LocalDate targetDate, Path inputFile, Path errorFile) {
         return new JobParametersBuilder()
                 .addString("scheduledTime", scheduledTime)
-                .addLocalDate("targetDate", TARGET_DATE)
+                .addLocalDate("targetDate", targetDate)
                 .addString("inputFile", inputFile.toString())
                 .addString("errorFile", errorFile.toString())
                 .toJobParameters();
@@ -119,6 +124,33 @@ class OrderDailySalesJobIT extends AbstractJobIT {
                         + " || '|' || total_quantity || '|' || total_amount"
                         + " FROM app.daily_store_sales ORDER BY sales_date, store_code",
                 String.class);
+    }
+
+    /**
+     * 指定テーブルへの INSERT で条件に合う行だけ失敗させるトリガを一時的に足してジョブを起動する。
+     * トリガ・関数は finally で必ず消す（他のテストに影響させない）。
+     */
+    private JobExecution startWithFailTrigger(String table, String condition, JobParameters params)
+            throws Exception {
+        jdbcTemplate.execute("CREATE OR REPLACE FUNCTION app.it_fail_on_line() RETURNS trigger AS $$ "
+                + "BEGIN IF " + condition + " THEN RAISE EXCEPTION 'IT による意図的な失敗'; END IF; RETURN NEW; END; "
+                + "$$ LANGUAGE plpgsql");
+        jdbcTemplate.execute("CREATE TRIGGER it_fail_trigger BEFORE INSERT ON app." + table + " "
+                + "FOR EACH ROW EXECUTE FUNCTION app.it_fail_on_line()");
+        try {
+            return jobOperator.start(job, params);
+        } finally {
+            jdbcTemplate.execute("DROP TRIGGER IF EXISTS it_fail_trigger ON app." + table);
+            jdbcTemplate.execute("DROP FUNCTION IF EXISTS app.it_fail_on_line()");
+        }
+    }
+
+    /** 実行回の Step 4（取込 Step）の読込件数。 */
+    private static long importStepReadCount(JobExecution execution) {
+        return execution.getStepExecutions().stream()
+                .filter(s -> s.getStepName().contains("04ImportStep"))
+                .mapToLong(StepExecution::getReadCount)
+                .sum();
     }
 
     private long count(String table) {
@@ -319,31 +351,20 @@ class OrderDailySalesJobIT extends AbstractJobIT {
     }
 
     @Test
-    void Step4の途中でDB例外により失敗しても同一パラメータでリスタートすると続きから取り込みリスタートをまたいだ重複もSkipされる()
+    void Step4の途中でDB例外により失敗しても同一パラメータでリスタートすると最初から取り込み直し1回で成功した場合と同じ結果になる()
             throws Exception {
-        // 250行（チャンクサイズ100で3チャンク）＋ 1行目付近(line_no=5)と重複する最終行
+        // 250行（チャンクサイズ100で3チャンク）＋ 5行目と重複する最終行（ファイル内の重複）
         List<String> rows = new ArrayList<>();
         for (int i = 1; i <= 250; i++) {
             rows.add("R001," + i + ",2026-10-11,S01,I01,1,10");
         }
-        rows.add("R001,5,2026-10-11,S01,I01,1,10"); // ファイル252行目: リスタート前にコミット済みの行との重複
+        rows.add("R001,5,2026-10-11,S01,I01,1,10"); // ファイル252行目: ファイル内の重複
         Path input = writeCsv("orders.csv", rows);
         Path error = tempDir.resolve("error.txt");
         JobParameters params = parameters(input, error);
 
-        // 2チャンク目の line_no=120 の INSERT だけ失敗させるトリガを一時的に足す
-        jdbcTemplate.execute("CREATE OR REPLACE FUNCTION app.it_fail_on_line() RETURNS trigger AS $$ "
-                + "BEGIN IF NEW.line_no = 120 THEN RAISE EXCEPTION 'IT による意図的な失敗'; END IF; RETURN NEW; END; "
-                + "$$ LANGUAGE plpgsql");
-        jdbcTemplate.execute("CREATE TRIGGER it_fail_trigger BEFORE INSERT ON app.order_detail_work "
-                + "FOR EACH ROW EXECUTE FUNCTION app.it_fail_on_line()");
-        JobExecution failed;
-        try {
-            failed = jobOperator.start(job, params);
-        } finally {
-            jdbcTemplate.execute("DROP TRIGGER IF EXISTS it_fail_trigger ON app.order_detail_work");
-            jdbcTemplate.execute("DROP FUNCTION IF EXISTS app.it_fail_on_line()");
-        }
+        // 2チャンク目の line_no=120 の INSERT だけ失敗させる
+        JobExecution failed = startWithFailTrigger("order_detail_work", "NEW.line_no = 120", params);
 
         assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
         assertThat(failed.getExitStatus().getExitCode()).isEqualTo("FAILED");
@@ -352,14 +373,20 @@ class OrderDailySalesJobIT extends AbstractJobIT {
         assertThat(count("order_detail")).isZero();
         assertThat(count("daily_store_sales")).isZero();
 
+        // 前の実行回のエラーファイルが残っていても、Step 3 で削除されて重複しないことを確かめる
+        Files.writeString(error, "stale,line" + System.lineSeparator(), StandardCharsets.UTF_8);
+
         JobExecution restarted = jobOperator.restart(failed);
 
         assertThat(restarted.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        // リスタートで重複行が1件 Skip される
+        // 重複1件の Skip（1回で成功した場合と同じ）
         assertThat(restarted.getExitStatus().getExitCode())
                 .isEqualTo(BatchExitCodes.COMPLETED_WITH_WARNING.getExitCode());
+        // Step 4 はファイルの先頭から読み直した（入力の全データ行数）
+        assertThat(importStepReadCount(restarted)).isEqualTo(rows.size());
         // 1回で成功した場合と同じ結果（250行・重複行は取り込まれない）
         assertThat(count("order_detail")).isEqualTo(250);
+        assertThat(count("order_detail_work")).isEqualTo(250);
         assertThat(salesRows()).containsExactly("2026-10-11|S01|1|250|250|2500");
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT quantity FROM app.order_detail WHERE order_no = 'R001' AND line_no = 5", Integer.class))
@@ -367,6 +394,94 @@ class OrderDailySalesJobIT extends AbstractJobIT {
         List<String> errors = errorLines(error);
         assertThat(errors).hasSize(1);
         assertThat(errors.get(0)).startsWith("line=252,R001,5,2026-10-11,S01,I01,1,10");
+    }
+
+    @Test
+    void 実行AをStep4で失敗させ別の対象日の実行Bを完了させてからAをリスタートすると両日の明細と集計がそれぞれの入力どおりになる()
+            throws Exception {
+        List<String> rowsA = new ArrayList<>();
+        for (int i = 1; i <= 250; i++) {
+            rowsA.add("A001," + i + ",2026-10-11,S01,I01,1,10");
+        }
+        Path inputA = writeCsv("orders-a.csv", rowsA);
+        Path inputB = writeCsv("orders-b.csv", List.of(
+                "B001,1,2026-10-12,S02,I02,2,300",
+                "B002,1,2026-10-12,S02,I02,1,50"));
+        JobParameters paramsA = parameters(nextScheduledTime(), TARGET_DATE, inputA, tempDir.resolve("error-a.txt"));
+        JobParameters paramsB = parameters(nextScheduledTime(), TARGET_DATE.plusDays(1), inputB,
+                tempDir.resolve("error-b.txt"));
+
+        // A の行（order_no = A001）の2チャンク目だけを失敗させる
+        JobExecution failedA = startWithFailTrigger("order_detail_work",
+                "NEW.order_no = 'A001' AND NEW.line_no = 120", paramsA);
+        assertThat(failedA.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(count("order_detail_work")).isEqualTo(100);
+
+        JobExecution executionB = jobOperator.start(job, paramsB);
+        assertThat(executionB.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        List<String> detailAfterB = detailRows();
+        List<String> salesAfterB = salesRows();
+        assertThat(detailAfterB).containsExactly(
+                "B001|1|2026-10-12|S02|I02|2|300|600",
+                "B002|1|2026-10-12|S02|I02|1|50|50");
+        assertThat(salesAfterB).containsExactly("2026-10-12|S02|2|2|3|650");
+
+        JobExecution restartedA = jobOperator.restart(failedA);
+
+        assertThat(restartedA.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(restartedA.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        assertThat(importStepReadCount(restartedA)).isEqualTo(rowsA.size());
+        // 10/11 は A の入力どおり、10/12 は B の完了直後のまま
+        List<String> detailAfterRestart = detailRows();
+        assertThat(detailAfterRestart.stream().filter(r -> r.contains("|2026-10-11|")).toList()).hasSize(250);
+        assertThat(detailAfterRestart.stream().filter(r -> r.contains("|2026-10-12|")).toList())
+                .containsExactlyElementsOf(detailAfterB);
+        assertThat(salesRows()).containsExactly(
+                "2026-10-11|S01|1|250|250|2500",
+                salesAfterB.get(0));
+    }
+
+    @Test
+    void 実行AをStep5で失敗させ別の対象日の実行Bを完了させてからAをリスタートすると対象日の明細が0件にならない()
+            throws Exception {
+        Path inputA = writeCsv("orders-a.csv", List.of(
+                "A001,1,2026-10-11,S01,I01,2,100",
+                "A001,2,2026-10-11,S01,I02,1,500",
+                "A002,1,2026-10-11,S03,I01,3,100"));
+        Path inputB = writeCsv("orders-b.csv", List.of(
+                "B001,1,2026-10-12,S02,I02,2,300",
+                "B002,1,2026-10-12,S02,I02,1,50"));
+        JobParameters paramsA = parameters(nextScheduledTime(), TARGET_DATE, inputA, tempDir.resolve("error-a.txt"));
+        JobParameters paramsB = parameters(nextScheduledTime(), TARGET_DATE.plusDays(1), inputB,
+                tempDir.resolve("error-b.txt"));
+
+        // app.order_detail への INSERT（Step 5）を失敗させる
+        JobExecution failedA = startWithFailTrigger("order_detail", "TRUE", paramsA);
+        assertThat(failedA.getStatus()).isEqualTo(BatchStatus.FAILED);
+        assertThat(count("order_detail")).isZero();
+        assertThat(count("order_detail_work")).isEqualTo(3);
+
+        JobExecution executionB = jobOperator.start(job, paramsB);
+        assertThat(executionB.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        List<String> detailAfterB = detailRows();
+        List<String> salesAfterB = salesRows();
+        assertThat(detailAfterB).hasSize(2);
+
+        JobExecution restartedA = jobOperator.restart(failedA);
+
+        assertThat(restartedA.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(restartedA.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+        // 10/11 の明細は A の入力どおり（0件でない）、10/12 は B のまま
+        assertThat(detailRows()).containsExactly(
+                "A001|1|2026-10-11|S01|I01|2|100|200",
+                "A001|2|2026-10-11|S01|I02|1|500|500",
+                "A002|1|2026-10-11|S03|I01|3|100|300",
+                detailAfterB.get(0),
+                detailAfterB.get(1));
+        assertThat(salesRows()).containsExactly(
+                "2026-10-11|S01|1|2|3|700",
+                "2026-10-11|S03|1|1|3|300",
+                salesAfterB.get(0));
     }
 
     @Test
