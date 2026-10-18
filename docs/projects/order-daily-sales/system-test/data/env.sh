@@ -3,7 +3,7 @@
 # Java 25 が必要（CLAUDE.md）。環境に別の JAVA_HOME があっても上書きする。別の場所にある時は ST_JAVA_HOME で指定する
 export JAVA_HOME="${ST_JAVA_HOME:-/opt/jdk-25}"
 export PATH="$JAVA_HOME/bin:$PATH"
-export ST_BASE=/tmp/claude/P-20261012-order-daily-sales-T-05
+export ST_BASE=/tmp/claude/P-20261018-order001-restart-redo-T-05
 export ST_IN="$ST_BASE/in"
 export ST_ERR="$ST_BASE/error"
 export ST_WORK="$ST_BASE/work"

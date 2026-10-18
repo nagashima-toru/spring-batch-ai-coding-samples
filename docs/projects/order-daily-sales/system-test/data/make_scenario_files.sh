@@ -48,6 +48,14 @@ CSV
 # No.4: 2026-10-14。二重起動の試行と重なる程度の件数
 "$here/gen_orders.sh" 2026-10-14 30000 "$ST_WORK/orders_20261014.csv" 10
 
+# No.7: 別の実行回をまたぐリスタート。受注番号は gen_orders.sh が日付を含めるため、A と B で重ならない
+# (a) A=2026-10-17（500明細。Step 4 の後半で失敗させる）、B=2026-10-18（200明細）
+"$here/gen_orders.sh" 2026-10-17 500 "$ST_WORK/orders_20261017.csv" 5
+"$here/gen_orders.sh" 2026-10-18 200 "$ST_WORK/orders_20261018.csv" 4
+# (b) A=2026-10-19（200明細。Step 5 で失敗させる）、B=2026-10-20（150明細）
+"$here/gen_orders.sh" 2026-10-19 200 "$ST_WORK/orders_20261019.csv" 5
+"$here/gen_orders.sh" 2026-10-20 150 "$ST_WORK/orders_20261020.csv" 3
+
 # No.5: ヘッダ不正（列名違い）。対象日 2026-10-15
 cat > "$ST_WORK/orders_20261015_badheader.csv" <<CSV
 order_no,line_no,order_date,store_code,item_code,qty,unit_price
