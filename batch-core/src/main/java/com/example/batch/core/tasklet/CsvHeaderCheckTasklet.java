@@ -49,7 +49,7 @@ public class CsvHeaderCheckTasklet implements Tasklet {
     private static final Logger log = LoggerFactory.getLogger(CsvHeaderCheckTasklet.class);
 
     /** 先頭に付く BOM（U+FEFF）。 */
-    private static final String BOM = "﻿";
+    private static final String BOM = "\uFEFF";
 
     private final Path file;
     private final Charset charset;
