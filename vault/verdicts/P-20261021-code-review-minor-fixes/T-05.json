@@ -1,0 +1,17 @@
+{
+  "task": "P-20261021-code-review-minor-fixes/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 01:15",
+  "criteria": [
+    {"text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）", "ok": true, "note": "参照ルール: vault/rules/verifier/code-review.md。実行: Skill code-review を worktree 指定で呼び、範囲は `git -C <worktree> diff --merge-base main`（HARNESS_BASE_BRANCH は空、計画一式4種除く。15ファイル）。指摘6件、[Must] 相当0件、[Ask] 相当0件。内訳: (1) ByteLengthLineTokenizer のバイト長不一致メッセージの line=%s、(2) ByteLengthLineAggregator の超過メッセージの value=%s はいずれも差分で変えていない既存行（diff で文脈行を確認）。対象外（既存コード）: 値を含む既存の例外メッセージ2件。(3) canEncode true でも encode 失敗する状態依存文字コードでメッセージが汎用になる、(4) Validator の Javadoc の言い過ぎ、(5) IT のロガー前提（OrderDailySalesJobConfig に log があり IT 全体が通過）、(6) UTF-8 の U+FFFD 非検出（Javadoc に明記済み）は [Should] 相当で FAIL 根拠にしない。"},
+    {"text": "リポジトリ（`.git`・`target`・`vault` を除く）にリテラルの U+FEFF を含むファイルが無い：`grep -rlP '\\xEF\\xBB\\xBF' --exclude-dir=.git --exclude-dir=target --exclude-dir=vault .` の出力が空", "ok": true, "note": "実行コマンド: worktree で `grep -rlP '\\xEF\\xBB\\xBF' --exclude-dir=.git --exclude-dir=target --exclude-dir=vault .` / 出力: 空"},
+    {"text": "strict エンコードの処理が1か所にまとまっている：`grep -rl 'CodingErrorAction' batch-core/src/main batch-sample/src/main` の出力が `batch-core/src/main/java/com/example/batch/core/item/StrictCharsetEncoder.java` の1行だけ", "ok": true, "note": "実行コマンド: worktree で `grep -rl 'CodingErrorAction' batch-core/src/main batch-sample/src/main` / 出力: batch-core/src/main/java/com/example/batch/core/item/StrictCharsetEncoder.java の1行のみ"},
+    {"text": "全モジュールの静的解析と単体テストが通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で JAVA_HOME=Java25 `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 出力: BUILD SUCCESS の行数 1、終了コード rc=0"},
+    {"text": "batch-core のカバレッジ80%を含めて通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で JAVA_HOME=Java25 `./mvnw clean verify -DskipITs -pl batch-core` / 出力: BUILD SUCCESS の行数 1、終了コード rc=0"},
+    {"text": "結合テストと batch-sample のカバレッジ80%を含めて全体が通る（要 Docker）：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で JAVA_HOME=Java25 `./mvnw clean verify` / 出力: BUILD SUCCESS の行数 1、終了コード rc=0、結合テスト含め最終 Tests run: 56, Failures: 0, Errors: 0"}
+  ],
+  "reasons": [
+    "対象外（既存コード）: ByteLengthLineTokenizer のバイト長不一致メッセージ（line=%s）と ByteLengthLineAggregator の長さ超過メッセージ（value=%s）が行・値をそのままログに出す。今回の差分で変えていない既存行"
+  ]
+}
