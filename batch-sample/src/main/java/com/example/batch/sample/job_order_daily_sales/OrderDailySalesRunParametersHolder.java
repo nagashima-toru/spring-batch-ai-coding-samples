@@ -9,6 +9,12 @@ package com.example.batch.sample.job_order_daily_sales;
  * 1回の JobExecution につき解決とログ出力を1回だけ行い、各 {@code @StepScope} の Bean はこの Bean から値を受け取る。</p>
  *
  * <p>スコーププロキシが継承して上書きできるよう、クラスも {@link #get()} も final にしない。</p>
+ *
+ * <p>スコーププロキシは CGLIB でこのクラスを継承して作り、Objenesis でコンストラクタを呼ばずに生成されるため、
+ * 引数なしコンストラクタは不要。</p>
+ *
+ * <p>resolve の入力はすべて起動前に Validator が検証するので、Bean の生成（Step の実行中の遅延解決）で
+ * 不正なパラメータの例外は起きない。</p>
  */
 public class OrderDailySalesRunParametersHolder {
 
