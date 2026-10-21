@@ -1,10 +1,6 @@
 package com.example.batch.core.item;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 
 import org.springframework.batch.infrastructure.item.file.transform.DefaultFieldSet;
@@ -32,7 +28,14 @@ import com.example.batch.core.exception.BusinessException;
  * 除去して返す。
  * 行のバイト長が定義合計と一致しない場合・フィールド境界がマルチバイト文字の途中に
  * かかる場合は {@link BusinessException} を送出する（Skip 対象として扱える）。
- * 文字コードで表せない文字を含む行も {@link BusinessException} になる。</p>
+ * </p>
+ *
+ * <p>文字コードで表せない文字（対になっていないサロゲートを含む）を含む場合は
+ * {@link BusinessException} を送出する。例外のメッセージには値を含めず、1始まりの文字位置と
+ * コードポイント（U+XXXX）を示す。読込時に文字コードとして解釈できなかったバイト列は
+ * U+FFFD に置き換わって渡ってくるので、U+FFFD を表せない文字コード（Shift_JIS・Windows-31J など）
+ * では、その旨を添えた例外になる。U+FFFD を表せる文字コード（UTF-8 など）では、この置換は
+ * 検出しない。</p>
  *
  * <p><b>拡張ポイント:</b> パディング除去の挙動を変えたい場合（全角スペース・ゼロ埋め等）は
  * {@link #stripPadding(String)} をオーバーライドする。</p>
@@ -65,7 +68,7 @@ public class ByteLengthLineTokenizer implements LineTokenizer {
         if (line == null) {
             line = "";
         }
-        byte[] bytes = encode(line);
+        byte[] bytes = StrictCharsetEncoder.encode(line, charset, "入力の行");
         if (bytes.length != totalBytes) {
             throw new BusinessException(
                     "固定長レコードのバイト長が不正です: expected=%d actual=%d line=%s"
@@ -85,21 +88,6 @@ public class ByteLengthLineTokenizer implements LineTokenizer {
             offset += byteLengths[i];
         }
         return new DefaultFieldSet(values, names);
-    }
-
-    private byte[] encode(String line) {
-        try {
-            ByteBuffer buffer = charset.newEncoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .encode(CharBuffer.wrap(line));
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
-            return bytes;
-        } catch (CharacterCodingException e) {
-            throw new BusinessException(
-                    "入力文字コード %s で表せない文字を含む行です: line=%s".formatted(charset.name(), line), e);
-        }
     }
 
     /**

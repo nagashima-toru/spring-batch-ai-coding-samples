@@ -71,6 +71,19 @@ class ByteLengthLineTokenizerTest {
 
         assertThatThrownBy(() -> tokenizer.tokenize("A𠮷B"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("表せない文字");
+                .hasMessageContaining("表せない文字")
+                .hasMessageContaining("入力の行")
+                .hasMessageContaining("位置=2 文字=U+20BB7")
+                .hasMessageNotContaining("A𠮷B");
+    }
+
+    @Test
+    void 表せない文字で例外になった後に続けて呼んだ場合＿正しく分割する() {
+        var tokenizer = new ByteLengthLineTokenizer(
+                Charset.forName("Windows-31J"), new String[] {"a"}, new int[] {4});
+
+        assertThatThrownBy(() -> tokenizer.tokenize("A𠮷B")).isInstanceOf(BusinessException.class);
+
+        assertThat(tokenizer.tokenize("ABC ").readString("a")).isEqualTo("ABC");
     }
 }

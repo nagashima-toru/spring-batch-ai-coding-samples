@@ -1,11 +1,7 @@
 package com.example.batch.core.item;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
 
 import org.springframework.batch.infrastructure.item.file.transform.FieldExtractor;
@@ -23,8 +19,14 @@ import com.example.batch.core.exception.BusinessException;
  * <p><b>使い方:</b> 通常は {@code FixedLengthItemWriterFactory} 経由で利用する。</p>
  *
  * <p>フィールド値が指定バイト長を超える場合は {@link BusinessException} を送出する
- * （切り捨てによるデータ破損を防ぐため）。出力文字コードで表せない文字を含む場合も
- * {@link BusinessException} を送出する。</p>
+ * （切り捨てによるデータ破損を防ぐため）。</p>
+ *
+ * <p>文字コードで表せない文字（対になっていないサロゲートを含む）を含む場合は
+ * {@link BusinessException} を送出する。例外のメッセージには値を含めず、1始まりの文字位置と
+ * コードポイント（U+XXXX）を示す。読込時に文字コードとして解釈できなかったバイト列は
+ * U+FFFD に置き換わって渡ってくるので、U+FFFD を表せない文字コード（Shift_JIS・Windows-31J など）
+ * では、その旨を添えた例外になる。U+FFFD を表せる文字コード（UTF-8 など）では、この置換は
+ * 検出しない。</p>
  *
  * <p><b>拡張ポイント:</b> 数値の左詰めゼロ埋め等が必要な場合は
  * {@link #pad(byte[], int, String)} をオーバーライドする。</p>
@@ -60,7 +62,7 @@ public class ByteLengthLineAggregator<T> implements LineAggregator<T> {
         ByteArrayOutputStream line = new ByteArrayOutputStream();
         for (int i = 0; i < fields.length; i++) {
             String value = Objects.toString(fields[i], "");
-            byte[] bytes = encode(value, i);
+            byte[] bytes = StrictCharsetEncoder.encode(value, charset, "出力のフィールド index=" + i);
             if (bytes.length > byteLengths[i]) {
                 throw new BusinessException(
                         "フィールド値が固定長 %dバイト を超えています: value=%s".formatted(byteLengths[i], value));
@@ -68,22 +70,6 @@ public class ByteLengthLineAggregator<T> implements LineAggregator<T> {
             line.writeBytes(pad(bytes, byteLengths[i], value));
         }
         return new String(line.toByteArray(), charset);
-    }
-
-    private byte[] encode(String value, int index) {
-        try {
-            ByteBuffer buffer = charset.newEncoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .encode(CharBuffer.wrap(value));
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
-            return bytes;
-        } catch (CharacterCodingException e) {
-            throw new BusinessException(
-                    "出力文字コード %s で表せない文字を含むフィールド値です: index=%d value=%s"
-                            .formatted(charset.name(), index, value), e);
-        }
     }
 
     /**
