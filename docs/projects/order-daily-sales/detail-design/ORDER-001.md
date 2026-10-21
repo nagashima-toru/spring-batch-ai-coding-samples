@@ -98,7 +98,7 @@
 | `orderDailySalesHeaderCheckTasklet` | `CsvHeaderCheckTasklet` | `@StepScope` | RunParameters の `inputFile()`・UTF-8・`OrderCsvRecord.COLUMN_NAMES` |
 | `orderDailySalesClearWorkTasklet` | `OrderDetailWorkClearTasklet` | `@StepScope` | §2 Step 3。RunParameters の `errorFile()`・`OrderDetailWorkMapper` |
 | `orderDailySalesReader` | `FlatFileItemReader<OrderCsvRecord>` | `@StepScope` | §2 Step 4。RunParameters の `inputFile()`。読取位置を保存しない（`saveState=false`） |
-| `orderDailySalesProcessor` | `OrderItemProcessor` | `@StepScope` | §2 Step 4。Step 実行ごとに既出キーの状態を新しく（空から）持つため Step スコープ。RunParameters の `targetDate()` |
+| `orderDailySalesProcessor` | `ItemProcessor<OrderCsvRecord, OrderDetailWork>`（実体は `OrderItemProcessor`） | `@StepScope` | §2 Step 4。Step 実行ごとに既出キーの状態を新しく（空から）持つため Step スコープ。RunParameters の `targetDate()` |
 | `orderDailySalesWriter` | `MyBatisBatchItemWriter<OrderDetailWork>` | singleton | statementId `...OrderDetailWorkMapper.insert` |
 | `orderDailySalesErrorRecordSkipListener` | `ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork>` | `@StepScope` | RunParameters の `errorFile()` |
 | `orderDailySalesReplaceTasklet` | `OrderDailySalesReplaceTasklet` | `@StepScope` | RunParameters の `targetDate()`・`OrderDetailMapper`・`DailyStoreSalesMapper` |
@@ -108,8 +108,9 @@
   本案件で新規作成する対象は `CsvHeaderCheckTasklet`（batch-core）・`OrderDetailWorkClearTasklet`・`OrderItemProcessor`・`OrderDailySalesReplaceTasklet`。
   `@JobScope` の `OrderDailySalesRunParametersHolder` も同じ理由で final にしない（`get()` も final にしない）。
   Bean メソッドの戻り値の型は具象クラスにする（プロキシが `StepExecutionListener` 等のインタフェースも実装するように）
-  継承元の public メソッド（`ValidatingItemProcessorBase#process` など）も final にしない（final だとプロキシが上書きできず、
-  プロキシ経由の呼び出しで target の状態が使われない）
+  ただし `ValidatingItemProcessorBase` を継承した Processor（`orderDailySalesProcessor`）は、戻り値と注入先の型を `ItemProcessor<OrderCsvRecord, OrderDetailWork>` にする（docs/architecture.md §13）
+  継承元の public メソッドも final にしない（final だとプロキシが上書きできず、
+  プロキシ経由の呼び出しで target の状態が使われない）。`ValidatingItemProcessorBase#process` は例外で final にし、上のとおりインタフェース型の Bean にする（Issue #76）
 
 ## 2. Step 詳細設計
 
@@ -395,3 +396,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-21 | 1.5 | Issue #77: `CsvHeaderCheckTasklet` は1行目の先頭の BOM を取り除いてからヘッダを照合する（BOM 付きを不一致とする記述を削除） |
 | 2026-10-21 | 1.6 | Issue #75: 実行時パラメータを `@JobScope` の `OrderDailySalesRunParametersHolder` で1回だけ解決し、各 `@StepScope` Bean に注入する（1.1 版の方式を見直し） |
 | 2026-10-21 | 1.7 | Issue #92: inputFile・errorFile がパスに変換できることを起動前に検証する（遅延解決で例外が入れ子にならないようにする）／Holder に引数なしコンストラクタが要らない理由（Objenesis）を明記／結合テストのログ回数の検証方法を明記 |
+| 2026-10-22 | 1.8 | Issue #76: `ValidatingItemProcessorBase#process` を final に戻した。§1 Bean 一覧の `orderDailySalesProcessor` の型を `ItemProcessor<OrderCsvRecord, OrderDetailWork>` にし、`@StepScope` の注記を直す |
