@@ -1,0 +1,15 @@
+{
+  "task": "P-20261021-code-review-minor-fixes/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 01:06",
+  "criteria": [
+    {"text": "リポジトリ（`.git`・`target`・`vault` を除く）にリテラルの U+FEFF（UTF-8 のバイト列 EF BB BF）を含むファイルが無い：`grep -rlP '\\xEF\\xBB\\xBF' --exclude-dir=.git --exclude-dir=target --exclude-dir=vault .` の出力が空", "ok": true, "note": "worktree で基準の grep -rlP を実行 / 出力: 空（該当ファイルなし）"},
+    {"text": "`CsvHeaderCheckTasklet.java` の `BOM` 定数が Unicode エスケープで書かれている：`grep -c 'String BOM = ..uFEFF.;' batch-core/src/main/java/com/example/batch/core/tasklet/CsvHeaderCheckTasklet.java` が `1`", "ok": true, "note": "実行コマンド: 基準の grep -c / 出力: 1"},
+    {"text": "テストの BOM 付きの2つの文字列が Unicode エスケープで書かれている：`grep -c 'uFEFForder_no,line_no,' batch-core/src/test/java/com/example/batch/core/tasklet/CsvHeaderCheckTaskletTest.java` が `2`", "ok": true, "note": "実行コマンド: 基準の grep -c / 出力: 2"},
+    {"text": "全モジュールの静的解析と単体テストが通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "worktree で JAVA_HOME=Java25 にて実行 / 終了コード0、BUILD SUCCESS 行の数: 1"},
+    {"text": "batch-core のカバレッジ80%を含めて通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "worktree で実行 / 終了コード0、BUILD SUCCESS 行の数: 1（参照: vault/rules/verifier/build-verification.md）"},
+    {"text": "直前のビルドで BOM 付きの2テストが実行された（BOM が U+FEFF として比較されている）：`grep -c 'testcase name=.BOM付き' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.CsvHeaderCheckTaskletTest.xml` が `2`", "ok": true, "note": "直前の -pl batch-core ビルド後に基準の grep -c を実行 / 出力: 2"}
+  ],
+  "reasons": []
+}
