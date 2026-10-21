@@ -106,8 +106,17 @@ class CsvHeaderCheckTaskletTest {
     }
 
     @Test
-    void BOM付きファイルの場合＿先頭項目が一致せずBusinessExceptionをスローする() throws Exception {
+    void BOM付きファイルの場合＿BOMを除いて比較し一致すればFINISHEDを返す() throws Exception {
         Path file = csv("﻿order_no,line_no,quantity\n");
+
+        RepeatStatus status = tasklet(file).execute(null, null);
+
+        assertThat(status).isEqualTo(RepeatStatus.FINISHED);
+    }
+
+    @Test
+    void BOM付きで項目名が異なる場合＿BusinessExceptionをスローする() throws Exception {
+        Path file = csv("﻿order_no,line_no,qty\n");
 
         assertThatThrownBy(() -> tasklet(file).execute(null, null))
                 .isInstanceOf(BusinessException.class)

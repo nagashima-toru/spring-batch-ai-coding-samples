@@ -123,10 +123,10 @@
 
 #### 処理フロー
 
-1. 入力ファイルの1行目を UTF-8 で読み、カンマで分割する
+1. 入力ファイルの1行目を UTF-8 で読み、カンマで分割する。1行目の先頭の BOM（U+FEFF）は取り除いてから分割する
 2. 分割結果が期待するヘッダ名の並び（`order_no,line_no,order_date,store_code,item_code,quantity,unit_price`）と
    **完全一致**（順序・件数・大文字小文字・前後空白を含む）することを確認する
-3. 一致しない（空ファイル・BOM 付き・項目名違い・列数違いを含む）場合は `BusinessException` を送出し Step は失敗する
+3. 一致しない（空ファイル・項目名違い・列数違いを含む）場合は `BusinessException` を送出し Step は失敗する
 
 ### Step 3: orderDailySales.03ClearWorkStep
 
@@ -249,7 +249,7 @@
 | 2 | `targetDate` を `,java.time.LocalDate` 付きで渡したが日付に変換できない | システム（起動不備） | JobParameters 変換時の例外 | ジョブ起動時に異常終了（1） | ログ |
 | 3 | 二重起動 | システム | `SystemException`（`DuplicateRunPreventingJobExecutionListener`） | 異常終了（1） | ログ |
 | 4 | 入力ファイルなし・読取不可 | 前処理 | `BusinessException`（`FileExistenceCheckTasklet`） | Step 1 失敗→異常終了（1） | ログ |
-| 5 | ヘッダ行不一致（空ファイル・BOM 付き含む） | 前処理 | `BusinessException`（`CsvHeaderCheckTasklet`） | Step 2 失敗→異常終了（1） | ログ |
+| 5 | ヘッダ行不一致（空ファイル含む。BOM 付きは BOM を除いて照合する） | 前処理 | `BusinessException`（`CsvHeaderCheckTasklet`） | Step 2 失敗→異常終了（1） | ログ |
 | 5a | エラーファイルを削除できない（権限不足等） | システム | `SystemException`（`OrderDetailWorkClearTasklet`） | Step 3 失敗→異常終了（1）→原因除去後リスタート | ログ |
 | 6 | パース不能行（列数不一致等） | 業務 | `FlatFileParseException` | Skip（上限 `skipLimit`） | エラーファイル（元の行） |
 | 7 | 形式不正（必須・桁・文字種・値域） | 業務 | `BusinessException`（`ValidatingItemProcessorBase`） | Skip | エラーファイル |
@@ -341,7 +341,7 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
   1件目が不正で2件目が正常→2件目は通る、amount の計算（最大値で桁あふれしない）
 - `OrderDetailWorkClearTasklet`: エラーファイルがある→削除して TRUNCATE、無い→TRUNCATE のみ（例外にならない）、
   削除できない（例: パスがディレクトリで中身がある）→ `SystemException` で TRUNCATE を呼ばない
-- `CsvHeaderCheckTasklet`: 一致、項目名違い、順序違い、列数違い、空ファイル、BOM 付き、前後空白
+- `CsvHeaderCheckTasklet`: 一致、項目名違い、順序違い、列数違い、空ファイル、BOM 付き（BOM を除いて一致・不一致）、前後空白
 - `CsvItemReaderFactory#createWithLineNumber`: 行番号（ヘッダ1行スキップで最初のデータ行が2）、値をトリムしない、列数不一致で `FlatFileParseException`、
   リスタート（`ExecutionContext` から読取位置を復元して続きを読み、行番号も続きから振られる）
 - 業務 Tasklet 2つ: Mapper の呼び出し順と件数のログ・`incrementWriteCount`
@@ -380,3 +380,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-12 | 1.2 | 結合テスト工程の指摘反映: §1 の `@StepScope` 注記を「継承元の public メソッドも final にしない」に直す（`ValidatingItemProcessorBase#process` から final を外した） |
 | 2026-10-12 | 1.3 | 基盤部品の挙動の訂正（Issue #42）: §1.1 の Validator の説明を「未知のキーは基盤部品ではなくこのクラスで拒否する」に直す（実装は変えない） |
 | 2026-10-18 | 1.4 | 基本設計書 1.4 版への追従（Issue #74）: リスタートは Step 1〜4 を最初からやり直す（Step 1〜4 に `allowStartIfComplete(true)`、Reader は `saveState=false`）／Step 3 でエラーファイルも削除し、Tasklet を `@StepScope` に変更／`OrderItemProcessor` の `beforeStep`（ワークからの既出キーの復元）と `StepExecutionListener` の登録を廃止し、`selectKeys`・`OrderKey` を削除／リラン設計とテスト観点を更新（設計レビューの指摘で、システムテストのシナリオの改訂の引き継ぎを追加） |
+| 2026-10-21 | 1.5 | Issue #77: `CsvHeaderCheckTasklet` は1行目の先頭の BOM を取り除いてからヘッダを照合する（BOM 付きを不一致とする記述を削除） |

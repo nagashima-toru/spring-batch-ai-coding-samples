@@ -34,7 +34,10 @@ import com.example.batch.core.exception.BusinessException;
  *
  * <p>1行目をカンマで分割した値の並びを期待値と比較する（順序・件数・大文字小文字・前後空白を含む完全一致。
  * 値はトリムしない）。不一致・空ファイル・読取不可の場合は {@link BusinessException} を送出し、
- * Step は失敗（ジョブは異常終了）する。BOM 付きファイルは先頭項目が一致しないため不一致になる。</p>
+ * Step は失敗（ジョブは異常終了）する。
+ * 先頭の BOM（U+FEFF）を取り除いてから比べる。
+ * {@code CsvItemReaderFactory} は BOM を取り除かないが、ヘッダ行を {@code linesToSkip=1} で読み飛ばすので
+ * BOM の影響を受けない。</p>
  *
  * <p>{@code @StepScope} で使うため final にしない。</p>
  *
@@ -44,6 +47,9 @@ import com.example.batch.core.exception.BusinessException;
 public class CsvHeaderCheckTasklet implements Tasklet {
 
     private static final Logger log = LoggerFactory.getLogger(CsvHeaderCheckTasklet.class);
+
+    /** 先頭に付く BOM（U+FEFF）。 */
+    private static final String BOM = "﻿";
 
     private final Path file;
     private final Charset charset;
@@ -67,10 +73,11 @@ public class CsvHeaderCheckTasklet implements Tasklet {
             throw new BusinessException("ヘッダ行がありません（空ファイル）: file=" + file
                     + " 期待=" + String.join(",", expectedColumns));
         }
-        List<String> actual = Arrays.asList(firstLine.split(",", -1));
+        String header = firstLine.startsWith(BOM) ? firstLine.substring(BOM.length()) : firstLine;
+        List<String> actual = Arrays.asList(header.split(",", -1));
         if (!expectedColumns.equals(actual)) {
             throw new BusinessException("ヘッダ行が想定と異なります: file=" + file
-                    + " 期待=" + String.join(",", expectedColumns) + " 実際=" + firstLine);
+                    + " 期待=" + String.join(",", expectedColumns) + " 実際=" + header);
         }
         log.info("ヘッダ行を確認しました: file={}", file);
         return RepeatStatus.FINISHED;
