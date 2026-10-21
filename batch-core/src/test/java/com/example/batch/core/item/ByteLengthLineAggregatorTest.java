@@ -45,4 +45,15 @@ class ByteLengthLineAggregatorTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("超えています");
     }
+
+    @Test
+    void 表せない文字を含むフィールド値の場合＿BusinessExceptionをスローする() {
+        var aggregator = new ByteLengthLineAggregator<>(
+                item -> new Object[] {item}, Charset.forName("Windows-31J"), new int[] {10});
+
+        assertThatThrownBy(() -> aggregator.aggregate("A𠮷B"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("表せない文字")
+                .hasMessageContaining("A𠮷B");
+    }
 }

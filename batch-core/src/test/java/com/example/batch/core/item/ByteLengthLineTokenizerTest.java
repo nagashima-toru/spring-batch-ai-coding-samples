@@ -63,4 +63,14 @@ class ByteLengthLineTokenizerTest {
         assertThatThrownBy(() -> new ByteLengthLineTokenizer(SJIS, new String[] {"a"}, new int[] {1, 2}))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void 表せない文字を含む行の場合＿BusinessExceptionをスローする() {
+        var tokenizer = new ByteLengthLineTokenizer(
+                Charset.forName("Windows-31J"), new String[] {"a"}, new int[] {4});
+
+        assertThatThrownBy(() -> tokenizer.tokenize("A𠮷B"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("表せない文字");
+    }
 }
