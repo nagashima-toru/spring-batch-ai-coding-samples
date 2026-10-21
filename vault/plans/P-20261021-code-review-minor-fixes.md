@@ -28,7 +28,7 @@ GitHub Issue #92「PR #91 の /code-review で出た軽微な指摘」の7項目
 | T-01 | done | 1 | - | CsvHeaderCheckTasklet の BOM 定数とテストの BOM を Unicode エスケープ表記にする | |
 | T-02 | done | 1 | - | 固定長部品の strict エンコードを StrictCharsetEncoder にまとめ、例外の文言と Javadoc の契約を直す | |
 | T-03 | done | 1 | - | ORDER-001 のパスを Validator で起動前に検証し、Holder の Javadoc と詳細設計書を直す | |
-| T-04 | doing | 1 | T-03 | OrderDailySalesJobIT のログ回数の検証を ListAppender にし、パラメータ検証とプロキシのテストを足す | |
+| T-04 | review | 1 | T-03 | OrderDailySalesJobIT のログ回数の検証を ListAppender にし、パラメータ検証とプロキシのテストを足す | |
 | T-05 | todo | 0 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
