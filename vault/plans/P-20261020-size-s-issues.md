@@ -20,7 +20,7 @@ GitHub の open な Issue のうち size: S ラベルの4件（#77・#75・#73�
 | T-02 | done | 1 | T-01 | #75 ORDER-001 の実行時パラメータを @JobScope Bean で1回だけ解決する | |
 | T-03 | done | 1 | - | #73 ByteLengthLineAggregator・Tokenizer が表せない文字で BusinessException を投げる | |
 | T-04 | done | 1 | - | #63 コアサンプル03/04/05 の単体テストを追加する | |
-| T-05 | doing | 1 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
+| T-05 | review | 1 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
