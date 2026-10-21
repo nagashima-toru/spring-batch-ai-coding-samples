@@ -45,7 +45,8 @@ class ByteLengthLineTokenizerTest {
 
         assertThatThrownBy(() -> tokenizer.tokenize("TOOLONGLINE"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("バイト長が不正");
+                .hasMessage("固定長レコードのバイト長が不正です: expected=5 actual=11")
+                .hasMessageNotContaining("TOOLONGLINE");
     }
 
     @Test
@@ -55,7 +56,8 @@ class ByteLengthLineTokenizerTest {
 
         assertThatThrownBy(() -> tokenizer.tokenize("あああ"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("分断");
+                .hasMessage("フィールド境界がマルチバイト文字を分断しています: field=a offset=0 length=3")
+                .hasMessageNotContaining("あああ");
     }
 
     @Test

@@ -28,6 +28,7 @@ import com.example.batch.core.exception.BusinessException;
  * 除去して返す。
  * 行のバイト長が定義合計と一致しない場合・フィールド境界がマルチバイト文字の途中に
  * かかる場合は {@link BusinessException} を送出する（Skip 対象として扱える）。
+ * 例外のメッセージには行の内容を含めず、バイト数・フィールド名・バイト位置を示す。
  * </p>
  *
  * <p>文字コードで表せない文字（対になっていないサロゲートを含む）を含む場合は
@@ -71,8 +72,8 @@ public class ByteLengthLineTokenizer implements LineTokenizer {
         byte[] bytes = StrictCharsetEncoder.encode(line, charset, "入力の行");
         if (bytes.length != totalBytes) {
             throw new BusinessException(
-                    "固定長レコードのバイト長が不正です: expected=%d actual=%d line=%s"
-                            .formatted(totalBytes, bytes.length, line));
+                    "固定長レコードのバイト長が不正です: expected=%d actual=%d"
+                            .formatted(totalBytes, bytes.length));
         }
         String[] values = new String[byteLengths.length];
         int offset = 0;
@@ -82,7 +83,8 @@ public class ByteLengthLineTokenizer implements LineTokenizer {
             // デコード→再エンコードで元のバイト列に戻らない場合、境界がマルチバイト文字を分断している
             if (!Arrays.equals(value.getBytes(charset), slice)) {
                 throw new BusinessException(
-                        "フィールド境界がマルチバイト文字を分断しています: field=%s line=%s".formatted(names[i], line));
+                        "フィールド境界がマルチバイト文字を分断しています: field=%s offset=%d length=%d"
+                                .formatted(names[i], offset, byteLengths[i]));
             }
             values[i] = stripPadding(value);
             offset += byteLengths[i];
