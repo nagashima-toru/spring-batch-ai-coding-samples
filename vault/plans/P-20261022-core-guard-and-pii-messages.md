@@ -22,7 +22,7 @@ GitHub Issue #76 と #93（nagashima-toru/spring-batch-ai-coding-samples）を1�
 |---|---|---|---|---|---|
 | T-01 | doing | 1 | - | `@StepScope` の Processor をインタフェース型の Bean にする方針を設計書に反映する | |
 | T-02 | todo | 0 | T-01 | `ValidatingItemProcessorBase.process()` を final に戻し、`orderDailySalesProcessor` をインタフェース型の Bean にする | |
-| T-03 | doing | 1 | - | `ByteLengthLineTokenizer` の例外メッセージから行の内容を除く | |
+| T-03 | blocked | 1 | - | `ByteLengthLineTokenizer` の例外メッセージから行の内容を除く | この環境には JDK 21 しか無く、`./mvnw clean verify` が `maven-compiler-plugin` の「release version 25 not supported」で失敗します。受け入れ基準の最後の2つ(ビルド成功を数える `./mvnw` のコマンド)が、コードの内容に関係なく通せません。JDK 25 (Temurin) を入れた環境で実行し直してよいですか。pom の Java バージョンを下げる対応は、基準を緩める変更になるので行っていません。 |
 | T-04 | doing | 1 | - | `ByteLengthLineAggregator` の例外メッセージから値を除き、sample03 の解説を直す | |
 | T-05 | todo | 0 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
 
