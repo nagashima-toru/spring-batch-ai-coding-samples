@@ -1,0 +1,16 @@
+{
+  "task": "P-20261022-core-guard-and-pii-messages/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 07:51",
+  "criteria": [
+    {"text": "`process()` が final で宣言されている：`grep -c 'public final O process(I item)' batch-core/src/main/java/com/example/batch/core/item/ValidatingItemProcessorBase.java` の出力が `1`", "ok": true, "note": "実行コマンド: 左記 grep（worktree で実行） / 出力: 1"},
+    {"text": "`ValidatingItemProcessorBase.java` から「final にしない」の記述が消えている：`grep -c 'final にしない' batch-core/src/main/java/com/example/batch/core/item/ValidatingItemProcessorBase.java` の出力が `0`", "ok": true, "note": "実行コマンド: 左記 grep / 出力: 0"},
+    {"text": "final を確かめる単体テストがある：`grep -c 'void processメソッドの修飾子＿finalである' batch-core/src/test/java/com/example/batch/core/item/ValidatingItemProcessorBaseTest.java` の出力が `1`", "ok": true, "note": "実行コマンド: 左記 grep / 出力: 1"},
+    {"text": "`orderDailySalesProcessor` の Bean メソッドの戻り値と注入先の型がインタフェース型：`grep -c 'public ItemProcessor.OrderCsvRecord, OrderDetailWork. orderDailySalesProcessor(' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderDailySalesJobConfig.java` と `grep -c 'ItemProcessor.OrderCsvRecord, OrderDetailWork. orderDailySalesProcessor,' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderDailySalesJobConfig.java` の出力がどちらも `1`", "ok": true, "note": "実行コマンド: 左記 grep 2本 / 出力: 1 と 1。Bean 戻り値と step 引数の両方がインタフェース型"},
+    {"text": "全モジュールの静的解析・単体テストが通る：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: JAVA_HOME 付きで左記 mvnw を worktree で実行 / 終了コード 0、BUILD SUCCESS の grep -c は 1"},
+    {"text": "batch-core のカバレッジ80%を満たす：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: 左記 mvnw を実行 / 終了コード 0、BUILD SUCCESS の grep -c は 1（jacoco check 込みで成功）。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "結合テスト（`OrderDailySalesJobIT` の `@StepScope` のプロキシ経由の実行を含む）が通る：`./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw clean verify`（docker info 成功を確認済み） / 終了コード 0、BUILD SUCCESS の grep -c は 1、OrderDailySalesJobIT Tests run: 15, Failures: 0, Errors: 0"}
+  ],
+  "reasons": []
+}
