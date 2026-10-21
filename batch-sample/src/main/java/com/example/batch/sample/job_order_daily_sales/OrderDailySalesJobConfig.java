@@ -8,6 +8,7 @@ import org.mybatis.spring.batch.MyBatisBatchItemWriter;
 import org.mybatis.spring.batch.builder.MyBatisBatchItemWriterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -143,57 +144,56 @@ public class OrderDailySalesJobConfig {
                 .build();
     }
 
+    /**
+     * 省略時の補完を済ませた実行時パラメータを確定し、補完後の値をログに出す（1回の JobExecution につき1回）。
+     * record は final でスコーププロキシを作れないため、{@link OrderDailySalesRunParametersHolder} に包んで返す。
+     */
     @Bean
-    @StepScope
-    public FileExistenceCheckTasklet orderDailySalesFileCheckTasklet(
+    @JobScope
+    public OrderDailySalesRunParametersHolder orderDailySalesRunParameters(
             @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
             @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
             @Value("#{jobParameters['inputFile']}") String inputFile,
             @Value("#{jobParameters['errorFile']}") String errorFile,
             SampleProperties properties) {
-        return new FileExistenceCheckTasklet(
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).inputFile());
+        OrderDailySalesRunParameters resolved = OrderDailySalesRunParameters.resolve(scheduledTime, targetDate,
+                inputFile, errorFile, properties.orderDailySales());
+        log.info("実行時パラメータを確定しました: targetDate={} inputFile={} errorFile={}",
+                resolved.targetDate(), resolved.inputFile(), resolved.errorFile());
+        return new OrderDailySalesRunParametersHolder(resolved);
+    }
+
+    @Bean
+    @StepScope
+    public FileExistenceCheckTasklet orderDailySalesFileCheckTasklet(
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
+        return new FileExistenceCheckTasklet(orderDailySalesRunParameters.get().inputFile());
     }
 
     @Bean
     @StepScope
     public CsvHeaderCheckTasklet orderDailySalesHeaderCheckTasklet(
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties) {
-        return new CsvHeaderCheckTasklet(
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).inputFile(),
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
+        return new CsvHeaderCheckTasklet(orderDailySalesRunParameters.get().inputFile(),
                 StandardCharsets.UTF_8, OrderCsvRecord.COLUMN_NAMES);
     }
 
     @Bean
     @StepScope
     public OrderDetailWorkClearTasklet orderDailySalesClearWorkTasklet(
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties, OrderDetailWorkMapper orderDetailWorkMapper) {
-        return new OrderDetailWorkClearTasklet(
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).errorFile(),
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters,
+            OrderDetailWorkMapper orderDetailWorkMapper) {
+        return new OrderDetailWorkClearTasklet(orderDailySalesRunParameters.get().errorFile(),
                 orderDetailWorkMapper);
     }
 
     @Bean
     @StepScope
     public FlatFileItemReader<OrderCsvRecord> orderDailySalesReader(
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties) {
-        OrderDailySalesRunParameters runParameters =
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties);
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
         FlatFileItemReader<OrderCsvRecord> reader = CsvItemReaderFactory.createWithLineNumber(
-                "orderDailySalesReader", new FileSystemResource(runParameters.inputFile()), StandardCharsets.UTF_8, 1,
-                OrderCsvRecord.COLUMN_NAMES, OrderCsvRecord::of);
+                "orderDailySalesReader", new FileSystemResource(orderDailySalesRunParameters.get().inputFile()),
+                StandardCharsets.UTF_8, 1, OrderCsvRecord.COLUMN_NAMES, OrderCsvRecord::of);
         // リスタート時もファイルの先頭から読み直す（Step 4 は最初からやり直すため読取位置を保存しない）
         reader.setSaveState(false);
         return reader;
@@ -202,13 +202,8 @@ public class OrderDailySalesJobConfig {
     @Bean
     @StepScope
     public OrderItemProcessor orderDailySalesProcessor(Validator validator,
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties) {
-        return new OrderItemProcessor(validator,
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).targetDate());
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
+        return new OrderItemProcessor(validator, orderDailySalesRunParameters.get().targetDate());
     }
 
     @Bean
@@ -222,13 +217,8 @@ public class OrderDailySalesJobConfig {
     @Bean
     @StepScope
     public ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork> orderDailySalesErrorRecordSkipListener(
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties) {
-        return new ErrorRecordSkipListener<>(
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).errorFile(),
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
+        return new ErrorRecordSkipListener<>(orderDailySalesRunParameters.get().errorFile(),
                 r -> "line=" + r.lineSeq() + "," + String.join(",", r.orderNo(), r.lineNo(), r.orderDate(),
                         r.storeCode(), r.itemCode(), r.quantity(), r.unitPrice()),
                 w -> "line=" + w.lineSeq() + "," + w.orderNo() + "," + w.lineNo());
@@ -237,24 +227,9 @@ public class OrderDailySalesJobConfig {
     @Bean
     @StepScope
     public OrderDailySalesReplaceTasklet orderDailySalesReplaceTasklet(
-            @Value("#{jobParameters['scheduledTime']}") String scheduledTime,
-            @Value("#{jobParameters['targetDate']}") LocalDate targetDate,
-            @Value("#{jobParameters['inputFile']}") String inputFile,
-            @Value("#{jobParameters['errorFile']}") String errorFile,
-            SampleProperties properties, OrderDetailMapper orderDetailMapper,
-            DailyStoreSalesMapper dailyStoreSalesMapper) {
-        return new OrderDailySalesReplaceTasklet(
-                runParameters(scheduledTime, targetDate, inputFile, errorFile, properties).targetDate(),
+            OrderDailySalesRunParametersHolder orderDailySalesRunParameters,
+            OrderDetailMapper orderDetailMapper, DailyStoreSalesMapper dailyStoreSalesMapper) {
+        return new OrderDailySalesReplaceTasklet(orderDailySalesRunParameters.get().targetDate(),
                 orderDetailMapper, dailyStoreSalesMapper);
-    }
-
-    /** 省略時の補完を済ませた実行時パラメータを確定し、補完後の値をログに出す。 */
-    private static OrderDailySalesRunParameters runParameters(String scheduledTime, LocalDate targetDate,
-            String inputFile, String errorFile, SampleProperties properties) {
-        OrderDailySalesRunParameters resolved = OrderDailySalesRunParameters.resolve(scheduledTime, targetDate,
-                inputFile, errorFile, properties.orderDailySales());
-        log.info("実行時パラメータを確定しました: targetDate={} inputFile={} errorFile={}",
-                resolved.targetDate(), resolved.inputFile(), resolved.errorFile());
-        return resolved;
     }
 }
