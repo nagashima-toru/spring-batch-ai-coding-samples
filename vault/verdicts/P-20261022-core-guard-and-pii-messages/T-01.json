@@ -1,0 +1,16 @@
+{
+  "task": "P-20261022-core-guard-and-pii-messages/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 06:10",
+  "criteria": [
+    {"text": "方式設計 §13 に方針の項目がある：`grep -c 'Bean メソッドの戻り値の型と注入先の引数の型を' docs/architecture.md` の出力が `1`", "ok": true, "note": "worktree で実行: `grep -c ... docs/architecture.md` / 出力: 1。差分は architecture.md に1行追加のみ"},
+    {"text": "決定事項の末尾に Issue #76 の行がある：`grep -c 'P-20261022-core-guard-and-pii-messages（Issue #76）' docs/decisions.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c ... docs/decisions.md` / 出力: 1"},
+    {"text": "決定事項の既存の行が改められている：`grep -c 'は例外。Issue #76 で final に戻した。末尾の行を見る' docs/decisions.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c ... docs/decisions.md` / 出力: 1"},
+    {"text": "「process も final を外した」という古い記述がリポジトリの docs・コードに残っていない：`grep -rn 'も final を外した' docs batch-core batch-sample` の出力が空", "ok": true, "note": "実行コマンド: `grep -rn 'も final を外した' docs batch-core batch-sample` / 出力: 空（rc=1）"},
+    {"text": "ORDER-001 の Bean 一覧の `orderDailySalesProcessor` の型がインタフェース型になっている：`grep -c 'orderDailySalesProcessor.....ItemProcessor.OrderCsvRecord, OrderDetailWork.' docs/projects/order-daily-sales/detail-design/ORDER-001.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "ORDER-001 の `@StepScope` の注記から process を final にしない旨が消えている：`grep -c 'など）も final にしない' docs/projects/order-daily-sales/detail-design/ORDER-001.md` の出力が `0`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 0"},
+    {"text": "ORDER-001 の変更履歴に Issue #76 の行がある：`grep -c 'Issue #76: ' docs/projects/order-daily-sales/detail-design/ORDER-001.md` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1。git diff --stat は docs 3ファイルのみ（Java 変更なし）"}
+  ],
+  "reasons": []
+}
