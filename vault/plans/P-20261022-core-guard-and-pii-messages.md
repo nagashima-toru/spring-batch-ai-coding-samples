@@ -25,7 +25,7 @@ GitHub Issue #76 と #93（nagashima-toru/spring-batch-ai-coding-samples）を1�
 | T-02 | done | 1 | T-01 | `ValidatingItemProcessorBase.process()` を final に戻し、`orderDailySalesProcessor` をインタフェース型の Bean にする | |
 | T-03 | done | 1 | - | `ByteLengthLineTokenizer` の例外メッセージから行の内容を除く | |
 | T-04 | done | 1 | - | `ByteLengthLineAggregator` の例外メッセージから値を除き、sample03 の解説を直す | |
-| T-05 | todo | 0 | T-01,T-02,T-03,T-04,T-06 | 計画の差分が `/code-review` を通過する |  |
+| T-05 | doing | 1 | T-01,T-02,T-03,T-04,T-06 | 計画の差分が `/code-review` を通過する | |
 | T-06 | done | 1 | T-02 | `ValidatingItemProcessorBase` 派生の具象型を `@StepScope` の Bean にする書き方を ArchUnit で検出する | |
 
 ## 計画の受け入れ基準
