@@ -43,7 +43,8 @@ class ByteLengthLineAggregatorTest {
     void バイト長を超えるフィールド値はBusinessExceptionをスローする() {
         assertThatThrownBy(() -> aggregator(2, 4, 3).aggregate(new Product("TOOLONG", "x", "1")))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("超えています");
+                .hasMessage("フィールド値が固定長 2バイト を超えています: index=0 actual=7")
+                .hasMessageNotContaining("TOOLONG");
     }
 
     @Test
