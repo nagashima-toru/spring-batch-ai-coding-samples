@@ -12,8 +12,8 @@ import com.example.batch.sample.common.SampleProperties.OrderDailySales;
 /**
  * ORDER-001: 実行時パラメータ（省略時の補完を済ませた値）。
  *
- * <p>record は final クラスでスコーププロキシを作れないため Bean にしない。
- * 値が必要な Bean メソッドは {@link #resolve} を呼んで使う（補完規則はここだけに置く）。
+ * <p>record は final クラスでスコーププロキシを作れないため、{@link OrderDailySalesRunParametersHolder} に包んで
+ * {@code @JobScope} の Bean にする。補完規則は {@link #resolve} だけに置く。
  * 日付はすべて {@code scheduledTime} から導出し、実行時刻には依存しない（リスタートで値が変わらない）。</p>
  *
  * @param targetDate 対象日（受注日）
