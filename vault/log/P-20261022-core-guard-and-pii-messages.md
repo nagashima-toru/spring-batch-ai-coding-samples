@@ -26,3 +26,4 @@
 - 2026-10-22 06:45 T-04 doing→review attempt=1 creator=sonnet
 - 2026-10-22 06:47 T-03 review→done attempt=1 verifier=sonnet
 - 2026-10-22 06:47 T-04 review→done attempt=1 verifier=sonnet
+- 2026-10-22 07:46 T-02 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-02
