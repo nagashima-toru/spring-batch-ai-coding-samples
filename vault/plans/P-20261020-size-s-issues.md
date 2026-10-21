@@ -1,6 +1,6 @@
 ---
 id: P-20261020-size-s-issues
-status: approved
+status: done
 ---
 # ゴール
 GitHub の open な Issue のうち size: S ラベルの4件（#77・#75・#73・#63）をすべて解決する。1 Issue = 1 タスクを基本とする。
