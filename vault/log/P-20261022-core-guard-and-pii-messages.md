@@ -16,3 +16,4 @@
 - 2026-10-22 06:34 T-04 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-04
 - 2026-10-22 06:34 T-02 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-02
 - 2026-10-22 06:35 T-02 todo→doing attempt=1 worktree を引き継ぎ
+- 2026-10-22 06:35 T-03 todo→doing attempt=1 worktree を引き継ぎ
