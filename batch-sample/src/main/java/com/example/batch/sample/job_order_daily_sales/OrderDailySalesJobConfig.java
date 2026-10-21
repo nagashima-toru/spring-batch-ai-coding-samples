@@ -15,6 +15,7 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.batch.infrastructure.item.file.FlatFileItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -114,7 +115,7 @@ public class OrderDailySalesJobConfig {
     @Bean
     public Step orderDailySalesImportStep(JobRepository jobRepository, PlatformTransactionManager transactionManager,
             FlatFileItemReader<OrderCsvRecord> orderDailySalesReader,
-            OrderItemProcessor orderDailySalesProcessor,
+            ItemProcessor<OrderCsvRecord, OrderDetailWork> orderDailySalesProcessor,
             MyBatisBatchItemWriter<OrderDetailWork> orderDailySalesWriter,
             ErrorRecordSkipListener<OrderCsvRecord, OrderDetailWork> orderDailySalesErrorRecordSkipListener,
             LoggingStepExecutionListener loggingStepExecutionListener,
@@ -201,7 +202,7 @@ public class OrderDailySalesJobConfig {
 
     @Bean
     @StepScope
-    public OrderItemProcessor orderDailySalesProcessor(Validator validator,
+    public ItemProcessor<OrderCsvRecord, OrderDetailWork> orderDailySalesProcessor(Validator validator,
             OrderDailySalesRunParametersHolder orderDailySalesRunParameters) {
         return new OrderItemProcessor(validator, orderDailySalesRunParameters.get().targetDate());
     }
