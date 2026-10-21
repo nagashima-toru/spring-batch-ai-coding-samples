@@ -1,6 +1,6 @@
 ---
 id: P-20261022-core-guard-and-pii-messages
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #76 と #93（nagashima-toru/spring-batch-ai-coding-samples）を1つの計画で解決する。
