@@ -10,3 +10,8 @@
 - 2026-10-22 06:09 T-01 doing→review attempt=1 creator=sonnet
 - 2026-10-22 06:10 T-01 review→done attempt=1 verifier=sonnet
 - 2026-10-22 06:10 T-02 todo→doing attempt=1
+- 2026-10-22 06:11 T-02 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a54ef233b50a513c0 branch=worktree-agent-a54ef233b50a513c0 plan_head=f4fef5b1d885f3ab4392b63d71c306e10be6b294
+- 2026-10-22 06:11 T-02 doing→blocked attempt=1 creator=sonnet
+- 2026-10-22 06:34 T-03 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-03
+- 2026-10-22 06:34 T-04 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-04
+- 2026-10-22 06:34 T-02 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-02
