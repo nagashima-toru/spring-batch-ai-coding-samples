@@ -15,7 +15,8 @@ GitHub Issue #76 と #93（nagashima-toru/spring-batch-ai-coding-samples）を1�
 - T-02 は `@StepScope` のプロキシの不具合が結合テストでしか出ない（`docs/decisions.md`）ため、`./mvnw clean verify`（Docker 必須）を基準に入れる
 - #93 は Issue に挙がった2つのメッセージに加え、同じ `ByteLengthLineTokenizer` の境界分断のメッセージ（`field=%s line=%s`）も行をそのまま出しているので、T-03 で同じ扱いにする（Issue のタイトル「固定長部品の例外メッセージに行・値がそのまま入る」の範囲）
 - T-01 は Markdown だけの変更で、ビルドの結果に影響しないため、ビルドの基準を入れない
-- コードを変更するタスク（T-02・T-03・T-04）があるので、計画単位のレビュータスク T-05 を最後に足す
+- T-05 の `/code-review` で「具象型の `@StepScope` の Bean にすると実行時に NPE になる書き方を自動で止められない」「`docs/decisions.md` の旧行と新行が矛盾して読める」との指摘が出て、人が対応（B）を決めた。T-06 を足し、ArchUnit の検査と decisions.md の整理を行う。T-06 は T-02 の後に実装し、T-05 は T-06 の後に再実行する
+- コードを変更するタスク（T-02・T-03・T-04・T-06）があるので、計画単位のレビュータスク T-05 を最後に置く
 
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
@@ -24,7 +25,8 @@ GitHub Issue #76 と #93（nagashima-toru/spring-batch-ai-coding-samples）を1�
 | T-02 | done | 1 | T-01 | `ValidatingItemProcessorBase.process()` を final に戻し、`orderDailySalesProcessor` をインタフェース型の Bean にする | |
 | T-03 | done | 1 | - | `ByteLengthLineTokenizer` の例外メッセージから行の内容を除く | |
 | T-04 | done | 1 | - | `ByteLengthLineAggregator` の例外メッセージから値を除き、sample03 の解説を直す | |
-| T-05 | blocked | 1 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | 人の判断が必要: ValidatingItemProcessorBase.process() を final にした方式（#76）は、具象型で @StepScope の Bean を宣言すると NPE になり、自動検査（ArchUnit/Checkstyle）が無い。docs/decisions.md の旧行と新行が並んで矛盾して読めるため、検査の追加や行の整理が要るか決める必要がある（方式の変更が要る指摘なので独断で直さない） |
+| T-05 | blocked | 1 | T-01,T-02,T-03,T-04,T-06 | 計画の差分が `/code-review` を通過する | 人の判断が必要: ValidatingItemProcessorBase.process() を final にした方式（#76）は、具象型で @StepScope の Bean を宣言すると NPE になり、自動検査（ArchUnit/Checkstyle）が無い。docs/decisions.md の旧行と新行が並んで矛盾して読めるため、検査の追加や行の整理が要るか決める必要がある（方式の変更が要る指摘なので独断で直さない） |
+| T-06 | todo | 0 | T-02 | `ValidatingItemProcessorBase` 派生の具象型を `@StepScope` の Bean にする書き方を ArchUnit で検出する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある
