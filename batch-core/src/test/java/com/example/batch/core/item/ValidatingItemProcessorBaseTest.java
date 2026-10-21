@@ -3,6 +3,8 @@ package com.example.batch.core.item;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.lang.reflect.Modifier;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -61,5 +63,11 @@ class ValidatingItemProcessorBaseTest {
     @Test
     void doProcessがnullを返すとレコードはフィルタされる() throws Exception {
         assertThat(processor().process(new CustomerInput("SKIP", 1))).isNull();
+    }
+
+    @Test
+    void processメソッドの修飾子＿finalである() throws NoSuchMethodException {
+        assertThat(Modifier.isFinal(ValidatingItemProcessorBase.class.getMethod("process", Object.class)
+                .getModifiers())).isTrue();
     }
 }
