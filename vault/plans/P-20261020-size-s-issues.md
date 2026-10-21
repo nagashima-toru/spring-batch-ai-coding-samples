@@ -16,7 +16,7 @@ GitHub の open な Issue のうち size: S ラベルの4件（#77・#75・#73�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | #77 CsvHeaderCheckTasklet が先頭の BOM を除いてヘッダを比べる | |
+| T-01 | review | 1 | - | #77 CsvHeaderCheckTasklet が先頭の BOM を除いてヘッダを比べる | |
 | T-02 | todo | 0 | T-01 | #75 ORDER-001 の実行時パラメータを @JobScope Bean で1回だけ解決する | |
 | T-03 | doing | 1 | - | #73 ByteLengthLineAggregator・Tokenizer が表せない文字で BusinessException を投げる | |
 | T-04 | doing | 1 | - | #63 コアサンプル03/04/05 の単体テストを追加する | |
