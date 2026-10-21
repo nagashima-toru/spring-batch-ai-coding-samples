@@ -19,7 +19,8 @@ import com.example.batch.core.exception.BusinessException;
  * <p><b>使い方:</b> 通常は {@code FixedLengthItemWriterFactory} 経由で利用する。</p>
  *
  * <p>フィールド値が指定バイト長を超える場合は {@link BusinessException} を送出する
- * （切り捨てによるデータ破損を防ぐため）。</p>
+ * （切り捨てによるデータ破損を防ぐため）。
+     * 例外のメッセージには値を含めず、フィールドの添字（0始まり）・固定長のバイト数・値のバイト数を示す。</p>
  *
  * <p>文字コードで表せない文字（対になっていないサロゲートを含む）を含む場合は
  * {@link BusinessException} を送出する。例外のメッセージには値を含めず、1始まりの文字位置と
@@ -65,7 +66,8 @@ public class ByteLengthLineAggregator<T> implements LineAggregator<T> {
             byte[] bytes = StrictCharsetEncoder.encode(value, charset, "出力のフィールド index=" + i);
             if (bytes.length > byteLengths[i]) {
                 throw new BusinessException(
-                        "フィールド値が固定長 %dバイト を超えています: value=%s".formatted(byteLengths[i], value));
+                        "フィールド値が固定長 %dバイト を超えています: index=%d actual=%d"
+                                .formatted(byteLengths[i], i, bytes.length));
             }
             line.writeBytes(pad(bytes, byteLengths[i], value));
         }
