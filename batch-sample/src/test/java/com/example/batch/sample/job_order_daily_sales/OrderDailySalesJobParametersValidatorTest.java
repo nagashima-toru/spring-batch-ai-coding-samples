@@ -116,6 +116,24 @@ class OrderDailySalesJobParametersValidatorTest {
     }
 
     @Test
+    void inputFileがパスに変換できない場合＿InvalidJobParametersExceptionをスローする() {
+        JobParameters parameters = base().addString("inputFile", "in" + (char) 0 + "put.csv").toJobParameters();
+
+        assertThatThrownBy(() -> validator.validate(parameters))
+                .isInstanceOf(InvalidJobParametersException.class)
+                .hasMessageContaining("inputFile");
+    }
+
+    @Test
+    void errorFileがパスに変換できない場合＿InvalidJobParametersExceptionをスローする() {
+        JobParameters parameters = base().addString("errorFile", "err" + (char) 0 + "or.txt").toJobParameters();
+
+        assertThatThrownBy(() -> validator.validate(parameters))
+                .isInstanceOf(InvalidJobParametersException.class)
+                .hasMessageContaining("errorFile");
+    }
+
+    @Test
     void 未知のキーを指定した場合＿InvalidJobParametersExceptionをスローする() {
         JobParameters parameters = base().addString("unknownKey", "x").toJobParameters();
 

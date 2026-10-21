@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
@@ -30,10 +30,14 @@ import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.StepExecution;
 import org.springframework.batch.infrastructure.item.ExecutionContext;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.context.ApplicationContext;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
@@ -45,7 +49,6 @@ import com.example.batch.sample.AbstractJobIT;
  * §5 リラン設計・§7「結合テスト」の観点に基づく。ジョブパラメータの Validator が未知のキーを拒否するため、
  * {@code uniqueParameters()} は使わず、テストごとに異なる {@code scheduledTime} で JobInstance の重複を避ける。</p>
  */
-@ExtendWith(OutputCaptureExtension.class)
 class OrderDailySalesJobIT extends AbstractJobIT {
 
     private static final LocalDate TARGET_DATE = LocalDate.of(2026, 10, 11);
@@ -62,6 +65,9 @@ class OrderDailySalesJobIT extends AbstractJobIT {
     @Autowired
     @Qualifier("orderDailySalesJob")
     private Job job;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     @TempDir
     Path tempDir;
@@ -220,16 +226,29 @@ class OrderDailySalesJobIT extends AbstractJobIT {
     }
 
     @Test
-    void 正常に実行した場合＿実行時パラメータ確定のログは1回だけ出力される(CapturedOutput output) throws Exception {
+    void 正常に実行した場合＿実行時パラメータ確定のログは1回だけ出力される() throws Exception {
         Path input = writeCsv("orders.csv", List.of(
                 "A001,1,2026-10-11,S01,I01,2,100",
                 "B001,1,2026-10-11,S02,I03,5,1000"));
         Path error = tempDir.resolve("error.txt");
 
-        JobExecution execution = jobOperator.start(job, parameters(input, error));
+        Logger logger = (Logger) LoggerFactory.getLogger(OrderDailySalesJobConfig.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        JobExecution execution;
+        try {
+            execution = jobOperator.start(job, parameters(input, error));
+        } finally {
+            logger.detachAppender(appender);
+        }
 
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(output.getAll().split("実行時パラメータを確定しました", -1)).hasSize(2);
+        // 入力ファイルのパスは @TempDir 配下でテストごとに一意なので、このテストの実行分だけを数える
+        assertThat(appender.list.stream()
+                .filter(e -> e.getMessage().startsWith("実行時パラメータを確定しました: "))
+                .filter(e -> e.getFormattedMessage().contains(input.toString()))
+                .toList()).hasSize(1);
     }
 
     @Test
@@ -546,5 +565,30 @@ class OrderDailySalesJobIT extends AbstractJobIT {
 
         assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
         assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+    }
+
+    @Test
+    void inputFileがパスに変換できない場合＿ジョブパラメータ検証エラーで起動失敗し本テーブルは変わらない() throws Exception {
+        insertOldData();
+        JobParameters params = new JobParametersBuilder()
+                .addString("scheduledTime", nextScheduledTime())
+                .addLocalDate("targetDate", TARGET_DATE)
+                .addString("inputFile", "in" + (char) 0 + "put.csv")
+                .addString("errorFile", tempDir.resolve("error.txt").toString())
+                .toJobParameters();
+
+        assertThatThrownBy(() -> jobOperator.start(job, params))
+                .isInstanceOf(InvalidJobParametersException.class);
+
+        assertThat(detailRows()).containsExactlyElementsOf(OLD_DETAIL);
+        assertThat(salesRows()).containsExactlyElementsOf(OLD_SALES);
+    }
+
+    @Test
+    void 実行時パラメータのBeanを取得した場合＿CGLIBのクラスプロキシである() {
+        Object bean = applicationContext.getBean("orderDailySalesRunParameters");
+
+        assertThat(bean).isInstanceOf(OrderDailySalesRunParametersHolder.class);
+        assertThat(AopUtils.isCglibProxy(bean)).isTrue();
     }
 }

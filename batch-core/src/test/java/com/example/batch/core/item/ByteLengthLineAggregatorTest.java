@@ -54,6 +54,18 @@ class ByteLengthLineAggregatorTest {
         assertThatThrownBy(() -> aggregator.aggregate("A𠮷B"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("表せない文字")
-                .hasMessageContaining("A𠮷B");
+                .hasMessageNotContaining("A𠮷B")
+                .hasMessageContaining("index=0")
+                .hasMessageContaining("U+20BB7");
+    }
+
+    @Test
+    void 表せない文字で例外になった後に続けて呼んだ場合＿正しく連結する() {
+        var aggregator = new ByteLengthLineAggregator<>(
+                item -> new Object[] {item}, Charset.forName("Windows-31J"), new int[] {4});
+
+        assertThatThrownBy(() -> aggregator.aggregate("A𠮷B")).isInstanceOf(BusinessException.class);
+
+        assertThat(aggregator.aggregate("AB")).isEqualTo("AB  ");
     }
 }
