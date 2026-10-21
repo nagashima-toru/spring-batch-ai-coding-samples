@@ -36,3 +36,4 @@
 - 2026-10-22 07:54 T-05 doing→review attempt=1 creator=sonnet
 - 2026-10-22 07:57 T-05 review→blocked attempt=1 verifier=sonnet 人の判断が必要
 - 2026-10-22 08:05 T-05 amend 成果物追加=batch-sample/src/test/java/com/example/batch/sample/architecture/StepScopeBeanRuleTest.java 成果物追加=pom.xml 成果物追加=batch-sample/pom.xml T-06 の成果物を修正対象に追加
+- 2026-10-22 08:18 T-05 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-05 --fresh
