@@ -1,0 +1,16 @@
+{
+  "task": "P-20261022-core-guard-and-pii-messages/T-06",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 08:25",
+  "criteria": [
+    {"text": "ArchUnit のバージョンを親 POM で一元管理し、`batch-sample` がバージョン無しで test スコープに入れている：`grep -c 'archunit-junit5' pom.xml` の出力が `1`、`grep -c 'archunit-junit5' batch-sample/pom.xml` の出力が `1`、`grep -A2 'archunit-junit5' batch-sample/pom.xml | grep -c '<version>'` の出力が `0`", "ok": true, "note": "worktree で3コマンドを実行 / 出力: 1, 1, 0。pom.xml に archunit.version=1.5.1 と dependencyManagement の定義あり"},
+    {"text": "違反が無いことを確かめるテストがある：`grep -c 'void StepScopeのBeanメソッドがValidatingItemProcessorBase派生の具象型を返さない' batch-sample/src/test/java/com/example/batch/sample/architecture/StepScopeBeanRuleTest.java` の出力が `1`", "ok": true, "note": "実行コマンド: 基準の grep -c / 出力: 1"},
+    {"text": "違反を検出できることを確かめる負のテストがある：`grep -c 'void 派生の具象型を返すStepScopeのBeanメソッド＿違反として検出される' batch-sample/src/test/java/com/example/batch/sample/architecture/StepScopeBeanRuleTest.java` の出力が `1`", "ok": true, "note": "実行コマンド: 基準の grep -c / 出力: 1。全体ビルドで StepScopeBeanRuleTest は Tests run: 3, Failures: 0, Errors: 0"},
+    {"text": "`docs/decisions.md` の旧行が改められ、テストへの参照がある：`grep -c 'Issue #76 で final に戻した。末尾の行を見る' docs/decisions.md` の出力が `0`、`grep -c 'StepScopeBeanRuleTest' docs/decisions.md` の出力が `1`", "ok": true, "note": "実行コマンド: 基準の grep -c 2本 / 出力: 0, 1"},
+    {"text": "方式設計 §13 にテストへの参照がある：`grep -c 'StepScopeBeanRuleTest' docs/architecture.md` の出力が `1`", "ok": true, "note": "実行コマンド: 基準の grep -c / 出力: 1"},
+    {"text": "全モジュールの静的解析・単体テスト（ArchUnit のテストを含む）が通る：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "JAVA_HOME=JDK25 で実行 / 終了コード 0、grep -c 出力 1。追加で `./mvnw clean verify -DskipITs -pl batch-core` も終了コード 0、BUILD SUCCESS（参照: vault/rules/verifier/build-verification.md）"},
+    {"text": "結合テストを含む全体のビルドが通る：`./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "docker info 終了コード 0 / `./mvnw clean verify` 終了コード 0、grep -c 出力 1"}
+  ],
+  "reasons": []
+}
