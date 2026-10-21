@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.job.Job;
@@ -31,6 +32,8 @@ import org.springframework.batch.core.step.StepExecution;
 import org.springframework.batch.infrastructure.item.ExecutionContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
@@ -42,6 +45,7 @@ import com.example.batch.sample.AbstractJobIT;
  * §5 リラン設計・§7「結合テスト」の観点に基づく。ジョブパラメータの Validator が未知のキーを拒否するため、
  * {@code uniqueParameters()} は使わず、テストごとに異なる {@code scheduledTime} で JobInstance の重複を避ける。</p>
  */
+@ExtendWith(OutputCaptureExtension.class)
 class OrderDailySalesJobIT extends AbstractJobIT {
 
     private static final LocalDate TARGET_DATE = LocalDate.of(2026, 10, 11);
@@ -213,6 +217,19 @@ class OrderDailySalesJobIT extends AbstractJobIT {
                 "2026-10-11|S01|2|3|6|1000",
                 "2026-10-11|S02|1|2|6|5000");
         assertThat(Files.exists(error)).isFalse();
+    }
+
+    @Test
+    void 正常に実行した場合＿実行時パラメータ確定のログは1回だけ出力される(CapturedOutput output) throws Exception {
+        Path input = writeCsv("orders.csv", List.of(
+                "A001,1,2026-10-11,S01,I01,2,100",
+                "B001,1,2026-10-11,S02,I03,5,1000"));
+        Path error = tempDir.resolve("error.txt");
+
+        JobExecution execution = jobOperator.start(job, parameters(input, error));
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(output.getAll().split("実行時パラメータを確定しました", -1)).hasSize(2);
     }
 
     @Test
