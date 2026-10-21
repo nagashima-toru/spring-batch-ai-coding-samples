@@ -14,3 +14,4 @@
 - 2026-10-22 06:11 T-02 doing→blocked attempt=1 creator=sonnet
 - 2026-10-22 06:34 T-03 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-03
 - 2026-10-22 06:34 T-04 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-04
+- 2026-10-22 06:34 T-02 blocked→todo 人の指示: /plan unblock P-20261022-core-guard-and-pii-messages T-02
