@@ -1,0 +1,46 @@
+{
+  "task": "P-20261022-core-guard-and-pii-messages/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 07:56",
+  "criteria": [
+    {
+      "text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）",
+      "ok": true,
+      "note": "参照ルール: vault/rules/verifier/code-review.md / 実行: code-review を worktree 指定で `git diff --merge-base main`（計画一式4種を除く）に対し実行 / 結果: 6件。Must相当0件、Ask相当1件（final方式とdecisions.md行の矛盾。reasonsに記載）、Should相当5件（Javadocのインデント、メッセージの識別子、byteOffset表記、Bean戻り型の汎化、など）。クラッシュ・データ破損・誤結果に当たる差分内の指摘は無い"
+    },
+    {
+      "text": "全モジュールの静的解析・単体テストが通る：`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（JAVA_HOME=java-25）/ 出力: BUILD SUCCESS のgrep件数 1、exit=0"
+    },
+    {
+      "text": "batch-core のカバレッジ80%を満たす：`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: `./mvnw clean verify -DskipITs -pl batch-core` / 出力: grep件数 1、exit=0"
+    },
+    {
+      "text": "結合テストを含む全体のビルド（batch-sample のカバレッジ80%を含む）が通る：`./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: `./mvnw clean verify`（Docker起動済み）/ 出力: grep件数 1、exit=0"
+    },
+    {
+      "text": "`process()` が final のまま：`grep -c 'public final O process(I item)' batch-core/src/main/java/com/example/batch/core/item/ValidatingItemProcessorBase.java` の出力が `1`",
+      "ok": true,
+      "note": "実行コマンド: 同grep（worktree内）/ 出力: 1"
+    },
+    {
+      "text": "行をそのまま出す書式が残っていない：`grep -rn --include=*.java 'line=%s' batch-core/src batch-sample/src` の出力が空",
+      "ok": true,
+      "note": "実行コマンド: 同grep（worktree内）/ 出力: 空（0行）"
+    },
+    {
+      "text": "値をそのまま出す書式が残っていない：`grep -rn --include=*.java 'value=%s' batch-core/src batch-sample/src` の出力が空",
+      "ok": true,
+      "note": "実行コマンド: 同grep（worktree内）/ 出力: 空（0行）"
+    }
+  ],
+  "reasons": [
+    "人の判断が必要: ValidatingItemProcessorBase.process() を final にした方式（#76）は、具象型で @StepScope の Bean を宣言すると NPE になり、自動検査（ArchUnit/Checkstyle）が無い。docs/decisions.md の旧行と新行が並んで矛盾して読めるため、検査の追加や行の整理が要るか決める必要がある（方式の変更が要る指摘なので独断で直さない）"
+  ]
+}
