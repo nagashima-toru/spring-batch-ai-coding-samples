@@ -25,8 +25,8 @@
 |---|---|---|---|---|
 | scheduledTime | String（`scheduledTime=2026-10-11T17:00:00Z`） | ○ | 存在すること。`OffsetDateTime.parse`（ISO-8601、オフセット必須）で解釈できること | `JobParametersInvalidException`（Step 実行前に異常終了＝1） |
 | targetDate | java.time.LocalDate（`targetDate=2026-10-11,java.time.LocalDate`） | - | 指定された場合、パラメータの型が `LocalDate` であること（型サフィックスを付け忘れると String になるため検出する） | 同上 |
-| inputFile | String | - | なし（存在確認は Step 1） | - |
-| errorFile | String | - | なし | - |
+| inputFile | String | - | 指定された場合、`Path.of` で変換できること（存在確認は Step 1） | `JobParametersInvalidException`（Step 実行前に異常終了＝1） |
+| errorFile | String | - | 指定された場合、`Path.of` で変換できること | 同上 |
 
 - `OrderDailySalesJobParametersValidator`（`JobParametersValidator` を実装）は、まず
   `JobParametersValidators.requiredAndOptional(new String[]{"scheduledTime"}, new String[]{"targetDate", "inputFile", "errorFile"})`
@@ -41,6 +41,10 @@
 - record は final クラスのため、そのままでは `@JobScope`・`@StepScope` のスコーププロキシ
   （クラスを継承して作る）を作れない。そこで record を包む `OrderDailySalesRunParametersHolder`（final にしないクラス。
   `get()` で record を返す）を `@JobScope` の Bean `orderDailySalesRunParameters` にする
+- スコーププロキシは CGLIB でこのクラスを継承して作り、Objenesis でコンストラクタを呼ばずに生成されるため、
+  引数なしコンストラクタは不要
+- resolve の入力はすべて起動前に Validator が検証するので、Bean の生成（Step の実行中の遅延解決）で
+  不正なパラメータの例外は起きない
 - この Bean はジョブパラメータ4つ（`#{jobParameters['scheduledTime']}` String・`['targetDate']` LocalDate・
   `['inputFile']` String・`['errorFile']` String。省略時は null）と `SampleProperties` を受け取り、
   `OrderDailySalesRunParameters.resolve(...)` を1回呼び、補完した3つの値を INFO ログに1回出す。
@@ -250,7 +254,7 @@
 
 | # | エラー事象 | 分類 | 例外 | 動作 | 退避・出力先 |
 |---|---|---|---|---|---|
-| 1 | `scheduledTime` 未指定・書式不正、未知のパラメータ、`targetDate` の型が LocalDate でない | システム（起動不備） | `JobParametersInvalidException` | Step 実行前に異常終了（1） | ログ |
+| 1 | `scheduledTime` 未指定・書式不正、未知のパラメータ、`targetDate` の型が LocalDate でない、`inputFile`・`errorFile` がパスに変換できない | システム（起動不備） | `JobParametersInvalidException` | Step 実行前に異常終了（1） | ログ |
 | 2 | `targetDate` を `,java.time.LocalDate` 付きで渡したが日付に変換できない | システム（起動不備） | JobParameters 変換時の例外 | ジョブ起動時に異常終了（1） | ログ |
 | 3 | 二重起動 | システム | `SystemException`（`DuplicateRunPreventingJobExecutionListener`） | 異常終了（1） | ログ |
 | 4 | 入力ファイルなし・読取不可 | 前処理 | `BusinessException`（`FileExistenceCheckTasklet`） | Step 1 失敗→異常終了（1） | ログ |
@@ -340,7 +344,7 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 **単体テスト**
 - `OrderDailySalesRunParameters.resolve`: `2026-10-11T17:00:00Z` → 対象日 2026-10-11（UTC の日付をそのまま使わないこと）、
   JST 00:00〜08:59 の境界（UTC で前日になる時刻）、`+09:00` 指定、targetDate・inputFile・errorFile 指定時は指定値優先、既定パスの組み立て
-- `OrderDailySalesJobParametersValidator`: scheduledTime 欠落・オフセットなし（`2026-10-12T02:00:00`）・不正文字列、targetDate が String 型、未知のキー
+- `OrderDailySalesJobParametersValidator`: scheduledTime 欠落・オフセットなし（`2026-10-12T02:00:00`）・不正文字列、targetDate が String 型、inputFile・errorFile がパスに変換できない（ヌル文字を含む）、未知のキー
 - `OrderItemProcessor`: 入力チェック仕様の各行の境界値（lineNo 0/1/999999999/1000000000、quantity 0/1/999999/1000000、unitPrice 0/999999999、
   桁超過、先頭ゼロ、前後空白、2026-02-30）、対象日不一致、重複（行番号が違う→エラー／同じ行番号の再処理→エラーにしない）、
   1件目が不正で2件目が正常→2件目は通る、amount の計算（最大値で桁あふれしない）
@@ -365,6 +369,9 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
   - 実行 A を Step 5 で失敗させ、実行 B（targetDate=10/12）を完了させてから A をリスタート →
     10/11 の明細が A の入力どおりに登録される（0件にならない）
 - 二重起動防止・パラメータ不正（scheduledTime なし）→ 終了コード1
+- パラメータ不正（inputFile がパスに変換できない）→ 起動時に `InvalidJobParametersException`（入れ子にならない）、本テーブル不変
+- 実行時パラメータの Bean が CGLIB のクラスプロキシであること
+- 実行時パラメータ確定のログが1回だけ出ること。ロガーに付けた ListAppender で数える（標準出力の取り込みに依存しない）
 
 **システムテスト**
 - 10万件のファイルで所要時間（基本設計書 §2 の見込み: 全体で十数分以内）と Step 5 の所要時間（数十秒以内）
@@ -387,3 +394,4 @@ Mapper XML は `batch-sample/src/main/resources/mapper/` に置き、SQL はす�
 | 2026-10-18 | 1.4 | 基本設計書 1.4 版への追従（Issue #74）: リスタートは Step 1〜4 を最初からやり直す（Step 1〜4 に `allowStartIfComplete(true)`、Reader は `saveState=false`）／Step 3 でエラーファイルも削除し、Tasklet を `@StepScope` に変更／`OrderItemProcessor` の `beforeStep`（ワークからの既出キーの復元）と `StepExecutionListener` の登録を廃止し、`selectKeys`・`OrderKey` を削除／リラン設計とテスト観点を更新（設計レビューの指摘で、システムテストのシナリオの改訂の引き継ぎを追加） |
 | 2026-10-21 | 1.5 | Issue #77: `CsvHeaderCheckTasklet` は1行目の先頭の BOM を取り除いてからヘッダを照合する（BOM 付きを不一致とする記述を削除） |
 | 2026-10-21 | 1.6 | Issue #75: 実行時パラメータを `@JobScope` の `OrderDailySalesRunParametersHolder` で1回だけ解決し、各 `@StepScope` Bean に注入する（1.1 版の方式を見直し） |
+| 2026-10-21 | 1.7 | Issue #92: inputFile・errorFile がパスに変換できることを起動前に検証する（遅延解決で例外が入れ子にならないようにする）／Holder に引数なしコンストラクタが要らない理由（Objenesis）を明記／結合テストのログ回数の検証方法を明記 |
