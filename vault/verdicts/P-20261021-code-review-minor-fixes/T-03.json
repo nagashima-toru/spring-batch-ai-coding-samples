@@ -1,0 +1,15 @@
+{
+  "task": "P-20261021-code-review-minor-fixes/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 01:06",
+  "criteria": [
+    {"text": "Holder の Javadoc に2つの設計判断が書かれている：`grep -c 'Objenesis でコンストラクタを呼ばずに生成される' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderDailySalesRunParametersHolder.java` と `grep -c 'resolve の入力はすべて起動前に Validator が検証する' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderDailySalesRunParametersHolder.java` がどちらも `1`", "ok": true, "note": "実行コマンド: worktree で上記2つの grep -c / 出力: 1 と 1"},
+    {"text": "詳細設計書 §1.1 に同じ2つの設計判断とパスの検証が書かれている：`docs/projects/order-daily-sales/detail-design/ORDER-001.md` に対して `grep -c 'Objenesis でコンストラクタを呼ばずに生成される'` が `1`、`grep -c 'resolve の入力はすべて起動前に Validator が検証する'` が `1`、`grep -c 'Path.of. で変換できること'` が `2`", "ok": true, "note": "実行コマンド: ORDER-001.md に対する3つの grep -c / 出力: 1, 1, 2"},
+    {"text": "詳細設計書 §7 にログ回数の検証方法が、§8 に改訂の行がある：`grep -c 'ロガーに付けた ListAppender で数える' docs/projects/order-daily-sales/detail-design/ORDER-001.md` が `1`、`grep -c '2026-10-21 . 1.7 . Issue #92' docs/projects/order-daily-sales/detail-design/ORDER-001.md` が `1`", "ok": true, "note": "実行コマンド: ORDER-001.md に対する2つの grep -c / 出力: 1 と 1"},
+    {"text": "全モジュールの静的解析と単体テストが通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false（JAVA_HOME=Java25）/ 終了コード 0、BUILD SUCCESS の grep -c = 1（参照ルール: vault/rules/verifier/build-verification.md）"},
+    {"text": "batch-core のカバレッジ80%を含めて通る：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で ./mvnw clean verify -DskipITs -pl batch-core / 終了コード 0、BUILD SUCCESS の grep -c = 1"},
+    {"text": "直前のビルドでパスの検証の単体テストが実行された：`grep -c 'testcase name=.inputFileがパスに変換できない場合＿' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job_order_daily_sales.OrderDailySalesJobParametersValidatorTest.xml` と `grep -c 'testcase name=.errorFileがパスに変換できない場合＿' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job_order_daily_sales.OrderDailySalesJobParametersValidatorTest.xml` がどちらも `1`", "ok": true, "note": "実行コマンド: 1回目のビルド直後に worktree の surefire レポート XML へ2つの grep -c / 出力: 1 と 1"}
+  ],
+  "reasons": []
+}
