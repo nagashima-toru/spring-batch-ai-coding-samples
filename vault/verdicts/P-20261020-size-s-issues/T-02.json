@@ -1,0 +1,16 @@
+{
+  "task": "P-20261020-size-s-issues/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-21 09:18",
+  "criteria": [
+    {"text": "./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'BUILD SUCCESS' の出力が 1", "ok": true, "note": "worktree で実行。終了コード0 / grep -c の出力: 1 (BUILD SUCCESS)"},
+    {"text": "./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'BUILD SUCCESS' の出力が 1", "ok": true, "note": "worktree で実行。終了コード0 / grep -c の出力: 1 (BUILD SUCCESS)"},
+    {"text": "./mvnw clean verify 2>&1 | grep -c 'BUILD SUCCESS' の出力が 1（結合テスト・batch-sample のカバレッジ80%。Docker が要る）", "ok": true, "note": "worktree で実行。終了コード0 / grep -c の出力: 1 / 末尾の Tests run: 54, Failures: 0, Errors: 0"},
+    {"text": "ログが1回だけ出ることを確かめる結合テストが実行されて成功している：grep -c '実行時パラメータ確定のログは1回だけ出力される' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job_order_daily_sales.OrderDailySalesJobIT.xml の出力が 1", "ok": true, "note": "実行コマンド: 上記 grep -c / 出力: 1。ビルド全体が BUILD SUCCESS で失敗0のため成功扱い"},
+    {"text": "ジョブパラメータの受け取りが1か所になっている：grep -c 'jobParameters..scheduledTime' OrderDailySalesJobConfig.java の出力が 1、かつ grep -c 'runParameters(scheduledTime' の出力が 0", "ok": true, "note": "実行コマンド: 2つの grep -c / 出力: 1 と 0"},
+    {"text": "record を Bean にしない方式の古い記述が残っていない：git grep -n 'Bean にしない' -- batch-sample docs の出力が空", "ok": true, "note": "実行コマンド: git grep -n 'Bean にしない' -- batch-sample docs / 出力: 空"},
+    {"text": "詳細設計書が改訂されている：grep -c 'Issue #75' ORDER-001.md の出力が 1、かつ grep -c 'OrderDailySalesRunParametersHolder' の出力が 1 以上", "ok": true, "note": "実行コマンド: 2つの grep -c（docs/projects/order-daily-sales/detail-design/ORDER-001.md）/ 出力: 1 と 4"}
+  ],
+  "reasons": []
+}
