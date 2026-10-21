@@ -1,6 +1,6 @@
 ---
 id: P-20261021-code-review-minor-fixes
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #92「PR #91 の /code-review で出た軽微な指摘」の7項目をすべて解決する。
