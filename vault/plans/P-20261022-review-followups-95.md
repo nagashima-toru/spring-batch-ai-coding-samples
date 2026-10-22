@@ -1,6 +1,6 @@
 ---
 id: P-20261022-review-followups-95
-status: approved
+status: done
 ---
 # ゴール
 
