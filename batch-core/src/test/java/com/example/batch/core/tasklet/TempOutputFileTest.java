@@ -35,6 +35,15 @@ class TempOutputFileTest {
     }
 
     @Test
+    void 一時ディレクトリ名がカレントを指す場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, "."))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+    }
+
+    @Test
     void 一時ディレクトリが配置先と同じパスの場合＿SystemExceptionを送出する() {
         Path outputFile = dir.resolve("tmp");
 

@@ -46,7 +46,7 @@ public final class TempOutputFile {
         }
         Path resolvedTempDir = tempDirOrNull != null
                 ? tempDirOrNull.toAbsolutePath().normalize()
-                : parent.resolve(dirName);
+                : parent.resolve(dirName).normalize();
         if (resolvedTempDir.equals(absolute) || resolvedTempDir.equals(parent)) {
             throw new SystemException(
                     "一時ディレクトリが配置先と重なります: tempDir=" + resolvedTempDir + " outputFile=" + absolute);
