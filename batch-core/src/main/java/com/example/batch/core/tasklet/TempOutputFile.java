@@ -123,6 +123,17 @@ public final class TempOutputFile {
     /**
      * 一時ディレクトリを作成し、一時ファイルのパスを返す。
      *
+     * <p>前回の失敗で残った同名の一時ファイルは消さない（Writer の上書きに任せる）。消さないだけでなく、残っていても失敗させない
+     * （失敗後の再実行では一時ファイルが残っているのが通常のため）。</p>
+     * <ul>
+     *   <li>{@code shouldDeleteIfExists(true)} の Writer（batch-core の Writer の生成部品の既定）なら、
+     *       リスタートでない実行で Writer が開く時に残った一時ファイルを消して書き直すので、前回の中身は残らない。</li>
+     *   <li>{@code saveState=true} のリスタートでは、Spring Batch が保存した位置から一時ファイルに書き継ぐ。
+     *       ここで消すとリスタートを壊す。</li>
+     *   <li>追記する Writer（{@code shouldDeleteIfExists(false)} や {@code append(true)}）とは組み合わせない。
+     *       残った一時ファイルの末尾に書き足され、前回の中身が配置先に混ざる。</li>
+     * </ul>
+     *
      * @return 一時ファイルのパス
      * @throws SystemException 一時ディレクトリを作成できない場合
      */
