@@ -1,6 +1,6 @@
 ---
 id: P-20261023-tempoutput-errfile-followups
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #102・#104・#105・#106 をまとめて対応する（PR #103 の `/code-review` の指摘の後始末）。
