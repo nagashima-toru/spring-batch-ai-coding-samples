@@ -1,6 +1,6 @@
 ---
 id: P-20261023-filemove-and-skiplog
-status: approved
+status: done
 ---
 # ゴール
 
