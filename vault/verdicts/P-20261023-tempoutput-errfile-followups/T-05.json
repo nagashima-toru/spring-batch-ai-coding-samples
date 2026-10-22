@@ -1,0 +1,15 @@
+{
+  "task": "P-20261023-tempoutput-errfile-followups/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 08:07",
+  "criteria": [
+    {"text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）", "ok": true, "note": "参照ルール: vault/rules/verifier/code-review.md。範囲: worktree で `git diff --merge-base main`（9ファイル、計画一式除く）を Skill code-review で実行。指摘5件。[Must] 0件 / [Ask] 0件 / [Should] 5件（tempDir/outputFile の NUL 等で InvalidPathException が検証器を素通りする＝ジョブは失敗し致命的でない、祖先拒否・シンボリックリンク未解決・CR/LF/タブ置換は理由側のみ・dirName の区切り文字拒否は T-01〜T-04 の決定済み仕様、tempOutputOf の3回計算は保守性）。致命的なものは無し"},
+    {"text": "結合テストを含む全体のビルドが成功する（Docker が要る）：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify 2>&1 | grep -c 'BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify`（ログを保存して grep） / 終了コード 0、`grep -c 'BUILD SUCCESS'` の出力: 1"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -pl batch-core`（JAVA_HOME=JDK25） / 終了コード 0、`grep -c 'BUILD SUCCESS'` の出力: 1"},
+    {"text": "`TempOutputFile` の検証の単体テストが残っている：上のビルドの後、`grep -c 'testcase name=.dirName' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` の出力が `4`", "ok": true, "note": "実行コマンド: worktree で `grep -c 'testcase name=.dirName' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` / 出力: 4"},
+    {"text": "エラー理由の置き換えの単体テストが残っている：`grep -c 'に置き換えて1行で退避する' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` の出力が `2`", "ok": true, "note": "実行コマンド: worktree で `grep -c 'に置き換えて1行で退避する' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` / 出力: 2"},
+    {"text": "sample03 の `tempDir` の結合テストが残っている：`grep -c 'testcase name=.tempDir' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job03_file_export.Sample03FileExportJobIT.xml` の出力が `2`", "ok": true, "note": "実行コマンド: 全体ビルド後に worktree で `grep -c 'testcase name=.tempDir' batch-sample/target/failsafe-reports/TEST-com.example.batch.sample.job03_file_export.Sample03FileExportJobIT.xml` / 出力: 2"}
+  ],
+  "reasons": []
+}
