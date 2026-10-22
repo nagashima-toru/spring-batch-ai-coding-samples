@@ -38,3 +38,4 @@
 
 - Spring Batch 標準の `FixedLengthTokenizer` は**文字数**ベースのため使用しない（規約）
 - パディング除去は基盤部品が行う（半角・全角スペースとも除去。変更は `stripPadding` 拡張）
+- 読込時の Skip の WARN ログには行の内容を出さず、行番号（`FlatFileParseException#getLineNumber()`）と原因だけを出す（`ErrorRecordSkipListener`）。行の内容はエラーレコードファイルにだけ残る

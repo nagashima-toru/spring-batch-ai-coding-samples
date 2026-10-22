@@ -4,9 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.springframework.batch.infrastructure.item.file.FlatFileParseException;
 
 class ErrorRecordSkipListenerTest {
@@ -34,6 +40,44 @@ class ErrorRecordSkipListenerTest {
 
         assertThat(Files.readAllLines(errorFile))
                 .containsExactly("bad,csv,line\tパース失敗");
+    }
+
+    @Test
+    void 読取時Skipの場合＿WARNログに行の内容を含めず行番号を出す() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"), r -> r, r -> r);
+        var e = new FlatFileParseException("Parsing error at line: 3 in resource=[x], input=[秘密,行]",
+                new BusinessException("固定長レコードのバイト長が不正です: expected=5 actual=11"), "秘密,行", 3);
+
+        List<String> logs = captureLogs(() -> listener.onSkipInRead(e));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("line=3").contains("固定長レコードのバイト長が不正です: expected=5 actual=11")
+                .doesNotContain("秘密");
+    }
+
+    @Test
+    void 読取時Skipで原因がBusinessExceptionでない場合＿原因のクラス名だけを出す() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"), r -> r, r -> r);
+        var e = new FlatFileParseException("Parsing error at line: 3 in resource=[x], input=[秘密,行]",
+                new IllegalStateException("値=秘密"), "秘密,行", 3);
+
+        List<String> logs = captureLogs(() -> listener.onSkipInRead(e));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("line=3").contains("IllegalStateException").doesNotContain("秘密");
+    }
+
+    private static List<String> captureLogs(Runnable action) {
+        Logger logger = (Logger) LoggerFactory.getLogger(ErrorRecordSkipListener.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            action.run();
+        } finally {
+            logger.detachAppender(appender);
+        }
+        return appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
     }
 
     @Test

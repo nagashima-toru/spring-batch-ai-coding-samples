@@ -33,7 +33,8 @@ import org.springframework.batch.infrastructure.item.file.FlatFileParseException
  *         entity -> entity.toString()))                       // 書込時（変換後エンティティ）
  * }</pre>
  *
- * <p>読取時 Skip（パースエラー）は例外から元の行文字列を取得して出力する。</p>
+ * <p>読取時 Skip（パースエラー）は例外から元の行文字列を取得して出力する。
+ * 読込時の Skip の WARN ログには行の内容を出さず行番号と原因だけを出す（行の内容はエラーレコードファイルにだけ残る）。</p>
  *
  * <p><b>拡張ポイント:</b> 出力形式はフォーマッタ関数で調整する。出力先をファイル以外
  * （DB等）にしたい場合は {@link SkipListener} を直接実装した別クラスを作成する。</p>
@@ -73,21 +74,30 @@ public class ErrorRecordSkipListener<T, S> implements SkipListener<T, S> {
     @Override
     public void onSkipInRead(Throwable t) {
         String record = t instanceof FlatFileParseException parseError ? parseError.getInput() : "(読取失敗)";
-        writeErrorRecord(record, t);
+        String reason = t instanceof FlatFileParseException parseError ? readReason(parseError) : t.getMessage();
+        writeErrorRecord(record, t, reason);
     }
 
     @Override
     public void onSkipInProcess(T item, Throwable t) {
-        writeErrorRecord(inputFormatter.apply(item), t);
+        writeErrorRecord(inputFormatter.apply(item), t, t.getMessage());
     }
 
     @Override
     public void onSkipInWrite(S item, Throwable t) {
-        writeErrorRecord(outputFormatter.apply(item), t);
+        writeErrorRecord(outputFormatter.apply(item), t, t.getMessage());
     }
 
-    private synchronized void writeErrorRecord(String record, Throwable t) {
-        log.warn("レコードをSkipしました。エラーレコードファイルへ退避します: file={} reason={}", errorFile, t.getMessage());
+    /** ログ用の理由（行の内容を含まない）。原因が BusinessException 以外ならクラス名だけを出す。 */
+    private static String readReason(FlatFileParseException e) {
+        Throwable cause = e.getCause();
+        String detail = cause instanceof BusinessException ? cause.getMessage()
+                : (cause == null ? FlatFileParseException.class : cause.getClass()).getSimpleName();
+        return "line=" + e.getLineNumber() + " cause=" + detail;
+    }
+
+    private synchronized void writeErrorRecord(String record, Throwable t, String logReason) {
+        log.warn("レコードをSkipしました。エラーレコードファイルへ退避します: file={} reason={}", errorFile, logReason);
         try {
             Path parentDir = errorFile.getParent();
             if (parentDir != null) {

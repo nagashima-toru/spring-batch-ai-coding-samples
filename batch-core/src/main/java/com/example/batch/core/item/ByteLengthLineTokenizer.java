@@ -29,6 +29,9 @@ import com.example.batch.core.exception.BusinessException;
  * 行のバイト長が定義合計と一致しない場合・フィールド境界がマルチバイト文字の途中に
  * かかる場合は {@link BusinessException} を送出する（Skip 対象として扱える）。
  * 例外のメッセージには行の内容を含めず、バイト数・フィールド名・バイト位置を示す。
+ * 行番号は含めない（{@code LineTokenizer} は行番号を受け取らないため）。行番号は
+ * {@code FlatFileItemReader} が {@code FlatFileParseException} に持たせ、
+ * {@code ErrorRecordSkipListener} が読込時の Skip の WARN ログに出す。
  * </p>
  *
  * <p>文字コードで表せない文字（対になっていないサロゲートを含む）を含む場合は
