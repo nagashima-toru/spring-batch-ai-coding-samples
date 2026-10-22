@@ -34,9 +34,9 @@ GitHub Issue #72 と #100 をまとめて対応する。
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | todo | 0 | - | 一時出力→配置の一時ファイルのパスを決める TempOutputFile を batch-core に足す（#72） | |
+| T-01 | doing | 1 | - | 一時出力→配置の一時ファイルのパスを決める TempOutputFile を batch-core に足す（#72） | |
 | T-02 | todo | 0 | T-01 | sample03 の一時ファイルのパスの決定と一時ディレクトリの作成を TempOutputFile に置き換える（#72） | |
-| T-03 | todo | 0 | - | 加工時・書込時などの Skip の WARN ログに例外のメッセージをそのまま出さない（#100） | |
+| T-03 | doing | 1 | - | 加工時・書込時などの Skip の WARN ログに例外のメッセージをそのまま出さない（#100） | |
 | T-04 | todo | 0 | T-01,T-02,T-03 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
