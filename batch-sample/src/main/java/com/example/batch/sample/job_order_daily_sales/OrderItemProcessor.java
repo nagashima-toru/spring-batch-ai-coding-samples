@@ -20,7 +20,13 @@ import jakarta.validation.Validator;
  * チャンク再処理による同一行の再入力とみなし、重複にしない。リスタートは Step 1〜4 を最初からやり直すため、
  * 対応を復元する処理は持たない。{@code @StepScope} のため Step 実行ごとに空の対応から作る。</p>
  *
- * <p>{@code @StepScope} の Bean にする時は、Bean メソッドの戻り値と注入先の型を {@code ItemProcessor<OrderCsvRecord, OrderDetailWork>} にする（docs/architecture.md §13）。{@code process()} は継承元で final のため、具象型で宣言するとスコーププロキシが未初期化のまま {@code process()} を実行して NullPointerException になる。クラスは final にしない（ORDER-001 詳細設計 §1 Bean 一覧の注記）。{@code process()} 以外の public メソッドは足さない（インタフェース型の Bean からは呼べないため）。</p>
+ * <p>{@code @StepScope} の Bean にする時は、
+ * Bean メソッドの戻り値と注入先の型を {@code ItemProcessor<OrderCsvRecord, OrderDetailWork>} にする
+ * （docs/architecture.md §13）。
+ * {@code process()} は継承元で final のため、具象型で宣言すると
+ * スコーププロキシが未初期化のまま {@code process()} を実行して NullPointerException になる。
+ * クラスは final にしない（ORDER-001 詳細設計 §1 Bean 一覧の注記）。
+ * {@code process()} 以外の public メソッドは足さない（インタフェース型の Bean からは呼べないため）。</p>
  */
 public class OrderItemProcessor extends ValidatingItemProcessorBase<OrderCsvRecord, OrderDetailWork> {
 
