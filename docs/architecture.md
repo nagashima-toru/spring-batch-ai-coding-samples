@@ -113,6 +113,7 @@ com.example.batch.sample/
 
 - Skip は `BusinessException` 系のみ許可し、`skipLimit`（既定10件）を必ず設定する
 - Skip したレコードは **エラーレコードファイル**（元レコード＋エラー理由）へ退避し、後続の手動リカバリを可能にする
+- エラーレコードファイルは「元レコード<TAB>エラー理由」の1行1レコードで書く。エラー理由に含まれる改行（CR・LF）とタブは半角空白に置き換え、元レコードは置き換えない
 - Retry は `RetryableSystemException` 系のみ許可し、リトライ回数（既定3回）・間隔は設定で外部化する
 - HTTP 呼出のリトライは HTTP Client 基盤（指数バックオフ）で行い、Batch の Retry と二重にしない
 
