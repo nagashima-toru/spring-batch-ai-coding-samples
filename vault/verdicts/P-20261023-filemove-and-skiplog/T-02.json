@@ -1,0 +1,16 @@
+{
+  "task": "P-20261023-filemove-and-skiplog/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 07:01",
+  "criteria": [
+    {"text": "`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す（`Sample03JobConfigTest` を含む）", "ok": true, "note": "実行コマンド: worktree で上記 mvnw（出力をファイルに保存して grep -c） / 出力: 終了コード0、grep -c は 1、BUILD SUCCESS、Sample03JobConfigTest Tests run: 3, Failures: 0。追加で `./mvnw clean verify -DskipITs -pl batch-core` も終了コード0・BUILD SUCCESS（参照ルール: vault/rules/verifier/build-verification.md）"},
+    {"text": "`grep -c 'import java.nio.file.Files;' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` が `0` を出す（Files API の直接使用が残っていない）", "ok": true, "note": "実行コマンド: worktree で同 grep -c / 出力: 0"},
+    {"text": "`grep -c 'TempOutputFile.inSubdirectory(Path.of(outputFile), TEMP_DIR_NAME)' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で同 grep -c / 出力: 1"},
+    {"text": "`grep -c '配置先のディレクトリを再帰的に監視する仕組みがある場合は' batch-sample/docs/sample03-file-export.md` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で同 grep -c / 出力: 1"},
+    {"text": "`grep -c '（一時ファイルのパスと一時ディレクトリの作成）' batch-sample/docs/README.md` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で同 grep -c / 出力: 1"},
+    {"text": "`grep -c '一時出力→配置（一時ファイルのパス・一時ディレクトリの作成）' .claude/skills/implementation/SKILL.md` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で同 grep -c / 出力: 1"},
+    {"text": "`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で同コマンド / 出力: 1"}
+  ],
+  "reasons": []
+}
