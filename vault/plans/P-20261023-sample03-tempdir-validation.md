@@ -1,6 +1,6 @@
 ---
 id: P-20261023-sample03-tempdir-validation
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #107 に対応する。sample03（`Sample03JobConfig`）の任意パラメータ `tempDir` について、(1) NUL 文字などパスとして解釈できない値を `InvalidJobParametersException` に変換して起動時に拒否する、(2) 空白だけの値を未指定として扱う、(3) `tempDir` を識別パラメータにするかを判断して `batch-sample/docs/sample03-file-export.md` に書く、(4) `TempOutputFileTest` に、空でない `ExecutionContext`（リスタート）の場合に `prepare` が前回の一時ファイルを消さないことを示す単体テストを足す。直前の計画（PR #108）で足した `tempDir` と `TempOutputFile`（dirName 検証・prepare の方針）と整合させる。
