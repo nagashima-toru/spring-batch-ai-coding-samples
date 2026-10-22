@@ -24,7 +24,7 @@ GitHub Issue #97, #98, #99 をまとめて対応する（PR #95 のレビュー�
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | 読込時の Skip の WARN ログに行の内容を出さず行番号を出す（#97・#99(d)） | |
-| T-02 | doing | 1 | - | OrderItemProcessor の Javadoc を ItemProcessor 型の Bean の方針に直す（#98） | |
+| T-02 | review | 1 | - | OrderItemProcessor の Javadoc を ItemProcessor 型の Bean の方針に直す（#98） | |
 | T-03 | done | 1 | - | StepScopeBeanRuleTest の検出範囲と空マッチの扱いを明示する（#99(a)(b)） | |
 | T-04 | done | 1 | - | formatViolations の書式と値を含めない約束を Javadoc とテストで固定する（#99(c)） | |
 | T-05 | done | 1 | - | process() を final にした破壊的変更の移行手順を decisions.md に書く（#99(e)） | |
