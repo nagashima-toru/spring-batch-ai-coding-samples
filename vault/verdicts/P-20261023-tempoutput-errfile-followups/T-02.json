@@ -1,0 +1,13 @@
+{
+  "task": "P-20261023-tempoutput-errfile-followups/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 07:58",
+  "criteria": [
+    {"text": "batch-core のビルド（Checkstyle・SpotBugs・単体テスト・カバレッジ80%）が成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "worktree で `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core`（出力をファイルに保存）後 `grep -c 'BUILD SUCCESS'` / 出力: 1（末尾 [INFO] BUILD SUCCESS）。参照ルール: vault/rules/verifier/build-verification.md。全体ビルド（batch-sample 含む）は受け入れ基準に無く未実行。"},
+    {"text": "残った一時ファイルの単体テスト2件が実行されている：上のビルドの後、`grep -c 'testcase name=.前回の一時ファイルが残っている場合' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` の出力が `2`", "ok": true, "note": "実行コマンド: 同 grep（worktree の batch-core/target/surefire-reports/…TempOutputFileTest.xml） / 出力: 2"},
+    {"text": "`prepare` の Javadoc に方針が書かれている：`grep -c '前回の失敗で残った同名の一時ファイルは消さない' batch-core/src/main/java/com/example/batch/core/tasklet/TempOutputFile.java` の出力が `1`", "ok": true, "note": "実行コマンド: 同 grep / 出力: 1。差分は TempOutputFile.java に +11 行（Javadoc のみ、コードの動作変更なし）。"},
+    {"text": "T-01 の単体テストが残っている：`grep -c 'testcase name=.dirName' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` の出力が `4`", "ok": true, "note": "実行コマンド: 同 grep / 出力: 4。`git diff --merge-base work/p-20261023-tempoutput-errfile-followups --stat` は TempOutputFile.java +11、TempOutputFileTest.java +38 の追加のみ（削除なし）。"}
+  ],
+  "reasons": []
+}
