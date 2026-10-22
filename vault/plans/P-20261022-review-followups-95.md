@@ -28,7 +28,7 @@ GitHub Issue #97, #98, #99 をまとめて対応する（PR #95 のレビュー�
 | T-03 | done | 1 | - | StepScopeBeanRuleTest の検出範囲と空マッチの扱いを明示する（#99(a)(b)） | |
 | T-04 | done | 1 | - | formatViolations の書式と値を含めない約束を Javadoc とテストで固定する（#99(c)） | |
 | T-05 | done | 1 | - | process() を final にした破壊的変更の移行手順を decisions.md に書く（#99(e)） | |
-| T-06 | review | 1 | T-01,T-02,T-03,T-04,T-05 | 計画の差分が `/code-review` を通過する | |
+| T-06 | done | 1 | T-01,T-02,T-03,T-04,T-05 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
 - 各タスクに成果物と受け入れ基準が1つずつある

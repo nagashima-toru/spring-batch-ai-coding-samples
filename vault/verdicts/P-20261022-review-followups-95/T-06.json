@@ -1,0 +1,36 @@
+{
+  "task": "P-20261022-review-followups-95/T-06",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 14:13",
+  "criteria": [
+    {
+      "text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）",
+      "ok": true,
+      "note": "参照ルール: vault/rules/verifier/code-review.md。実行: Skill code-review（対象 worktree /home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a30f00acc6a0b21f4、範囲 `git diff --merge-base main`、計画一式4種は除く。HARNESS_BASE_BRANCH は空なので main）。指摘8件。[Must] 相当 0件、[Ask] 相当 0件、[Should] 相当 6件（テストの import 順・logback 前提・ArchUnit の allowEmptyShould の効き方と sample ジョブへの依存・readReason の三項演算子の読みにくさ・formatViolations の Javadoc と ${validatedValue} テンプレートの注意・BusinessException 原因メッセージの内容が生産者依存）、対象外（既存コード）2件。差分の変更行を `git diff` で確認し、クラッシュ・データ破損・誤った結果に当たるものは無かった。"
+    },
+    {
+      "text": "`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す",
+      "ok": true,
+      "note": "実行コマンド: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（worktree で実行、出力をファイルへ保存）/ 終了コード 0、`grep -c 'INFO. BUILD SUCCESS'` の出力 1"
+    },
+    {
+      "text": "`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す",
+      "ok": true,
+      "note": "実行コマンド: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core`（2行目の後に実行）/ 終了コード 0、`grep -c 'INFO. BUILD SUCCESS'` の出力 1"
+    },
+    {
+      "text": "3行目のビルドの後、`grep -c '読取時Skipの場合＿WARNログに行の内容を含めず行番号を出す' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` が `1` を出す",
+      "ok": true,
+      "note": "実行コマンド: 左記の grep を worktree 直下で実行 / 出力: 1"
+    },
+    {
+      "text": "2行目のビルドの後、`grep -c 'クラスにStepScopeを付けた派生クラス＿違反として検出される' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.architecture.StepScopeBeanRuleTest.xml` が `1` を出す",
+      "ok": true,
+      "note": "実行コマンド: 左記の grep を worktree 直下で実行（3行目の -pl batch-core の clean は batch-sample の target を消さない）/ 出力: 1"
+    }
+  ],
+  "reasons": [
+    "対象外（既存コード）: ErrorRecordSkipListener の onSkipInProcess / onSkipInWrite と、FlatFileParseException 以外の読取時 Skip は従来どおり t.getMessage() をそのまま WARN ログに出す（変更していない経路）。処理時・書込時の例外メッセージ（DB の制約違反の値など）に行の値が入りうる。必要なら別の Issue にする"
+  ]
+}
