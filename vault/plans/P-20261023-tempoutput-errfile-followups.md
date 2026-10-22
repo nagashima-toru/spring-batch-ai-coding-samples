@@ -24,7 +24,7 @@ GitHub Issue #102・#104・#105・#106 をまとめて対応する（PR #103 の
 |---|---|---|---|---|---|
 | T-01 | done | 1 | - | TempOutputFile の dirName を単一のディレクトリ名に限り、重なり検査を祖先・子孫まで見る（#104） | |
 | T-02 | done | 1 | T-01 | TempOutputFile.prepare が残った一時ファイルを消さず Writer の上書きに任せる方針を Javadoc と単体テストで示す（#106） | |
-| T-03 | review | 1 | T-01,T-02 | sample03 に任意のジョブパラメータ tempDir を足し、inDirectory の例と前提を文書に書く（#102） | |
+| T-03 | done | 1 | T-01,T-02 | sample03 に任意のジョブパラメータ tempDir を足し、inDirectory の例と前提を文書に書く（#102） | |
 | T-04 | done | 1 | - | ErrorRecordSkipListener がエラー理由の改行・タブを空白に置き換えて1行1レコードを保つ（#105） | |
 | T-05 | todo | 0 | T-01,T-02,T-03,T-04 | 計画の差分が `/code-review` を通過する | |
 
