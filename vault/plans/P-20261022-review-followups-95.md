@@ -23,7 +23,7 @@ GitHub Issue #97, #98, #99 をまとめて対応する（PR #95 のレビュー�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | doing | 1 | - | 読込時の Skip の WARN ログに行の内容を出さず行番号を出す（#97・#99(d)） | |
+| T-01 | blocked | 1 | - | 読込時の Skip の WARN ログに行の内容を出さず行番号を出す（#97・#99(d)） | この環境の JDK は 21 だけで、JDK 25 を取得できません（プロキシが 403）。ビルドを通す4本の受け入れ基準（`./mvnw clean verify -DskipITs ...` の BUILD SUCCESS と surefire レポートのテスト名の確認）を元のコマンドでは確認できません。JDK 25 (Temurin) のある環境で確認する形で進めてよいですか。代替として -Dmaven.compiler.release=21 -Dtest=ErrorRecordSkipListenerTest の実行は成功しています（Checkstyle・jacoco は省略）。 |
 | T-02 | doing | 1 | - | OrderItemProcessor の Javadoc を ItemProcessor 型の Bean の方針に直す（#98） | |
 | T-03 | doing | 1 | - | StepScopeBeanRuleTest の検出範囲と空マッチの扱いを明示する（#99(a)(b)） | |
 | T-04 | todo | 0 | - | formatViolations の書式と値を含めない約束を Javadoc とテストで固定する（#99(c)） | |
