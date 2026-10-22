@@ -40,7 +40,7 @@ class TempOutputFileTest {
 
         assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, "."))
                 .isInstanceOf(SystemException.class)
-                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
     }
 
     @Test
@@ -57,6 +57,63 @@ class TempOutputFileTest {
         Path outputFile = dir.resolve("sales.csv");
 
         assertThatThrownBy(() -> TempOutputFile.inDirectory(outputFile, dir))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+    }
+
+    @Test
+    void dirNameに区切り文字を含む場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, "a/b"))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください: dirName=a/b");
+    }
+
+    @Test
+    void dirNameが親ディレクトリを指す場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, ".."))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void dirNameが絶対パスの場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+        String absoluteDirName = dir.resolve("other").toAbsolutePath().toString();
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, absoluteDirName))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void dirNameが空文字の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, ""))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void 重なり検査で一時ディレクトリが配置先の祖先の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("a").resolve("b").resolve("sales.csv");
+        Path tempDir = dir.resolve("a");
+
+        assertThatThrownBy(() -> TempOutputFile.inDirectory(outputFile, tempDir))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+    }
+
+    @Test
+    void 重なり検査で一時ディレクトリが配置先ファイルの配下の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+        Path tempDir = dir.resolve("sales.csv").resolve("work");
+
+        assertThatThrownBy(() -> TempOutputFile.inDirectory(outputFile, tempDir))
                 .isInstanceOf(SystemException.class)
                 .hasMessageContaining("一時ディレクトリが配置先と重なります");
     }
