@@ -125,6 +125,26 @@ class ErrorRecordSkipListenerTest {
     }
 
     @Test
+    void 加工時Skipで理由に改行とタブを含む場合＿空白に置き換えて1行で退避する() throws Exception {
+        Path errorFile = tempDir.resolve("skipped.txt");
+        var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> r, r -> r);
+
+        listener.onSkipInProcess("A001", new BusinessException("1行目\r\n2行目\t3行目"));
+
+        assertThat(Files.readAllLines(errorFile)).containsExactly("A001\t1行目  2行目 3行目");
+    }
+
+    @Test
+    void 読取時Skipで理由に改行を含む場合＿空白に置き換えて1行で退避する() throws Exception {
+        Path errorFile = tempDir.resolve("skipped.txt");
+        var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> r, r -> r);
+
+        listener.onSkipInRead(new FlatFileParseException("パース\n失敗", "bad,line"));
+
+        assertThat(Files.readAllLines(errorFile)).containsExactly("bad,line\tパース 失敗");
+    }
+
+    @Test
     void 書込時Skipも退避され複数件は追記される() throws Exception {
         Path errorFile = tempDir.resolve("skipped.txt");
         var listener = new ErrorRecordSkipListener<String, String>(errorFile, r -> r, r -> r);
