@@ -1,0 +1,15 @@
+{
+  "task": "P-20261023-filemove-and-skiplog/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 01:46",
+  "criteria": [
+    {"text": "`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す", "ok": true, "note": "worktree で同コマンドを実行 / 終了コード0、grep -c は 1、末尾 BUILD SUCCESS（参照: vault/rules/verifier/build-verification.md）"},
+    {"text": "`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す（batch-core のカバレッジ80%）", "ok": true, "note": "同コマンドを実行 / 終了コード0、grep -c は 1（カバレッジ判定込みで BUILD SUCCESS）"},
+    {"text": "上のビルドの後、`grep -c '一時ディレクトリを指定した場合＿そのディレクトリ配下に同名の一時ファイルパスを返す' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1（レポートは tests=7 errors=0 failures=0 skipped=0）"},
+    {"text": "上のビルドの後、`grep -c '一時ディレクトリが配置先と同じパスの場合＿SystemExceptionを送出する' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "上のビルドの後、`grep -c 'prepareを呼んだ場合＿一時ディレクトリを作成し一時ファイルのパスを返す' batch-core/target/surefire-reports/TEST-com.example.batch.core.tasklet.TempOutputFileTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "`grep -c '配置先と同じファイルシステムに置く' batch-core/src/main/java/com/example/batch/core/tasklet/TempOutputFile.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c（worktree 内）/ 出力: 1"}
+  ],
+  "reasons": []
+}
