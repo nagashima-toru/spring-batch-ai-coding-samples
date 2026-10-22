@@ -58,6 +58,7 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 | Skip 制御 | `BusinessSkipPolicy`（skipLimit 必須） |
 | Skip レコードの退避 | `ErrorRecordSkipListener` |
 | ファイル存在チェック / 移動退避 | `FileExistenceCheckTasklet` / `FileMoveTasklet` |
+| 一時出力→配置（一時ファイルのパス・一時ディレクトリの作成） | `TempOutputFile`（配置は `FileMoveTasklet`） |
 | 単発 API コール Step | `AbstractApiCallTasklet` 継承 |
 | DB 件数チェック | `TableCountCheckTasklet` |
 | パラメータ検証 | `JobParametersValidators` |

@@ -9,7 +9,7 @@
 - `MyBatisCursorItemReader` による**カーソルフェッチ**（全件メモリロードなし）
 - ヘッダ/トレーラ付きファイル生成（`CsvItemWriterFactory` + `SummaryFooterCallback`）
 - 出力ファイル上書きによる冪等な再実行
-- `FileMoveTasklet` による**一時出力→配置**（一時ファイルへ出力してから配置先へ移す）
+- `FileMoveTasklet` による**一時出力→配置**（一時ファイルへ出力してから配置先へ移す。一時ファイルのパスは `TempOutputFile`）
 - `FixedLengthItemWriterFactory` による**固定長出力**（`format=fixed`）
 
 ## 出力例
@@ -31,10 +31,11 @@ T,2,3500
 | `sample03.02FileMoveStep` | `FileMoveTasklet` で一時ファイルを配置先（`outputFile`）へ移す（Tasklet） |
 
 - 目的は「途中で失敗しても配置先に不完全なファイルを出さない」こと。失敗時の一時ファイルは一時ディレクトリに残り、次の実行で上書きされる
-- 一時ファイルの場所は `<outputFile の親ディレクトリ>/tmp/<outputFile のファイル名>`。`outputFile` が相対パスなら絶対パスにしてから親ディレクトリを取る。一時ディレクトリが無ければ作る
+- 一時ファイルの場所は `<outputFile の親ディレクトリ>/tmp/<outputFile のファイル名>`。`outputFile` が相対パスなら絶対パスにしてから親ディレクトリを取る。一時ディレクトリが無ければ作る。パスの決定と一時ディレクトリの作成は基盤部品の `TempOutputFile`（`inSubdirectory`）で行う
 - `outputFile` のファイル名が `tmp` の時は、一時ディレクトリと配置先が同じパスになり移動できないため、起動時のパラメータ検証で拒否する（`InvalidJobParametersException`）
 - 一時ディレクトリは配置先と同じファイルシステムなので、移動は名前の付け替えで済む
 - 移動は上書きあり（`FileMoveTasklet` の `overwrite=true`）。出力ファイルを上書き生成する冪等性（docs/architecture.md §6.2）を保つため
+- 配置先のディレクトリを再帰的に監視する仕組みがある場合は、`tmp/` の書きかけのファイルを拾わないよう、`TempOutputFile.inDirectory` で一時ディレクトリを配置先の外に置く。一時ディレクトリは配置先と同じファイルシステムにする（別のファイルシステムだと移動がコピーになり、配置先に書きかけのファイルが見える）
 
 ## 出力形式（format パラメータ）
 

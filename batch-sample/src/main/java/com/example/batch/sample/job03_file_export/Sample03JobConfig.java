@@ -1,9 +1,7 @@
 package com.example.batch.sample.job03_file_export;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -24,7 +22,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.example.batch.core.exception.SystemException;
 import com.example.batch.core.execution.DuplicateRunPreventingJobExecutionListener;
 import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.item.CsvItemWriterFactory;
@@ -33,6 +30,7 @@ import com.example.batch.core.item.SummaryFooterCallback;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
 import com.example.batch.core.tasklet.FileMoveTasklet;
+import com.example.batch.core.tasklet.TempOutputFile;
 import com.example.batch.sample.common.SalesTransaction;
 import com.example.batch.sample.common.SampleProperties;
 
@@ -43,7 +41,8 @@ import com.example.batch.sample.common.SampleProperties;
  * ヘッダ行＋トレーラ行（件数・金額合計）付きファイル生成、出力ファイル上書きによる冪等な再実行。</p>
  *
  * <p><b>一時出力→配置:</b> 1つ目の Step は配置先の親ディレクトリ配下の {@code tmp/} に一時ファイルとして出力し、
- * 2つ目の Step が {@link FileMoveTasklet} で outputFile へ移動する（途中失敗時に不完全なファイルを配置先に残さない）。</p>
+ * 2つ目の Step が {@link FileMoveTasklet} で outputFile へ移動する（途中失敗時に不完全なファイルを配置先に残さない）。
+ * 一時ファイルのパスの決定と一時ディレクトリの作成は {@link TempOutputFile} で行う。</p>
  *
  * <p><b>固定長出力:</b> 任意パラメータ {@code format=fixed} で {@link FixedLengthItemWriterFactory} による
  * Windows-31J 固定長（ヘッダ・トレーラ無し）を出力する（Java の Shift_JIS は Windows 拡張文字を表せないため）。
@@ -102,27 +101,13 @@ public class Sample03JobConfig {
     }
 
     /**
-     * 一時ファイルのパスを返す（配置先の親ディレクトリ配下の tmp/ に同名で置く）。
+     * 一時出力ファイルを返す（配置先の親ディレクトリ配下の tmp/ に同名で置く）。
      *
      * @param outputFile 配置先ファイル
-     * @return 一時ファイル
+     * @return 一時出力ファイル
      */
-    static Path tempFileOf(String outputFile) {
-        return outputDirOf(outputFile).resolve(TEMP_DIR_NAME).resolve(requirePath(Path.of(outputFile).getFileName(),
-                "outputFile にファイル名がありません: " + outputFile));
-    }
-
-    private static Path outputDirOf(String outputFile) {
-        return requirePath(Path.of(outputFile).toAbsolutePath().getParent(),
-                "outputFile に親ディレクトリがありません: " + outputFile);
-    }
-
-    // outputFile がルートパスの時だけ null になる。例外の3階層に合わせて SystemException にする
-    private static Path requirePath(Path path, String message) {
-        if (path == null) {
-            throw new SystemException(message);
-        }
-        return path;
+    static TempOutputFile tempOutputOf(String outputFile) {
+        return TempOutputFile.inSubdirectory(Path.of(outputFile), TEMP_DIR_NAME);
     }
 
     @Bean
@@ -137,7 +122,8 @@ public class Sample03JobConfig {
     @Bean
     @StepScope
     public Tasklet sample03FileMoveTasklet(@Value("#{jobParameters['outputFile']}") String outputFile) {
-        return new FileMoveTasklet(tempFileOf(outputFile), outputDirOf(outputFile), true);
+        TempOutputFile tempOutput = tempOutputOf(outputFile);
+        return new FileMoveTasklet(tempOutput.tempFile(), tempOutput.outputDir(), true);
     }
 
     @Bean
@@ -181,13 +167,7 @@ public class Sample03JobConfig {
             @Value("#{jobParameters['outputFile']}") String outputFile,
             @Value("#{jobParameters['format']}") String format,
             SummaryFooterCallback<SalesTransaction> sample03FooterCallback) {
-        Path tempFile = tempFileOf(outputFile);
-        Path tempDir = outputDirOf(outputFile).resolve(TEMP_DIR_NAME);
-        try {
-            Files.createDirectories(tempDir);
-        } catch (IOException e) {
-            throw new SystemException("一時ディレクトリを作成できません: " + tempDir, e);
-        }
+        Path tempFile = tempOutputOf(outputFile).prepare();
         FlatFileItemWriter<SalesTransaction> writer;
         if ("fixed".equals(format)) {
             // 幅は DB の型が取りうる値がすべて収まるようにする（id: BIGINT の符号付き19桁、customerCode: VARCHAR(10) の
