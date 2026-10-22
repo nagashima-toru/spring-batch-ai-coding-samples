@@ -34,3 +34,4 @@ echo "exit=$?"   # 0=正常 / 2=警告(Skipあり) / 1=異常
 - Reader/Listener は `@StepScope` とし、ジョブパラメータ（ファイルパス）を SpEL で受け取る
 - `JobParametersValidators.required(...)` でパラメータ不足を起動直後に検出する
 - Writer は `MyBatisBatchItemWriter` ＋ Mapper XML の UPSERT（`ON CONFLICT DO UPDATE`）
+- 加工時・書込時の Skip と、`FlatFileParseException` 以外の読込時の Skip の WARN ログには、原因が `BusinessException` ならそのメッセージ、それ以外なら例外のクラス名だけを出す（`ErrorRecordSkipListener`）。元レコードはエラーレコードファイルにだけ残る

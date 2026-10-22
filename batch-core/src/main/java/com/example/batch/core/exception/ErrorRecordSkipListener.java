@@ -34,7 +34,8 @@ import org.springframework.batch.infrastructure.item.file.FlatFileParseException
  * }</pre>
  *
  * <p>読取時 Skip（パースエラー）は例外から元の行文字列を取得して出力する。
- * 読込時の Skip の WARN ログには行の内容を出さず行番号と原因だけを出す（行の内容はエラーレコードファイルにだけ残る）。</p>
+ * WARN ログにはレコードの内容を出さず、原因（{@code BusinessException} ならメッセージ、それ以外は例外のクラス名）だけを出す。
+ * 読込時のパースエラーなら行番号も出す（レコードの内容はエラーレコードファイルにだけ残る）。</p>
  *
  * <p><b>拡張ポイント:</b> 出力形式はフォーマッタ関数で調整する。出力先をファイル以外
  * （DB等）にしたい場合は {@link SkipListener} を直接実装した別クラスを作成する。</p>
@@ -74,26 +75,32 @@ public class ErrorRecordSkipListener<T, S> implements SkipListener<T, S> {
     @Override
     public void onSkipInRead(Throwable t) {
         String record = t instanceof FlatFileParseException parseError ? parseError.getInput() : "(読取失敗)";
-        String reason = t instanceof FlatFileParseException parseError ? readReason(parseError) : t.getMessage();
+        String reason = t instanceof FlatFileParseException parseError
+                ? readReason(parseError) : "cause=" + describe(t);
         writeErrorRecord(record, t, reason);
     }
 
     @Override
     public void onSkipInProcess(T item, Throwable t) {
-        writeErrorRecord(inputFormatter.apply(item), t, t.getMessage());
+        writeErrorRecord(inputFormatter.apply(item), t, "cause=" + describe(t));
     }
 
     @Override
     public void onSkipInWrite(S item, Throwable t) {
-        writeErrorRecord(outputFormatter.apply(item), t, t.getMessage());
+        writeErrorRecord(outputFormatter.apply(item), t, "cause=" + describe(t));
     }
 
-    /** ログ用の理由（行の内容を含まない）。原因が BusinessException 以外ならクラス名だけを出す。 */
+    /** ログ用の理由（行の内容を含まない）。 */
     private static String readReason(FlatFileParseException e) {
         Throwable cause = e.getCause();
-        String detail = cause instanceof BusinessException ? cause.getMessage()
-                : (cause == null ? FlatFileParseException.class : cause.getClass()).getSimpleName();
+        String detail = cause == null
+                ? FlatFileParseException.class.getSimpleName() : describe(cause);
         return "line=" + e.getLineNumber() + " cause=" + detail;
+    }
+
+    /** 原因の表記。BusinessException ならメッセージ、それ以外ならクラスの単純名だけを返す。 */
+    private static String describe(Throwable t) {
+        return t instanceof BusinessException ? t.getMessage() : t.getClass().getSimpleName();
     }
 
     private synchronized void writeErrorRecord(String record, Throwable t, String logReason) {
