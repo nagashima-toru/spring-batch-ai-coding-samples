@@ -1,0 +1,16 @@
+{
+  "task": "P-20261023-filemove-and-skiplog/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 01:48",
+  "criteria": [
+    {"text": "`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` / 出力: 終了コード0、grep -c 'INFO. BUILD SUCCESS' = 1、末尾 BUILD SUCCESS。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す（batch-core のカバレッジ80%）", "ok": true, "note": "実行コマンド: worktree で `./mvnw clean verify -DskipITs -pl batch-core` / 出力: 終了コード0、grep -c = 1（カバレッジ判定込みで BUILD SUCCESS）"},
+    {"text": "上のビルドの後、`grep -c '加工時Skipで原因がBusinessExceptionでない場合＿原因のクラス名だけを出す' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "上のビルドの後、`grep -c '書込時Skipで原因がBusinessExceptionでない場合＿原因のクラス名だけを出す' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "上のビルドの後、`grep -c '読取時SkipでFlatFileParseException以外の場合＿原因のクラス名だけを出す' batch-core/target/surefire-reports/TEST-com.example.batch.core.exception.ErrorRecordSkipListenerTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1"},
+    {"text": "`grep -c 'WARN ログへそのまま出るため' batch-core/src/main/java/com/example/batch/core/exception/BusinessException.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1（差分は BusinessException.java に +3行のみ）"},
+    {"text": "`grep -c 'それ以外なら例外のクラス名だけを出す' batch-sample/docs/sample01-csv-import.md` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c / 出力: 1（差分は +1行）"}
+  ],
+  "reasons": []
+}
