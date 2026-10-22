@@ -243,3 +243,4 @@ Spring Batch 6 は 5 系から API が変わっている。**Web 上の 5 系以
 - Builder（`StepBuilder` / `JobBuilder`）は `JobRepository` をコンストラクタで受け、チャンク定義は `.chunk(size, transactionManager)` 形式
 - メタデータテーブル DDL は 6 系同梱のものを使用する（5 系からスキーマ変更あり）
 - 実装前に必ず公式リファレンス（<https://docs.spring.io/spring-batch/reference/>）で 6 系のシグネチャを確認する
+- `ValidatingItemProcessorBase` を継承した Processor を `@StepScope` の Bean にする時は、Bean メソッドの戻り値の型と注入先の引数の型を `ItemProcessor<入力型, 出力型>` にする（スコーププロキシがインタフェースの JDK 動的プロキシになり、final の `process()` を横取りできる。具象クラスの型にするとクラスを継承したプロキシになり、final の `process()` が未初期化のプロキシ本体で実行されて NullPointerException になる。結合テストでしか見つからない）。具象型で宣言すると `batch-sample` の `StepScopeBeanRuleTest` が失敗する

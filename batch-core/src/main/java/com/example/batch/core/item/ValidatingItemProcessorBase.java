@@ -52,11 +52,13 @@ public abstract class ValidatingItemProcessorBase<I, O> implements ItemProcessor
     /**
      * 形式チェック（Bean Validation）の後に {@link #doProcess} を呼ぶ。
      *
-     * <p>{@code @StepScope} の Bean として使えるよう（スコーププロキシがクラスを継承して作られるため）、
-     * final にしない。サブクラスでのオーバーライドは想定しない。</p>
+     * <p>入力チェックを必ず {@code doProcess} の前に実行するため final にする。
+     * {@code @StepScope} の Bean にする時は、Bean メソッドの戻り値と注入先の型を
+     * {@code ItemProcessor<I, O>} にする（スコーププロキシがインタフェースの JDK 動的プロキシになる。
+     * docs/architecture.md §13）。</p>
      */
     @Override
-    public O process(I item) throws Exception {
+    public final O process(I item) throws Exception {
         Set<ConstraintViolation<I>> violations = validator.validate(item);
         if (!violations.isEmpty()) {
             throw new BusinessException(formatViolations(item, violations));
