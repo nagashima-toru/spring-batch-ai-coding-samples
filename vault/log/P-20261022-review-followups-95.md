@@ -20,3 +20,4 @@
 - 2026-10-22 14:02 T-01 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-01
 - 2026-10-22 14:03 T-02 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-02
 - 2026-10-22 14:03 T-01 todo→doing attempt=1 worktree を引き継ぎ
+- 2026-10-22 14:03 T-02 todo→doing attempt=1 worktree を引き継ぎ
