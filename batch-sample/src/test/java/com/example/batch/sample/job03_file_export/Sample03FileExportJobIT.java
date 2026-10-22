@@ -196,6 +196,35 @@ class Sample03FileExportJobIT extends AbstractJobIT {
                 .isInstanceOf(InvalidJobParametersException.class);
     }
 
+    @Test
+    void tempDirを指定した場合_一時ファイルを配置先の外に作り配置先へ移動する() throws Exception {
+        salesMapper.insertTransaction(
+                new SalesTransaction(null, "C001", new BigDecimal("1000"), LocalDate.of(2026, 7, 1)));
+        Path work = tempDir.resolve("work");
+        Path output = tempDir.resolve("out").resolve("sales_tempdir.csv");
+
+        JobExecution execution = jobOperator.start(job, uniqueParameters()
+                .addString("outputFile", output.toString())
+                .addString("tempDir", work.toString())
+                .toJobParameters());
+
+        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(output).exists();
+        assertThat(work.resolve("sales_tempdir.csv")).doesNotExist();
+        assertThat(output.getParent().resolve("tmp")).doesNotExist();
+    }
+
+    @Test
+    void tempDirが配置先の親ディレクトリと同じ場合_InvalidJobParametersExceptionで起動を拒否する() {
+        Path output = tempDir.resolve("out").resolve("sales_overlap.csv");
+
+        assertThatThrownBy(() -> jobOperator.start(job, uniqueParameters()
+                .addString("outputFile", output.toString())
+                .addString("tempDir", output.getParent().toString())
+                .toJobParameters()))
+                .isInstanceOf(InvalidJobParametersException.class);
+    }
+
     private static BatchStatus stepStatus(JobExecution execution, String stepName) {
         return execution.getStepExecutions().stream()
                 .filter(s -> stepName.equals(s.getStepName()))

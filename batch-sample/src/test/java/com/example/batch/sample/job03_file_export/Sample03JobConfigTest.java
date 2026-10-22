@@ -47,7 +47,24 @@ class Sample03JobConfigTest {
 
     @Test
     void 配置先ファイルを指定した場合＿親ディレクトリ配下のtmpに同名の一時ファイルパスを返す(@TempDir Path dir) {
-        Path result = Sample03JobConfig.tempOutputOf(dir.resolve("sales.csv").toString()).tempFile();
+        Path result = Sample03JobConfig.tempOutputOf(dir.resolve("sales.csv").toString(), null).tempFile();
+
+        assertThat(result).isEqualTo(dir.toAbsolutePath().resolve("tmp").resolve("sales.csv"));
+    }
+
+    @Test
+    void 一時ディレクトリを指定した場合＿指定のディレクトリ配下に同名の一時ファイルパスを返す(@TempDir Path dir) {
+        Path work = dir.resolve("work");
+
+        Path result = Sample03JobConfig.tempOutputOf(dir.resolve("out").resolve("sales.csv").toString(),
+                work.toString()).tempFile();
+
+        assertThat(result).isEqualTo(work.toAbsolutePath().resolve("sales.csv"));
+    }
+
+    @Test
+    void 一時ディレクトリが空文字の場合＿親ディレクトリ配下のtmpに同名の一時ファイルパスを返す(@TempDir Path dir) {
+        Path result = Sample03JobConfig.tempOutputOf(dir.resolve("sales.csv").toString(), "").tempFile();
 
         assertThat(result).isEqualTo(dir.toAbsolutePath().resolve("tmp").resolve("sales.csv"));
     }

@@ -30,12 +30,15 @@ T,2,3500
 | `sample03.01ExportStep` | DBから抽出し、一時ファイルへ出力する（Chunk） |
 | `sample03.02FileMoveStep` | `FileMoveTasklet` で一時ファイルを配置先（`outputFile`）へ移す（Tasklet） |
 
-- 目的は「途中で失敗しても配置先に不完全なファイルを出さない」こと。失敗時の一時ファイルは一時ディレクトリに残り、次の実行で上書きされる
+- 目的は「途中で失敗しても配置先に不完全なファイルを出さない」こと。失敗時の一時ファイルは一時ディレクトリに残る。前回の失敗で残った同名の一時ファイルは消さない（`TempOutputFile` は消さず、Writer が最初から書き直す。Writer は `shouldDeleteIfExists(true)`、sample03 は `saveState=false` なので前回の中身は残らない）
 - 一時ファイルの場所は `<outputFile の親ディレクトリ>/tmp/<outputFile のファイル名>`。`outputFile` が相対パスなら絶対パスにしてから親ディレクトリを取る。一時ディレクトリが無ければ作る。パスの決定と一時ディレクトリの作成は基盤部品の `TempOutputFile`（`inSubdirectory`）で行う
 - `outputFile` のファイル名が `tmp` の時は、一時ディレクトリと配置先が同じパスになり移動できないため、起動時のパラメータ検証で拒否する（`InvalidJobParametersException`）
 - 一時ディレクトリは配置先と同じファイルシステムなので、移動は名前の付け替えで済む
 - 移動は上書きあり（`FileMoveTasklet` の `overwrite=true`）。出力ファイルを上書き生成する冪等性（docs/architecture.md §6.2）を保つため
-- 配置先のディレクトリを再帰的に監視する仕組みがある場合は、`tmp/` の書きかけのファイルを拾わないよう、`TempOutputFile.inDirectory` で一時ディレクトリを配置先の外に置く。一時ディレクトリは配置先と同じファイルシステムにする（別のファイルシステムだと移動がコピーになり、配置先に書きかけのファイルが見える）
+- 配置先のディレクトリを再帰的に監視する仕組みがある場合は、`tmp/` の書きかけのファイルを拾わないよう、任意パラメータ `tempDir` を指定する。`TempOutputFile.inDirectory` で一時ディレクトリを配置先の外に置く（未指定・空文字なら上の `tmp/`）
+- 一時ディレクトリは配置先と同じファイルシステムに置く前提。別のファイルシステムだと移動がアトミックにならず、コピーと削除になって配置先に書きかけのファイルが見える。同じファイルシステムかどうかはコードで検査しない（一時ディレクトリが起動時にまだ無いことがあるため）
+- 一時ディレクトリが配置先と重なる指定（配置先の親ディレクトリと同じ、など）は、起動時のパラメータ検証で拒否する（`InvalidJobParametersException`）。重なりの検査は正規化したパスで行い、シンボリックリンクは解決しないので、実体が同じでも検出できない場合がある
+- 別のジョブや別の実行が同じ一時ディレクトリに同じ出力ファイル名で書くと同じ一時ファイルを使う。同じ出力ファイル名で並行実行しない（同じジョブの並行実行は二重起動防止で止まる。方式設計 §6.3）。出力ファイル名か一時ディレクトリを分ける
 
 ## 出力形式（format パラメータ）
 
@@ -69,6 +72,14 @@ T,2,3500
 ./mvnw -q spring-boot:run -pl batch-sample -Dspring-boot.run.arguments="\
   --spring.batch.job.name=sample03FileExportJob \
   outputFile=batch-sample/data/out/sales.csv"
+```
+
+一時ディレクトリを配置先の外に置く例：
+
+```bash
+./mvnw -q spring-boot:run -pl batch-sample -Dspring-boot.run.arguments="\
+  --spring.batch.job.name=sample03FileExportJob \
+  outputFile=batch-sample/data/out/sales.csv tempDir=batch-sample/data/work"
 ```
 
 固定長で出力する例：
