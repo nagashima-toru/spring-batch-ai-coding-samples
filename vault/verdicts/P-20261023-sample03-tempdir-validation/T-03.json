@@ -1,0 +1,14 @@
+{
+  "task": "P-20261023-sample03-tempdir-validation/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 08:23",
+  "criteria": [
+    {"text": "識別パラメータの判断が書かれている：`grep -c '識別パラメータのままにする' batch-sample/docs/sample03-file-export.md` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で `grep -c '識別パラメータのままにする' batch-sample/docs/sample03-file-export.md` / 出力: 1。git diff で理由（配置Stepのリスタート、冪等性§6.2、§6.1）も本文に記載を確認"},
+    {"text": "空白だけの値の扱いが書かれている：`grep -c '空白だけの値は未指定として扱う' batch-sample/docs/sample03-file-export.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c '空白だけの値は未指定として扱う' batch-sample/docs/sample03-file-export.md` / 出力: 1"},
+    {"text": "パスとして解釈できない値の拒否が書かれている：`grep -c 'パスとして解釈できない値' batch-sample/docs/sample03-file-export.md` の出力が `1`", "ok": true, "note": "実行コマンド: `grep -c 'パスとして解釈できない値' batch-sample/docs/sample03-file-export.md` / 出力: 1。同行に InvalidJobParametersException で拒否と記載"},
+    {"text": "旧い「未指定・空文字なら」の説明が残っていない：`grep -c '未指定・空文字なら上の' batch-sample/docs/sample03-file-export.md` の出力が `0`", "ok": true, "note": "実行コマンド: `grep -c '未指定・空文字なら上の' batch-sample/docs/sample03-file-export.md` / 出力: 0。差分で「未指定・空文字・空白だけなら上の `tmp/`」に置換済み"},
+    {"text": "見出しの数が変わっていない（新しい `## ` 節を作らない）：`grep -c '^## ' batch-sample/docs/sample03-file-export.md` の出力が `7`", "ok": true, "note": "実行コマンド: `grep -c '^## ' batch-sample/docs/sample03-file-export.md` / 出力: 7（`### ` も1件で追加なし、差分は箇条書きのみ）"}
+  ],
+  "reasons": []
+}
