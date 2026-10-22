@@ -3,18 +3,28 @@ package com.example.batch.core.tasklet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.batch.infrastructure.item.Chunk;
+import org.springframework.batch.infrastructure.item.ExecutionContext;
+import org.springframework.batch.infrastructure.item.file.FlatFileItemWriter;
+import org.springframework.core.io.FileSystemResource;
 
 import com.example.batch.core.exception.SystemException;
+import com.example.batch.core.item.CsvItemWriterFactory;
 
 class TempOutputFileTest {
 
     @TempDir
     Path dir;
+
+    // RecordFieldExtractor がリフレクションでアクセスするため public にする
+    public record Row(String code) {
+    }
 
     @Test
     void 配下のディレクトリ名を指定した場合＿配置先の親ディレクトリ配下に同名の一時ファイルパスを返す() {
@@ -40,7 +50,7 @@ class TempOutputFileTest {
 
         assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, "."))
                 .isInstanceOf(SystemException.class)
-                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
     }
 
     @Test
@@ -62,6 +72,63 @@ class TempOutputFileTest {
     }
 
     @Test
+    void dirNameに区切り文字を含む場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, "a/b"))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください: dirName=a/b");
+    }
+
+    @Test
+    void dirNameが親ディレクトリを指す場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, ".."))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void dirNameが絶対パスの場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+        String absoluteDirName = dir.resolve("other").toAbsolutePath().toString();
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, absoluteDirName))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void dirNameが空文字の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+
+        assertThatThrownBy(() -> TempOutputFile.inSubdirectory(outputFile, ""))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリ名は単一のディレクトリ名にしてください");
+    }
+
+    @Test
+    void 重なり検査で一時ディレクトリが配置先の祖先の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("a").resolve("b").resolve("sales.csv");
+        Path tempDir = dir.resolve("a");
+
+        assertThatThrownBy(() -> TempOutputFile.inDirectory(outputFile, tempDir))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+    }
+
+    @Test
+    void 重なり検査で一時ディレクトリが配置先ファイルの配下の場合＿SystemExceptionを送出する() {
+        Path outputFile = dir.resolve("sales.csv");
+        Path tempDir = dir.resolve("sales.csv").resolve("work");
+
+        assertThatThrownBy(() -> TempOutputFile.inDirectory(outputFile, tempDir))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("一時ディレクトリが配置先と重なります");
+    }
+
+    @Test
     void ファイル名の無いパスの場合＿SystemExceptionを送出する() {
         assertThatThrownBy(() -> TempOutputFile.inSubdirectory(Path.of("/"), "tmp"))
                 .isInstanceOf(SystemException.class)
@@ -76,6 +143,34 @@ class TempOutputFileTest {
 
         assertThat(result).isEqualTo(temp.tempFile());
         assertThat(temp.tempDir()).isDirectory();
+    }
+
+    @Test
+    void 前回の一時ファイルが残っている場合＿prepareは消さずに一時ファイルのパスを返す() throws Exception {
+        var temp = TempOutputFile.inSubdirectory(dir.resolve("sales.csv"), "tmp");
+        Files.createDirectories(temp.tempDir());
+        Files.writeString(temp.tempFile(), "old");
+
+        Path result = temp.prepare();
+
+        assertThat(result).isEqualTo(temp.tempFile());
+        assertThat(Files.readString(result)).isEqualTo("old");
+    }
+
+    @Test
+    void 前回の一時ファイルが残っている場合＿CsvItemWriterFactoryのWriterが上書きする() throws Exception {
+        var temp = TempOutputFile.inSubdirectory(dir.resolve("sales.csv"), "tmp");
+        Files.createDirectories(temp.tempDir());
+        Files.writeString(temp.tempFile(), "OLD1\nOLD2\n");
+        FlatFileItemWriter<Row> writer = CsvItemWriterFactory.create("tempOutputWriter",
+                new FileSystemResource(temp.prepare().toFile()), Row.class, StandardCharsets.UTF_8,
+                null, null, "code");
+
+        writer.open(new ExecutionContext());
+        writer.write(Chunk.of(new Row("NEW1"), new Row("NEW2")));
+        writer.close();
+
+        assertThat(Files.readAllLines(temp.tempFile())).containsExactly("NEW1", "NEW2");
     }
 
     @Test

@@ -19,7 +19,8 @@ import org.springframework.batch.infrastructure.item.file.FlatFileParseException
  *
  * <p><b>用途:</b> 方式設計（docs/architecture.md §5.2）の「Skip したレコードは
  * 元レコード＋エラー理由をファイルへ退避し、手動リカバリを可能にする」を実現する。
- * 出力形式は「{@code 元レコード<TAB>エラー理由}」の1行1レコード。</p>
+ * 出力形式は「{@code 元レコード<TAB>エラー理由}」の1行1レコード。
+ * エラー理由に含まれる改行（CR・LF）とタブは半角空白に置き換え、1行1レコードを保つ。</p>
  *
  * <p><b>使い方:</b> Chunk Step の skipListener として登録する。読取・加工時の Skip は
  * 入力型 {@code T}、書込時の Skip は変換後の出力型 {@code S} で通知されるため、
@@ -103,6 +104,11 @@ public class ErrorRecordSkipListener<T, S> implements SkipListener<T, S> {
         return t instanceof BusinessException ? t.getMessage() : t.getClass().getSimpleName();
     }
 
+    /** エラーレコードファイル用に、CR・LF・タブを半角空白1文字ずつへ置き換える（null は "null"）。 */
+    private static String singleLine(String message) {
+        return String.valueOf(message).replace('\r', ' ').replace('\n', ' ').replace('\t', ' ');
+    }
+
     private synchronized void writeErrorRecord(String record, Throwable t, String logReason) {
         log.warn("レコードをSkipしました。エラーレコードファイルへ退避します: file={} reason={}", errorFile, logReason);
         try {
@@ -110,7 +116,7 @@ public class ErrorRecordSkipListener<T, S> implements SkipListener<T, S> {
             if (parentDir != null) {
                 Files.createDirectories(parentDir);
             }
-            Files.writeString(errorFile, record + "\t" + t.getMessage() + System.lineSeparator(), charset,
+            Files.writeString(errorFile, record + "\t" + singleLine(t.getMessage()) + System.lineSeparator(), charset,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             throw new UncheckedIOException("エラーレコードファイルの書込に失敗しました: " + errorFile, e);

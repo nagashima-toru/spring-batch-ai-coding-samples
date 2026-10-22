@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.example.batch.core.exception.SystemException;
 import com.example.batch.core.execution.DuplicateRunPreventingJobExecutionListener;
 import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.item.CsvItemWriterFactory;
@@ -42,7 +43,8 @@ import com.example.batch.sample.common.SampleProperties;
  *
  * <p><b>一時出力→配置:</b> 1つ目の Step は配置先の親ディレクトリ配下の {@code tmp/} に一時ファイルとして出力し、
  * 2つ目の Step が {@link FileMoveTasklet} で outputFile へ移動する（途中失敗時に不完全なファイルを配置先に残さない）。
- * 一時ファイルのパスの決定と一時ディレクトリの作成は {@link TempOutputFile} で行う。</p>
+ * 一時ファイルのパスの決定と一時ディレクトリの作成は {@link TempOutputFile} で行う。
+ * 任意パラメータ {@code tempDir} を指定すると、{@link TempOutputFile#inDirectory} で一時ディレクトリを配置先の外に置く。</p>
  *
  * <p><b>固定長出力:</b> 任意パラメータ {@code format=fixed} で {@link FixedLengthItemWriterFactory} による
  * Windows-31J 固定長（ヘッダ・トレーラ無し）を出力する（Java の Shift_JIS は Windows 拡張文字を表せないため）。
@@ -56,6 +58,7 @@ import com.example.batch.sample.common.SampleProperties;
  * <pre>{@code
  * --spring.batch.job.name=sample03FileExportJob outputFile=/data/out/sales.csv
  * --spring.batch.job.name=sample03FileExportJob outputFile=/data/out/sales.dat format=fixed
+ * --spring.batch.job.name=sample03FileExportJob outputFile=/data/out/sales.csv tempDir=/data/work
  * }</pre>
  */
 @Configuration(proxyBeanMethods = false)
@@ -73,10 +76,11 @@ public class Sample03JobConfig {
             DuplicateRunPreventingJobExecutionListener duplicateRunPreventingJobExecutionListener) {
         return new JobBuilder(JOB_NAME, jobRepository)
                 .validator(parameters -> {
-                    JobParametersValidators.requiredAndOptional(new String[] {"outputFile"}, new String[] {"format"})
+                    JobParametersValidators.requiredAndOptional(
+                            new String[] {"outputFile"}, new String[] {"format", "tempDir"})
                             .validate(parameters);
                     validateFormat(parameters.getString("format"));
-                    validateOutputFileName(parameters.getString("outputFile"));
+                    validateTempOutput(parameters.getString("outputFile"), parameters.getString("tempDir"));
                 })
                 .listener(duplicateRunPreventingJobExecutionListener)
                 .listener(loggingJobExecutionListener)
@@ -91,23 +95,30 @@ public class Sample03JobConfig {
         }
     }
 
-    // ファイル名が一時ディレクトリ名と同じだと、一時ディレクトリと配置先が同じパスになり移動できない
-    private static void validateOutputFileName(String outputFile) throws InvalidJobParametersException {
-        Path fileName = outputFile == null ? null : Path.of(outputFile).getFileName();
-        if (fileName != null && TEMP_DIR_NAME.equals(fileName.toString())) {
-            throw new InvalidJobParametersException(
-                    "outputFile のファイル名に " + TEMP_DIR_NAME + " は使えません: " + outputFile);
+    // 一時ディレクトリと配置先が重なる場合（ファイル名が tmp の場合を含む）は移動できないため、起動時に拒否する
+    private static void validateTempOutput(String outputFile, String tempDir) throws InvalidJobParametersException {
+        if (outputFile == null) {
+            return;
+        }
+        try {
+            tempOutputOf(outputFile, tempDir);
+        } catch (SystemException e) {
+            throw new InvalidJobParametersException(e.getMessage());
         }
     }
 
     /**
-     * 一時出力ファイルを返す（配置先の親ディレクトリ配下の tmp/ に同名で置く）。
+     * 一時出力ファイルを返す。
      *
      * @param outputFile 配置先ファイル
+     * @param tempDir    一時ディレクトリ（null・空文字なら配置先の親ディレクトリ配下の tmp/ に同名で置く）
      * @return 一時出力ファイル
      */
-    static TempOutputFile tempOutputOf(String outputFile) {
-        return TempOutputFile.inSubdirectory(Path.of(outputFile), TEMP_DIR_NAME);
+    static TempOutputFile tempOutputOf(String outputFile, String tempDir) {
+        if (tempDir == null || tempDir.isEmpty()) {
+            return TempOutputFile.inSubdirectory(Path.of(outputFile), TEMP_DIR_NAME);
+        }
+        return TempOutputFile.inDirectory(Path.of(outputFile), Path.of(tempDir));
     }
 
     @Bean
@@ -121,8 +132,9 @@ public class Sample03JobConfig {
 
     @Bean
     @StepScope
-    public Tasklet sample03FileMoveTasklet(@Value("#{jobParameters['outputFile']}") String outputFile) {
-        TempOutputFile tempOutput = tempOutputOf(outputFile);
+    public Tasklet sample03FileMoveTasklet(@Value("#{jobParameters['outputFile']}") String outputFile,
+            @Value("#{jobParameters['tempDir']}") String tempDir) {
+        TempOutputFile tempOutput = tempOutputOf(outputFile, tempDir);
         return new FileMoveTasklet(tempOutput.tempFile(), tempOutput.outputDir(), true);
     }
 
@@ -166,8 +178,9 @@ public class Sample03JobConfig {
     public FlatFileItemWriter<SalesTransaction> sample03SalesWriter(
             @Value("#{jobParameters['outputFile']}") String outputFile,
             @Value("#{jobParameters['format']}") String format,
+            @Value("#{jobParameters['tempDir']}") String tempDir,
             SummaryFooterCallback<SalesTransaction> sample03FooterCallback) {
-        Path tempFile = tempOutputOf(outputFile).prepare();
+        Path tempFile = tempOutputOf(outputFile, tempDir).prepare();
         FlatFileItemWriter<SalesTransaction> writer;
         if ("fixed".equals(format)) {
             // 幅は DB の型が取りうる値がすべて収まるようにする（id: BIGINT の符号付き19桁、customerCode: VARCHAR(10) の
