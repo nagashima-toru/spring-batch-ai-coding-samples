@@ -81,7 +81,16 @@ public abstract class ValidatingItemProcessorBase<I, O> implements ItemProcessor
     /**
      * バリデーション違反をエラーメッセージへ整形する。
      *
-     * @param item       入力レコード
+     * <p><b>書式:</b> {@code 入力チェックエラー: 項目のパス メッセージ, 項目のパス メッセージ}
+     * （「項目のパス メッセージ」の文字列順に {@code ", "} でつなぐ）。</p>
+     *
+     * <p>違反値（{@link ConstraintViolation#getInvalidValue()}）と入力レコードの値はメッセージに含めない
+     * （docs/architecture.md §8）。</p>
+     *
+     * <p>オーバーライドする時も値を含めないこと。メッセージテンプレートに
+     * {@code validatedValue} の式を使うと値が入るので使わないこと。</p>
+     *
+     * @param item      入力レコード
      * @param violations 違反一覧
      * @return エラーメッセージ
      */
