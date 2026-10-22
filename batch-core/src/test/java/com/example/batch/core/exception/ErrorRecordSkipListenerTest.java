@@ -67,6 +67,50 @@ class ErrorRecordSkipListenerTest {
         assertThat(logs.get(0)).contains("line=3").contains("IllegalStateException").doesNotContain("秘密");
     }
 
+    @Test
+    void 加工時Skipで原因がBusinessExceptionの場合＿WARNログにメッセージを出しレコードの内容を出さない() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"),
+                r -> "秘密:" + r, r -> r);
+
+        List<String> logs = captureLogs(
+                () -> listener.onSkipInProcess("A001", new BusinessException("入力チェックエラー: email 形式が不正です")));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("cause=入力チェックエラー: email 形式が不正です").doesNotContain("秘密");
+    }
+
+    @Test
+    void 加工時Skipで原因がBusinessExceptionでない場合＿原因のクラス名だけを出す() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"), r -> r, r -> r);
+
+        List<String> logs = captureLogs(
+                () -> listener.onSkipInProcess("A001", new IllegalStateException("値=秘密")));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("cause=IllegalStateException").doesNotContain("秘密");
+    }
+
+    @Test
+    void 書込時Skipで原因がBusinessExceptionでない場合＿原因のクラス名だけを出す() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"), r -> r, r -> r);
+
+        List<String> logs = captureLogs(() -> listener
+                .onSkipInWrite("R1", new IllegalArgumentException("Key (code)=(秘密) already exists")));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("cause=IllegalArgumentException").doesNotContain("秘密");
+    }
+
+    @Test
+    void 読取時SkipでFlatFileParseException以外の場合＿原因のクラス名だけを出す() {
+        var listener = new ErrorRecordSkipListener<String, String>(tempDir.resolve("skipped.txt"), r -> r, r -> r);
+
+        List<String> logs = captureLogs(() -> listener.onSkipInRead(new IllegalStateException("値=秘密")));
+
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0)).contains("cause=IllegalStateException").doesNotContain("秘密");
+    }
+
     private static List<String> captureLogs(Runnable action) {
         Logger logger = (Logger) LoggerFactory.getLogger(ErrorRecordSkipListener.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
