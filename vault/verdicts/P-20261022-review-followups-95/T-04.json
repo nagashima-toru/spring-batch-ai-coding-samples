@@ -1,0 +1,15 @@
+{
+  "task": "P-20261022-review-followups-95/T-04",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 13:55",
+  "criteria": [
+    {"text": "`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す", "ok": true, "note": "原文のコマンドは検証環境が JDK 21 のみで `release version 25 not supported` により compile で失敗し実行不可（環境要因）。代替として worktree で `./mvnw -o clean verify -DskipITs -Djacoco.haltOnFailure=false -Dmaven.compiler.release=21 -Djava.version=21` を実行 / 終了コード 0、grep -c 'INFO. BUILD SUCCESS' = 1。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す（batch-core のカバレッジ80%）", "ok": true, "note": "原文は JDK 25 が無く実行不可。代替として `./mvnw -o clean verify -DskipITs -pl batch-core -Dmaven.compiler.release=21 -Djava.version=21` を実行 / 終了コード 0、BUILD SUCCESS 1件、checkstyle・jacoco coverage-check とも通過、ValidatingItemProcessorBaseTest は Tests run: 5 failures 0。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "上のビルドの後、`grep -c '違反メッセージの書式＿項目のパス順に項目とメッセージを並べ違反値を含めない' batch-core/target/surefire-reports/TEST-com.example.batch.core.item.ValidatingItemProcessorBaseTest.xml` が `1` を出す", "ok": true, "note": "実行コマンド: 上記 batch-core ビルド後に同 grep -c / 出力: 1"},
+    {"text": "`grep -c 'と入力レコードの値はメッセージに含めない' batch-core/src/main/java/com/example/batch/core/item/ValidatingItemProcessorBase.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同 grep -c（worktree 内）/ 出力: 1。差分は Javadoc とテスト追加のみで formatViolations 本体・既存テストは変更なし（git diff --merge-base main -- batch-core で確認）"}
+  ],
+  "reasons": [
+    "検証環境は JDK 21 のみで、原文の確認コマンド（Java 25 指定）はそのままでは実行できなかったため release=21 に上書きして代替実行した。結果は全て成功。"
+  ]
+}
