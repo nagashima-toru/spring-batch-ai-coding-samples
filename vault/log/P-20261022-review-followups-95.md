@@ -21,3 +21,5 @@
 - 2026-10-22 14:03 T-02 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-02
 - 2026-10-22 14:03 T-01 todo→doing attempt=1 worktree を引き継ぎ
 - 2026-10-22 14:03 T-02 todo→doing attempt=1 worktree を引き継ぎ
+- 2026-10-22 14:05 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a9383961bbb5363f0 branch=worktree-agent-a9383961bbb5363f0 plan_head=ded95342e8400c0758f33701686c46825aae8825
+- 2026-10-22 14:05 T-01 doing→review attempt=1 creator=sonnet
