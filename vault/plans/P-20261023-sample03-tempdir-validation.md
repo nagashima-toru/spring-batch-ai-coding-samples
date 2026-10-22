@@ -15,7 +15,7 @@ GitHub Issue #107 に対応する。sample03（`Sample03JobConfig`）の任意�
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | doing | 1 | - | sample03 の tempDir の不正なパスを起動時に拒否し空白だけを未指定として扱う | |
-| T-02 | review | 1 | - | TempOutputFileTest にリスタート時に prepare が一時ファイルを消さないテストを足す | |
+| T-02 | done | 1 | - | TempOutputFileTest にリスタート時に prepare が一時ファイルを消さないテストを足す | |
 | T-03 | review | 1 | - | sample03-file-export.md に tempDir の空白・不正なパスの扱いと識別パラメータの判断を書く | |
 | T-04 | todo | 0 | T-01,T-02,T-03 | 計画の差分が `/code-review` を通過する | |
 
