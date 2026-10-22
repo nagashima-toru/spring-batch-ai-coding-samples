@@ -18,3 +18,4 @@
 - 2026-10-22 13:51 T-04 review→done attempt=1 verifier=sonnet
 - 2026-10-22 13:51 T-05 review→done attempt=1 verifier=sonnet
 - 2026-10-22 14:02 T-01 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-01
+- 2026-10-22 14:03 T-02 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-02
