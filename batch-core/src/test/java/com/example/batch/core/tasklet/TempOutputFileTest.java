@@ -174,6 +174,36 @@ class TempOutputFileTest {
     }
 
     @Test
+    void リスタートで前回の一時ファイルが残っている場合＿prepareは消さずWriterが保存位置から書き継ぐ() throws Exception {
+        // リスタートでは prepare が一時ファイルを消さないことを示す
+        var temp = TempOutputFile.inSubdirectory(dir.resolve("sales.csv"), "tmp");
+        FlatFileItemWriter<Row> writer = CsvItemWriterFactory.create("tempOutputWriter",
+                new FileSystemResource(temp.prepare().toFile()), Row.class, StandardCharsets.UTF_8,
+                null, null, "code");
+        ExecutionContext executionContext = new ExecutionContext();
+        writer.open(executionContext);
+        writer.write(Chunk.of(new Row("OLD1"), new Row("OLD2")));
+        writer.update(executionContext);
+        writer.close();
+        assertThat(executionContext.isEmpty()).isFalse();
+
+        var restartTemp = TempOutputFile.inSubdirectory(dir.resolve("sales.csv"), "tmp");
+        Path prepared = restartTemp.prepare();
+
+        assertThat(prepared).exists();
+        assertThat(Files.readAllLines(prepared)).containsExactly("OLD1", "OLD2");
+
+        FlatFileItemWriter<Row> restartWriter = CsvItemWriterFactory.create("tempOutputWriter",
+                new FileSystemResource(prepared.toFile()), Row.class, StandardCharsets.UTF_8,
+                null, null, "code");
+        restartWriter.open(executionContext);
+        restartWriter.write(Chunk.of(new Row("NEW3")));
+        restartWriter.close();
+
+        assertThat(Files.readAllLines(restartTemp.tempFile())).containsExactly("OLD1", "OLD2", "NEW3");
+    }
+
+    @Test
     void 一時ディレクトリを作成できない場合＿SystemExceptionを送出する() throws Exception {
         Files.writeString(dir.resolve("tmp"), "file");
         var temp = TempOutputFile.inSubdirectory(dir.resolve("sales.csv"), "tmp");
