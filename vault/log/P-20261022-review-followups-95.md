@@ -2,3 +2,21 @@
 - 2026-10-22 13:44 T-01 todo→doing attempt=1
 - 2026-10-22 13:44 T-02 todo→doing attempt=1
 - 2026-10-22 13:44 T-03 todo→doing attempt=1
+- 2026-10-22 13:46 T-01 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a9383961bbb5363f0 branch=worktree-agent-a9383961bbb5363f0 plan_head=d0860cf8de2bf46df33f5d816cc52b2a259d6df1
+- 2026-10-22 13:46 T-01 doing→blocked attempt=1 creator=sonnet
+- 2026-10-22 13:46 T-02 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a7e387ab38d913183 branch=worktree-agent-a7e387ab38d913183 plan_head=d0860cf8de2bf46df33f5d816cc52b2a259d6df1
+- 2026-10-22 13:46 T-02 doing→blocked attempt=1 creator=sonnet
+- 2026-10-22 13:46 T-03 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a2bb54185168a592e branch=worktree-agent-a2bb54185168a592e plan_head=d0860cf8de2bf46df33f5d816cc52b2a259d6df1
+- 2026-10-22 13:46 T-03 doing→review attempt=1 creator=sonnet
+- 2026-10-22 13:48 T-03 review→done attempt=1 verifier=sonnet
+- 2026-10-22 13:48 T-04 todo→doing attempt=1
+- 2026-10-22 13:48 T-05 todo→doing attempt=1
+- 2026-10-22 13:49 T-04 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a8823cea57360a215 branch=worktree-agent-a8823cea57360a215 plan_head=771ad7a81943a560221ae8213d962d3533310aad
+- 2026-10-22 13:49 T-04 doing→review attempt=1 creator=sonnet
+- 2026-10-22 13:49 T-05 worktree path=/home/user/spring-batch-ai-coding-samples/.claude/worktrees/agent-a6c37f5619c69519f branch=worktree-agent-a6c37f5619c69519f plan_head=771ad7a81943a560221ae8213d962d3533310aad
+- 2026-10-22 13:49 T-05 doing→review attempt=1 creator=sonnet
+- 2026-10-22 13:51 T-04 review→done attempt=1 verifier=sonnet
+- 2026-10-22 13:51 T-05 review→done attempt=1 verifier=sonnet
+- 2026-10-22 14:02 T-01 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-01
+- 2026-10-22 14:03 T-02 blocked→todo 人の指示: /plan unblock P-20261022-review-followups-95 T-02
+- 2026-10-22 14:03 T-01 todo→doing attempt=1 worktree を引き継ぎ

@@ -60,6 +60,26 @@ class ValidatingItemProcessorBaseTest {
                 .hasMessageContaining("age");
     }
 
+    record FixedMessageInput(@NotBlank(message = "必須") String code,
+            @Max(value = 150, message = "150以下") int age) {
+    }
+
+    @Test
+    void 違反メッセージの書式＿項目のパス順に項目とメッセージを並べ違反値を含めない() {
+        ValidatingItemProcessorBase<FixedMessageInput, FixedMessageInput> fixed =
+                new ValidatingItemProcessorBase<>(validator) {
+                    @Override
+                    protected FixedMessageInput doProcess(FixedMessageInput item) {
+                        return item;
+                    }
+                };
+
+        assertThatThrownBy(() -> fixed.process(new FixedMessageInput("  ", 200)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("入力チェックエラー: age 150以下, code 必須")
+                .hasMessageNotContaining("200");
+    }
+
     @Test
     void doProcessがnullを返すとレコードはフィルタされる() throws Exception {
         assertThat(processor().process(new CustomerInput("SKIP", 1))).isNull();
