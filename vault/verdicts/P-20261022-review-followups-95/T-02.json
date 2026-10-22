@@ -1,0 +1,15 @@
+{
+  "task": "P-20261022-review-followups-95/T-02",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-22 14:09",
+  "criteria": [
+    {"text": "`./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す", "ok": true, "note": "実行コマンド: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false` (worktree 内) / 出力: 終了コード 0、BUILD SUCCESS のgrep件数 1。シェル既定の JAVA_HOME は JDK 21 で 'release version 25 not supported' になったため JDK 25 を指定して再実行した（タスク票の決定済みの通り JDK 25 が前提）。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "`./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` が `1` を出す", "ok": true, "note": "実行コマンド: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core` / 出力: 終了コード 0、BUILD SUCCESS のgrep件数 1。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "`grep -rl 'で使うため final にしない' batch-sample/src/main batch-core/src/main` の出力が、`batch-core/src/main/java/com/example/batch/core/tasklet/CsvHeaderCheckTasklet.java` と `batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderDailySalesReplaceTasklet.java` の2行だけ（順不同）で、`OrderItemProcessor.java` を含まない", "ok": true, "note": "実行コマンド: 同grep（worktree 内） / 出力: OrderDailySalesReplaceTasklet.java と CsvHeaderCheckTasklet.java の2行のみ。OrderItemProcessor.java は含まれない"},
+    {"text": "`grep -c 'Bean メソッドの戻り値と注入先の型を' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderItemProcessor.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同grep / 出力: 1。git diff でも Javadoc 最終段落が決定済みの文言に置換されていることを確認"},
+    {"text": "`grep -c 'ORDER-001 詳細設計 §1 Bean 一覧の注記' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderItemProcessor.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"},
+    {"text": "`grep -c 'process()} 以外の public メソッドは足さない' batch-sample/src/main/java/com/example/batch/sample/job_order_daily_sales/OrderItemProcessor.java` が `1` を出す", "ok": true, "note": "実行コマンド: 同grep / 出力: 1"}
+  ],
+  "reasons": []
+}
