@@ -21,7 +21,7 @@ GitHub Issue #64 に対応する。`batch-sample/src/main/java/com/example/batch
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
 | T-01 | doing | 1 | - | job01 の Customer・CustomerMapper を job01_csv_import へ移す | |
-| T-02 | doing | 1 | - | job02 の Product・ProductMapper を job02_fixedlength_import へ移す | |
+| T-02 | review | 1 | - | job02 の Product・ProductMapper を job02_fixedlength_import へ移す | |
 | T-03 | doing | 1 | - | job05 の ApiUser・ApiUserMapper を job05_api_import へ移す | |
 | T-04 | todo | 0 | - | job06 の WorkRecord・WorkMapper を job06_flow_job へ移す | |
 | T-05 | todo | 0 | - | implementation SKILL.md に Mapper IF の置き場所の判断基準を明記する | |
