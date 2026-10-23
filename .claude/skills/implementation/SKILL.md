@@ -25,7 +25,7 @@ description: 詳細設計書を入力にジョブを実装する。「SALES-001 
 | Job設定クラス | `{module}/src/main/java/.../job_{内容}/{Xxx}JobConfig.java` |
 | 入力レコード | 同パッケージ `{Xxx}Record.java`（record 型＋Bean Validation） |
 | Processor | 同パッケージ `{Xxx}ItemProcessor.java`（ValidatingItemProcessorBase 継承） |
-| Mapper IF / XML | `common/` または同パッケージ / `src/main/resources/mapper/{Xxx}Mapper.xml` |
+| Mapper IF / XML | 単一ジョブ専用は同パッケージ、複数ジョブで共有するものは `common/`（エンティティも同じ） / `src/main/resources/mapper/{Xxx}Mapper.xml` |
 | Flyway | `src/main/resources/db/migration/V{次番}__{内容}.sql`（既存ファイル変更禁止） |
 
 ジョブ名・Step 名・Bean 名は §11 に従う。
