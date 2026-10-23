@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.example.batch.sample.AbstractJobIT;
-import com.example.batch.sample.common.WorkMapper;
 
 /**
  * サンプル06（複合Flowジョブ）の結合テスト。

@@ -26,7 +26,6 @@ import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.item.CsvItemReaderFactory;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
-import com.example.batch.sample.common.Customer;
 import com.example.batch.sample.common.SampleProperties;
 
 import jakarta.validation.Validator;
@@ -99,7 +98,7 @@ public class Sample01JobConfig {
     public MyBatisBatchItemWriter<Customer> sample01CustomerWriter(SqlSessionFactory sqlSessionFactory) {
         return new MyBatisBatchItemWriterBuilder<Customer>()
                 .sqlSessionFactory(sqlSessionFactory)
-                .statementId("com.example.batch.sample.common.CustomerMapper.upsert")
+                .statementId("com.example.batch.sample.job01_csv_import.CustomerMapper.upsert")
                 .assertUpdates(false) // UPSERT はバッチ実行時に更新件数が取得できないため検証しない
                 .build();
     }

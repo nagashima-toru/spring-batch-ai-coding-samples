@@ -1,7 +1,6 @@
 package com.example.batch.sample.job01_csv_import;
 
 import com.example.batch.core.item.ValidatingItemProcessorBase;
-import com.example.batch.sample.common.Customer;
 
 import jakarta.validation.Validator;
 

@@ -1,4 +1,4 @@
-package com.example.batch.sample.common;
+package com.example.batch.sample.job01_csv_import;
 
 import org.apache.ibatis.annotations.Mapper;
 
