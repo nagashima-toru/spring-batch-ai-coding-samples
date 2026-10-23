@@ -1,6 +1,6 @@
 ---
 id: P-20261024-move-single-job-mappers
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #64 に対応する。`batch-sample/src/main/java/com/example/batch/sample/common/` にある、1ジョブからしか使われないエンティティと Mapper を、そのジョブのパッケージ（`jobNN_`）へ移す。対象は `Customer`・`CustomerMapper`（job01）、`Product`・`ProductMapper`（job02）、`ApiUser`・`ApiUserMapper`（job05）、`WorkRecord`・`WorkMapper`（job06）。`SalesTransaction`・`SalesMapper`（job03・job04 で共有）と `SampleProperties` は `common/` に残す。あわせて `.claude/skills/implementation/SKILL.md` の Mapper IF の置き場所に、判断基準（単一ジョブ専用は同パッケージ、複数ジョブで共有するものは `common/`）を明記する。
