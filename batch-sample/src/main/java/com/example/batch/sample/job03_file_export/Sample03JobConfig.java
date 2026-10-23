@@ -50,7 +50,7 @@ import com.example.batch.sample.common.SampleProperties;
  *
  * <p><b>固定長出力:</b> 任意パラメータ {@code format=fixed} で {@link FixedLengthItemWriterFactory} による
  * Windows-31J 固定長（ヘッダ・トレーラ無し）を出力する（Java の Shift_JIS は Windows 拡張文字を表せないため）。
- * 未指定・空・{@code csv} は CSV、それ以外は起動を拒否する。</p>
+ * 未指定・空文字・空白だけ・{@code csv} は CSV、それ以外は起動を拒否する。</p>
  *
  * <p><b>リスタート:</b> トレーラの集計値はメモリ上で保持するため、出力 Step は Reader・Writer とも状態を保存しない
  * （saveState=false）。出力 Step の途中失敗からリスタートしても一時ファイルを最初から出力し直し、
@@ -94,7 +94,7 @@ public class Sample03JobConfig {
     }
 
     private static void validateFormat(String format) throws InvalidJobParametersException {
-        if (format != null && !format.isEmpty() && !"csv".equals(format) && !"fixed".equals(format)) {
+        if (format != null && !format.isBlank() && !"csv".equals(format) && !"fixed".equals(format)) {
             throw new InvalidJobParametersException("format は csv または fixed を指定してください: " + format);
         }
     }
