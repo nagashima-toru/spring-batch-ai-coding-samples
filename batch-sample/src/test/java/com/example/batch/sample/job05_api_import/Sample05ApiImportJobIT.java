@@ -37,8 +37,6 @@ import com.example.batch.core.exception.BusinessException;
 import com.example.batch.core.exception.RetryableSystemException;
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
-import com.example.batch.sample.common.ApiUser;
-import com.example.batch.sample.common.ApiUserMapper;
 import com.sun.net.httpserver.HttpServer;
 
 /**
