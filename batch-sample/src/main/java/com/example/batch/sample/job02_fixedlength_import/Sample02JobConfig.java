@@ -26,7 +26,6 @@ import com.example.batch.core.execution.JobParametersValidators;
 import com.example.batch.core.item.FixedLengthItemReaderFactory;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
-import com.example.batch.sample.common.Product;
 import com.example.batch.sample.common.SampleProperties;
 
 import jakarta.validation.Validator;
@@ -104,7 +103,7 @@ public class Sample02JobConfig {
     public MyBatisBatchItemWriter<Product> sample02ProductWriter(SqlSessionFactory sqlSessionFactory) {
         return new MyBatisBatchItemWriterBuilder<Product>()
                 .sqlSessionFactory(sqlSessionFactory)
-                .statementId("com.example.batch.sample.common.ProductMapper.upsert")
+                .statementId("com.example.batch.sample.job02_fixedlength_import.ProductMapper.upsert")
                 .assertUpdates(false)
                 .build();
     }

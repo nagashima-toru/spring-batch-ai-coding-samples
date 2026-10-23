@@ -3,7 +3,6 @@ package com.example.batch.sample.job02_fixedlength_import;
 import java.math.BigDecimal;
 
 import com.example.batch.core.item.ValidatingItemProcessorBase;
-import com.example.batch.sample.common.Product;
 
 import jakarta.validation.Validator;
 
