@@ -1,0 +1,15 @@
+{
+  "task": "P-20261023-sample03-tempdir-followups/T-04",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 23:47",
+  "criteria": [
+    {"text": "`/code-review` で計画の差分に致命的な指摘が残っていない（`vault/rules/verifier/code-review.md` に従って判定する）", "ok": true, "note": "参照ルール: vault/rules/verifier/code-review.md。範囲: `git -C <worktree> diff --merge-base main`（HARNESS_BASE_BRANCH 空のため main。3ファイル +27/-4、vault 除く）を /code-review（引数なし）で実行。指摘5件、[Must] 0件・[Ask] 0件・[Should] 5件（docs 42行の Boot の空白除去の記述が未検証、validateFormat の前後空白の非対称、format 判定の二重化、outputFile NUL テストの環境依存、docs 追記の冗長）。いずれもクラッシュ・データ破損・誤った結果ではなく FAIL 根拠にしない。差分の外の指摘は無し。"},
+    {"text": "全モジュールの静的解析と単体テストが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で上記 mvnw を実行し grep -c / 出力: 1（終了コード 0）"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: worktree で上記 mvnw を実行し grep -c / 出力: 1（終了コード 0）"},
+    {"text": "結合テストと batch-sample のカバレッジ80%を含む全体のビルドが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `docker info` は成功（終了コード 0）。worktree で `./mvnw clean verify`（JAVA_HOME=JDK25）/ 出力: BUILD SUCCESS の行数 1、終了コード 0"},
+    {"text": "`Sample03JobConfigTest` のテストが10件実行されている（4行目のビルドの後に確認）：`grep -c 'testcase name=' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job03_file_export.Sample03JobConfigTest.xml` の出力が `10`", "ok": true, "note": "実行コマンド: 全体ビルド直後に worktree で上記 grep -c / 出力: 10"},
+    {"text": "旧い説明（「省略時も csv」「未指定・空・」）がリポジトリのコードと文書に残っていない：`grep -rn -e '省略時も csv' -e '未指定・空・' batch-sample/src batch-sample/docs docs README.md` の出力が空", "ok": true, "note": "実行コマンド: worktree で上記 grep -rn / 出力: 空（終了コード 1）。Sample03JobConfig.java の Javadoc と docs の表は新しい文言に置換済みを git diff で確認"}
+  ],
+  "reasons": []
+}
