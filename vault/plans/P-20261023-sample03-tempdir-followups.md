@@ -1,6 +1,6 @@
 ---
 id: P-20261023-sample03-tempdir-followups
-status: approved
+status: done
 ---
 # ゴール
 GitHub Issue #110 に対応する。sample03（`Sample03JobConfig`）について、(1) 空白だけの `tempDir` が未指定とは別の JobInstance になる点を、解消するか `batch-sample/docs/sample03-file-export.md` に明記するかを決めて対応する、(2) `format` の空白だけの値の扱い（`isBlank` かどうか）を `tempDir` と揃えるか違いを文書に書く、(3) `Sample03JobConfigTest` に `outputFile` の NUL 文字のテストを足す。直前の計画（PR #109）で足した `tempDir` の検証（`validateParameters`、空白だけは未指定扱い、識別パラメータのまま）と整合させる。
