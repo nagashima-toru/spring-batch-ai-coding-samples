@@ -19,7 +19,7 @@ GitHub Issue #110 に対応する。sample03（`Sample03JobConfig`）につい�
 ## タスク表（状態の正本）
 | id | status | attempt | after | title | question |
 |---|---|---|---|---|---|
-| T-01 | review | 1 | - | sample03 の format の空白だけの値を tempDir と揃えて未指定（csv）として扱う | |
+| T-01 | done | 1 | - | sample03 の format の空白だけの値を tempDir と揃えて未指定（csv）として扱う | |
 | T-02 | todo | 0 | T-01 | Sample03JobConfigTest に outputFile の NUL 文字を拒否するテストを足す | |
 | T-03 | review | 1 | - | sample03-file-export.md に空白だけの値が別の JobInstance になることと format の空白の扱いを書く | |
 | T-04 | todo | 0 | T-01,T-02,T-03 | 計画の差分が `/code-review` を通過する | |

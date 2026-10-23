@@ -1,0 +1,15 @@
+{
+  "task": "P-20261023-sample03-tempdir-followups/T-01",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-23 23:37",
+  "criteria": [
+    {"text": "全モジュールの静的解析と単体テストが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "worktree で実行コマンド: `JAVA_HOME=...java-25... ./mvnw clean verify -DskipITs -Djacoco.haltOnFailure=false`（ログ保存後 grep -c） / 終了コード 0、grep -c の出力 1（BUILD SUCCESS）。参照ルール: vault/rules/verifier/build-verification.md"},
+    {"text": "batch-core のカバレッジ80%を含むビルドが成功する：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify -DskipITs -pl batch-core 2>&1 | grep -c 'INFO. BUILD SUCCESS'` の出力が `1`", "ok": true, "note": "実行コマンド: `./mvnw clean verify -DskipITs -pl batch-core`（JAVA_HOME=JDK25） / 終了コード 0、grep -c の出力 1（BUILD SUCCESS）"},
+    {"text": "空白だけの `format` で起動を拒否しない単体テストが実行されている（1行目のビルドの後に確認）：`grep -c 'testcase name=.formatが空白だけの場合＿起動を拒否しない' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job03_file_export.Sample03JobConfigTest.xml` の出力が `1`", "ok": true, "note": "実行コマンド: 基準記載の grep -c（1行目のビルド直後） / 出力: 1。差分でテスト10行追加を確認（git diff --stat）"},
+    {"text": "`Sample03JobConfigTest` のテストが既存8件＋1件の9件になっている（1行目のビルドの後に確認）：`grep -c 'testcase name=' batch-sample/target/surefire-reports/TEST-com.example.batch.sample.job03_file_export.Sample03JobConfigTest.xml` の出力が `9`", "ok": true, "note": "実行コマンド: 基準記載の grep -c / 出力: 9"},
+    {"text": "`validateFormat` の判定が `isBlank` になっている：`grep -c 'format.isBlank()' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` の出力が `1`、かつ `grep -c 'format.isEmpty()' batch-sample/src/main/java/com/example/batch/sample/job03_file_export/Sample03JobConfig.java` の出力が `0`", "ok": true, "note": "実行コマンド: 基準記載の grep -c 2本 / 出力: isBlank=1、isEmpty=0"},
+    {"text": "旧い「未指定・空・」の説明がリポジトリのコードと docs に残っていない：`grep -rn '未指定・空・' batch-sample/src docs` の出力が空", "ok": true, "note": "実行コマンド: `grep -rn '未指定・空・' batch-sample/src docs` / 出力: 空（grep 終了コード 1）"}
+  ],
+  "reasons": []
+}
