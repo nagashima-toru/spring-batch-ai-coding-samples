@@ -1,0 +1,14 @@
+{
+  "task": "P-20261024-move-single-job-mappers/T-03",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-24 00:23",
+  "criteria": [
+    {"text": "移動先の2ファイルがある：`ls batch-sample/src/main/java/com/example/batch/sample/job05_api_import/ApiUser.java batch-sample/src/main/java/com/example/batch/sample/job05_api_import/ApiUserMapper.java` が2つのパスを表示し、エラーを出さない", "ok": true, "note": "実行コマンド: worktree で上記 ls / 出力: 2つのパスを表示、エラー無し"},
+    {"text": "`common/` に移動元が残っていない：`ls batch-sample/src/main/java/com/example/batch/sample/common/ | grep -c '^ApiUser'` が `0`", "ok": true, "note": "実行コマンド: 上記コマンド / 出力: 0"},
+    {"text": "旧パッケージ名の参照がリポジトリに残っていない：`git grep -l --untracked 'sample.common.ApiUser' -- ':!vault/'` の出力が空", "ok": true, "note": "実行コマンド: 上記コマンド / 出力: 空"},
+    {"text": "Mapper XML の namespace が移動先を指す：`grep -c 'sample.job05_api_import.ApiUserMapper' batch-sample/src/main/resources/mapper/ApiUserMapper.xml` が `1`", "ok": true, "note": "実行コマンド: 上記コマンド / 出力: 1"},
+    {"text": "結合テストを含むビルドが通る（Checkstyle・SpotBugs・単体テスト・`Sample05ApiImportJobIT`・batch-sample のカバレッジ80%）：`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./mvnw clean verify 2>&1 | grep -c '^.INFO. BUILD SUCCESS'` が `1`", "ok": true, "note": "実行コマンド: worktree で JAVA_HOME=java-25 ./mvnw clean verify（ログ保存後 grep -c） / 出力: 1、ログ末尾 Tests run: 58, Failures: 0, Errors: 0 / BUILD SUCCESS。参照ルール: vault/rules/verifier/build-verification.md（結合テスト込み verify を自分で実行）"}
+  ],
+  "reasons": []
+}
