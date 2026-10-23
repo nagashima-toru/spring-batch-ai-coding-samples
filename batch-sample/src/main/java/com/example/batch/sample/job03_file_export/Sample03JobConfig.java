@@ -2,6 +2,7 @@ package com.example.batch.sample.job03_file_export;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -11,6 +12,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.job.parameters.InvalidJobParametersException;
+import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -75,18 +77,20 @@ public class Sample03JobConfig {
             LoggingJobExecutionListener loggingJobExecutionListener,
             DuplicateRunPreventingJobExecutionListener duplicateRunPreventingJobExecutionListener) {
         return new JobBuilder(JOB_NAME, jobRepository)
-                .validator(parameters -> {
-                    JobParametersValidators.requiredAndOptional(
-                            new String[] {"outputFile"}, new String[] {"format", "tempDir"})
-                            .validate(parameters);
-                    validateFormat(parameters.getString("format"));
-                    validateTempOutput(parameters.getString("outputFile"), parameters.getString("tempDir"));
-                })
+                .validator(Sample03JobConfig::validateParameters)
                 .listener(duplicateRunPreventingJobExecutionListener)
                 .listener(loggingJobExecutionListener)
                 .start(sample03ExportStep)
                 .next(sample03FileMoveStep)
                 .build();
+    }
+
+    static void validateParameters(JobParameters parameters) throws InvalidJobParametersException {
+        JobParametersValidators.requiredAndOptional(
+                new String[] {"outputFile"}, new String[] {"format", "tempDir"})
+                .validate(parameters);
+        validateFormat(parameters.getString("format"));
+        validateTempOutput(parameters.getString("outputFile"), parameters.getString("tempDir"));
     }
 
     private static void validateFormat(String format) throws InvalidJobParametersException {
@@ -104,6 +108,10 @@ public class Sample03JobConfig {
             tempOutputOf(outputFile, tempDir);
         } catch (SystemException e) {
             throw new InvalidJobParametersException(e.getMessage());
+        } catch (InvalidPathException e) {
+            // e.getMessage() は入力値（NUL 文字など）を含むため使わない
+            throw new InvalidJobParametersException(
+                    "outputFile または tempDir をパスとして解釈できません: " + e.getReason());
         }
     }
 
@@ -111,11 +119,11 @@ public class Sample03JobConfig {
      * 一時出力ファイルを返す。
      *
      * @param outputFile 配置先ファイル
-     * @param tempDir    一時ディレクトリ（null・空文字なら配置先の親ディレクトリ配下の tmp/ に同名で置く）
+     * @param tempDir    一時ディレクトリ（null・空文字・空白だけなら配置先の親ディレクトリ配下の tmp/ に同名で置く）
      * @return 一時出力ファイル
      */
     static TempOutputFile tempOutputOf(String outputFile, String tempDir) {
-        if (tempDir == null || tempDir.isEmpty()) {
+        if (tempDir == null || tempDir.isBlank()) {
             return TempOutputFile.inSubdirectory(Path.of(outputFile), TEMP_DIR_NAME);
         }
         return TempOutputFile.inDirectory(Path.of(outputFile), Path.of(tempDir));

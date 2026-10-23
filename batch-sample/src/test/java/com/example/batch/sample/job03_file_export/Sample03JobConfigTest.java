@@ -1,6 +1,8 @@
 package com.example.batch.sample.job03_file_export;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -10,6 +12,9 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.batch.core.job.parameters.InvalidJobParametersException;
+import org.springframework.batch.core.job.parameters.JobParameters;
+import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.infrastructure.item.Chunk;
 
 import com.example.batch.core.item.SummaryFooterCallback;
@@ -67,5 +72,34 @@ class Sample03JobConfigTest {
         Path result = Sample03JobConfig.tempOutputOf(dir.resolve("sales.csv").toString(), "").tempFile();
 
         assertThat(result).isEqualTo(dir.toAbsolutePath().resolve("tmp").resolve("sales.csv"));
+    }
+
+    @Test
+    void 一時ディレクトリが空白だけの場合＿親ディレクトリ配下のtmpに同名の一時ファイルパスを返す(@TempDir Path dir) {
+        Path result = Sample03JobConfig.tempOutputOf(dir.resolve("sales.csv").toString(), "   ").tempFile();
+
+        assertThat(result).isEqualTo(dir.toAbsolutePath().resolve("tmp").resolve("sales.csv"));
+    }
+
+    @Test
+    void tempDirが空白だけの場合＿起動を拒否しない(@TempDir Path dir) {
+        JobParameters parameters = new JobParametersBuilder()
+                .addString("outputFile", dir.resolve("sales.csv").toString())
+                .addString("tempDir", "   ")
+                .toJobParameters();
+
+        assertThatCode(() -> Sample03JobConfig.validateParameters(parameters)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void tempDirにNUL文字を含む場合＿InvalidJobParametersExceptionで起動を拒否する(@TempDir Path dir) {
+        JobParameters parameters = new JobParametersBuilder()
+                .addString("outputFile", dir.resolve("sales.csv").toString())
+                .addString("tempDir", "work\u0000dir")
+                .toJobParameters();
+
+        assertThatThrownBy(() -> Sample03JobConfig.validateParameters(parameters))
+                .isInstanceOf(InvalidJobParametersException.class)
+                .hasMessageContaining("パスとして解釈できません");
     }
 }
