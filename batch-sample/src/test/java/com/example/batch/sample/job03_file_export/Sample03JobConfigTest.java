@@ -112,4 +112,16 @@ class Sample03JobConfigTest {
                 .isInstanceOf(InvalidJobParametersException.class)
                 .hasMessageContaining("パスとして解釈できません");
     }
+
+    @Test
+    void outputFileにNUL文字を含む場合＿InvalidJobParametersExceptionで起動を拒否する(@TempDir Path dir) {
+        JobParameters parameters = new JobParametersBuilder()
+                .addString("outputFile", dir.toString() + "/sales\u0000.csv")
+                .toJobParameters();
+
+        assertThatThrownBy(() -> Sample03JobConfig.validateParameters(parameters))
+                .isInstanceOf(InvalidJobParametersException.class)
+                .hasMessageContaining("パスとして解釈できません")
+                .message().doesNotContain("\u0000");
+    }
 }
