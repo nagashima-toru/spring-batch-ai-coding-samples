@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.batch.sample.common.WorkMapper">
+<mapper namespace="com.example.batch.sample.job06_flow_job.WorkMapper">
 
-    <insert id="upsert" parameterType="com.example.batch.sample.common.WorkRecord">
+    <insert id="upsert" parameterType="com.example.batch.sample.job06_flow_job.WorkRecord">
         INSERT INTO app.work_import (code, amount)
         VALUES (#{code}, #{amount})
         ON CONFLICT (code)

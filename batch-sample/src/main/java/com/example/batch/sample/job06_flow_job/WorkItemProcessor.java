@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 
 import com.example.batch.core.exception.SystemException;
 import com.example.batch.core.item.ValidatingItemProcessorBase;
-import com.example.batch.sample.common.WorkRecord;
 
 import jakarta.validation.Validator;
 

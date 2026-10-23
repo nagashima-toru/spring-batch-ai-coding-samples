@@ -25,8 +25,6 @@ import com.example.batch.core.item.CsvItemReaderFactory;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
 import com.example.batch.core.tasklet.FileExistenceCheckTasklet;
-import com.example.batch.sample.common.WorkMapper;
-import com.example.batch.sample.common.WorkRecord;
 
 import jakarta.validation.Validator;
 
@@ -128,7 +126,7 @@ public class Sample06JobConfig {
     public MyBatisBatchItemWriter<WorkRecord> sample06WorkWriter(SqlSessionFactory sqlSessionFactory) {
         return new MyBatisBatchItemWriterBuilder<WorkRecord>()
                 .sqlSessionFactory(sqlSessionFactory)
-                .statementId("com.example.batch.sample.common.WorkMapper.upsert")
+                .statementId("com.example.batch.sample.job06_flow_job.WorkMapper.upsert")
                 .assertUpdates(false)
                 .build();
     }
