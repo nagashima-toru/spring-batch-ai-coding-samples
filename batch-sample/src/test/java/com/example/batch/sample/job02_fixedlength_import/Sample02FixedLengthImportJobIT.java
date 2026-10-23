@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
-import com.example.batch.sample.common.ProductMapper;
 
 /**
  * サンプル02（固定長取込）の結合テスト。

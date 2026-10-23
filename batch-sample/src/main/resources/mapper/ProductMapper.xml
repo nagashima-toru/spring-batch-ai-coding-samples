@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.batch.sample.common.ProductMapper">
+<mapper namespace="com.example.batch.sample.job02_fixedlength_import.ProductMapper">
 
-    <insert id="upsert" parameterType="com.example.batch.sample.common.Product">
+    <insert id="upsert" parameterType="com.example.batch.sample.job02_fixedlength_import.Product">
         INSERT INTO app.product (product_code, product_name, price)
         VALUES (#{productCode}, #{productName}, #{price})
         ON CONFLICT (product_code)
