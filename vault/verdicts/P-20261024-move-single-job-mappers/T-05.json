@@ -1,0 +1,12 @@
+{
+  "task": "P-20261024-move-single-job-mappers/T-05",
+  "attempt": 1,
+  "result": "PASS",
+  "checked_at": "2026-10-24 00:28",
+  "criteria": [
+    {"text": "判断基準が書かれている：`grep -c '単一ジョブ専用は同パッケージ、複数ジョブで共有するものは .common/.（エンティティも同じ）' .claude/skills/implementation/SKILL.md` が `1`", "ok": true, "note": "実行コマンド: worktree で `grep -c '単一ジョブ専用は同パッケージ、複数ジョブで共有するものは .common/.（エンティティも同じ）' .claude/skills/implementation/SKILL.md` / 出力: 1。差分は表の Mapper IF / XML 行の1行のみで、決定済みの文言と一致し XML パスも維持されている。目的（判断基準が分かる書き方）と確認対象は同一ファイルの同じ行で一致"},
+    {"text": "旧い書き方がリポジトリに残っていない：`git grep -l 'または同パッケージ' -- ':!vault/'` の出力が空", "ok": true, "note": "実行コマンド: worktree で `git grep -l 'または同パッケージ' -- ':!vault/'` / 出力: 空（rc=1）"},
+    {"text": "smoke の参照検査が通る：`bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` が `1`", "ok": true, "note": "実行コマンド: worktree で `bash scripts/smoke.sh 2>&1 | grep -c '^  ok   (ref-1) '` / 出力: 1（2回実行して両方 1）"}
+  ],
+  "reasons": []
+}

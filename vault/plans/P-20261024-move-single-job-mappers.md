@@ -24,7 +24,7 @@ GitHub Issue #64 に対応する。`batch-sample/src/main/java/com/example/batch
 | T-02 | done | 1 | - | job02 の Product・ProductMapper を job02_fixedlength_import へ移す | |
 | T-03 | done | 1 | - | job05 の ApiUser・ApiUserMapper を job05_api_import へ移す | |
 | T-04 | done | 1 | - | job06 の WorkRecord・WorkMapper を job06_flow_job へ移す | |
-| T-05 | review | 1 | - | implementation SKILL.md に Mapper IF の置き場所の判断基準を明記する | |
+| T-05 | done | 1 | - | implementation SKILL.md に Mapper IF の置き場所の判断基準を明記する | |
 | T-06 | todo | 0 | T-01,T-02,T-03,T-04,T-05 | 計画の差分が `/code-review` を通過する | |
 
 ## 計画の受け入れ基準
