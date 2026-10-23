@@ -1,7 +1,6 @@
 package com.example.batch.sample.job05_api_import;
 
 import com.example.batch.core.item.ValidatingItemProcessorBase;
-import com.example.batch.sample.common.ApiUser;
 
 import jakarta.validation.Validator;
 

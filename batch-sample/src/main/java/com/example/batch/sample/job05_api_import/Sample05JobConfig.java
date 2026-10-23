@@ -35,7 +35,6 @@ import com.example.batch.core.item.RestApiPagingItemReader;
 import com.example.batch.core.listener.LoggingJobExecutionListener;
 import com.example.batch.core.listener.LoggingStepExecutionListener;
 import com.example.batch.core.tasklet.TableCountCheckTasklet;
-import com.example.batch.sample.common.ApiUser;
 import com.example.batch.sample.common.SampleProperties;
 
 import jakarta.validation.Validator;
@@ -206,7 +205,7 @@ public class Sample05JobConfig {
     public MyBatisBatchItemWriter<ApiUser> sample05UserWriter(SqlSessionFactory sqlSessionFactory) {
         return new MyBatisBatchItemWriterBuilder<ApiUser>()
                 .sqlSessionFactory(sqlSessionFactory)
-                .statementId("com.example.batch.sample.common.ApiUserMapper.upsert")
+                .statementId("com.example.batch.sample.job05_api_import.ApiUserMapper.upsert")
                 .assertUpdates(false)
                 .build();
     }
