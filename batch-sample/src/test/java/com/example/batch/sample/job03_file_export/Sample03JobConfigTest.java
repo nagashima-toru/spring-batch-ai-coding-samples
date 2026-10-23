@@ -92,6 +92,16 @@ class Sample03JobConfigTest {
     }
 
     @Test
+    void formatが空白だけの場合＿起動を拒否しない(@TempDir Path dir) {
+        JobParameters parameters = new JobParametersBuilder()
+                .addString("outputFile", dir.resolve("sales.csv").toString())
+                .addString("format", "   ")
+                .toJobParameters();
+
+        assertThatCode(() -> Sample03JobConfig.validateParameters(parameters)).doesNotThrowAnyException();
+    }
+
+    @Test
     void tempDirにNUL文字を含む場合＿InvalidJobParametersExceptionで起動を拒否する(@TempDir Path dir) {
         JobParameters parameters = new JobParametersBuilder()
                 .addString("outputFile", dir.resolve("sales.csv").toString())
