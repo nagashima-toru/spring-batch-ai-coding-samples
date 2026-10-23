@@ -7,7 +7,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import com.example.batch.core.exception.BusinessException;
-import com.example.batch.sample.common.Customer;
 
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;

@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.example.batch.core.execution.BatchExitCodes;
 import com.example.batch.sample.AbstractJobIT;
-import com.example.batch.sample.common.CustomerMapper;
 
 /**
  * サンプル01（CSV取込）の結合テスト。
